@@ -1,0 +1,68 @@
+sequenceDiagram
+    participant User as User (Dev/Business)
+    participant Jira
+    participant CodeValidation as Code Validation Service (Python)
+    participant GitHub as GitHub / GCS
+    participant CodeAnalyser as Static Code Analyser
+    participant Gemini as Gemini API
+    participant DocGenerator as Documentation Generation Service (Python)
+    participant GCS as Google Cloud Storage (Archive)
+    participant Confluence as Confluence API
+
+    Note over User, Jira: 1. Initiation
+
+    User->>+Jira: Create Documentation Request Ticket (link to GitHub / GCS file)
+    Jira-->>-User: Ticket Created
+
+    Note over Jira, Gemini: 2. Trigger Code Validation
+
+    Jira->>+CodeValidation: Trigger Workflow (e.g., webhook, polling)
+    Note over CodeValidation: Reads Ticket for details (GitHub / GCS file)
+    
+    CodeValidation->>+GitHub: Fetch Code (Python / Jupyter Notebook)
+    GitHub-->>-CodeValidation: Return Code Content
+    
+    CodeValidation->>+CodeAnalyser: Verify code
+    CodeAnalyser-->>-CodeValidation: Return verification result    
+
+    CodeValidation->>+Gemini: Request Code Validation
+    Note right of Gemini: Evaluates the form of the code and documentation completeness
+    Gemini-->>-CodeValidation: Return validation result
+
+    CodeValidation->>+Jira: Update ticket with validation result and change status 
+    deactivate CodeValidation
+
+    Jira->>+User: Notify User about the validation result
+
+    Note over User, GCS: 3. Documentation Generation
+
+    User->>+Jira: Update ticket for Release (link to GitHub / GCS file)
+    Jira-->>-User: Send ticket update notification
+
+    Jira->>+DocGenerator: Start documentation generation
+
+    DocGenerator->>+GitHub: Fetch Code (Python / Jupyter Notebook)
+    GitHub-->>-DocGenerator: Return Code Content
+    
+    DocGenerator->>+Gemini: Request Documentation Generation (send code)
+    Note right of Gemini: Generates documentation based on code
+    Gemini-->>-DocGenerator: Return Generated Documentation (as file/content)
+
+    Note over DocGenerator, Confluence: 5. Confluence Update
+
+    DocGenerator->>+GCS: Find the last existing documentation for this file
+    GCS-->>-DocGenerator: return the last stored version
+    DocGenerator->>+GCS: Store the generated documentation as the next version
+
+    DocGenerator->>+Confluence: Update Existing Page / Create New Page (include the version number from GCS)
+        alt Update/Create Fails
+            Confluence-->>DocGenerator: Error Response
+            Note right of DocGenerator: Implement Retry Logic
+            DocGenerator-->>Confluence: Retry Update/Create
+        end
+    Confluence-->>-DocGenerator: Success Confirmation (after success/retries)
+
+    Note over DocGenerator, Jira: 6. Finalization
+
+    DocGenerator-->>Jira: Update Ticket Status with new Confluence link
+    Jira-->>-User: Notify User about documentation
