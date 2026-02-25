@@ -48,10 +48,15 @@ sequenceDiagram
     Main->>NP: find_overlaps(all_speech)
     NP-->>Main: overlap segments
 
-    loop Each Video Input
-        Main->>EX: process_video(input, output, keep_segments, spikes)
-        Note over EX: FFmpeg complex filters
-        EX-->>Main: Processed MKV
+    alt Render Processed Videos
+        loop Each Video Input
+            Main->>EX: process_video(input, output, keep_segments, spikes)
+            Note over EX: FFmpeg complex filters
+            EX-->>Main: Processed MKV
+        end
+    else Kdenlive-Native (no-render)
+        Main->>AU: get_video_fps(input)
+        AU-->>Main: fps
     end
 
     Main->>IU: adjust_timestamps(overlaps, keep_segments)
@@ -59,7 +64,8 @@ sequenceDiagram
     Main->>IU: adjust_timestamps(repetitions, keep_segments)
     IU-->>Main: adjusted repetitions
 
-    Main->>EX: generate_kdenlive_project(outputs, overlaps, repetitions)
+    Main->>EX: generate_kdenlive_project(files, keep_segments, spikes, overlaps, repetitions, fps, is_rendered)
+    Note over EX: Generates timeline with segments or single clip
     EX-->>Main: project.kdenlive
 
     loop Each ASR Result
@@ -74,6 +80,7 @@ sequenceDiagram
 
 ## Features
 
+- **Kdenlive-Native Editing**: Optionally avoids re-encoding by generating a Kdenlive timeline with segments from original files.
 - **Synchronized Cutting**: Processes multiple MKV inputs simultaneously to maintain perfect synchronization.
 - **Silence Detection**: Automatically marks segments for cutting where all audio streams are below a threshold (default -30dB) for more than 2 seconds.
 - **Spike Muting**: Identifies and mutes minor audio spikes (under 0.2s) like clicks or coughs.
@@ -119,6 +126,7 @@ python video_processor.py video1.mkv video2.mkv [options]
 - `--silence-duration`: Minimum silence duration for cutting (default: 2.0s).
 - `--overlap-duration`: Minimum duration for overlapping talk markers (default: 5.0s).
 - `--filler-words`: Comma-separated filler words to cut (default: "er,ő").
+- `--no-render`: Skip rendering processed videos and only generate a Kdenlive project using original files (faster and lossless).
 - `--working-dir`: Directory for intermediate files.
 
 ## Project Output

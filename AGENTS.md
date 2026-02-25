@@ -5,6 +5,7 @@ This project automates video editing based on audio features. When working on th
 ## Core Principles
 
 - **Maintain Synchronization**: All cuts MUST happen at the same timestamps across all input videos. Always use `calculate_keep_segments` on the consolidated `cutting_segments` to generate the `keep_segments` used by all streams.
+- **Kdenlive-Native Logic**: When generating a Kdenlive project without rendering, the tool creates multiple `<entry>` tags per track with `in` and `out` points in frames.
 - **Timestamp Adjustment**: When generating sidecar files (ASS, Kdenlive project), use `adjust_timestamps` from `interval_utils.py` to map original timestamps to the newly cut timeline.
 - **FFmpeg Filter Order**: In `exporter.py`, ensure volume filters (for muting spikes) are applied *before* the selection filters (`aselect`), because spikes are detected on the original un-cut audio.
 

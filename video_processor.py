@@ -9,7 +9,8 @@ from audio_utils import (
     detect_silence_and_spikes,
     find_global_silence,
     find_repetitions,
-    get_video_duration
+    get_video_duration,
+    get_video_fps
 )
 from nemo_processing import run_vad, run_asr, find_fillers, find_overlaps
 from interval_utils import merge_intervals, calculate_keep_segments, adjust_timestamps
@@ -30,6 +31,7 @@ def parse_args():
     parser.add_argument("--model-name", default="nvidia/parakeet-tdt-0.6b-v3", help="NeMo ASR model name (default: nvidia/parakeet-tdt-0.6b-v3)")
     parser.add_argument("--filler-words", default="er,ő", help="Comma-separated filler words to cut (default: er,ő)")
     parser.add_argument("--output-prefix", default="processed_", help="Prefix for output video files")
+    parser.add_argument("--no-render", action="store_true", help="Skip rendering processed videos and only generate Kdenlive project using original files (faster and lossless)")
 
     return parser.parse_args()
 
@@ -45,6 +47,8 @@ def get_working_dir(inputs: List[str], working_dir: str = None) -> str:
 def main():
     args = parse_args()
     working_dir = get_working_dir(args.inputs, args.working_dir)
+
+    fps = get_video_fps(args.inputs[0])
 
     video_to_audio_map = {v: extract_audio_streams(v, working_dir) for v in args.inputs}
     all_audio_files = [f for files in video_to_audio_map.values() for f in files]
@@ -76,17 +80,22 @@ def main():
         repetition_segments.extend(find_repetitions(af))
 
     output_files = []
-    for video in args.inputs:
-        out = os.path.join(os.path.dirname(video), args.output_prefix + os.path.basename(video))
-        logger.info(f"Processing video {video} to {out}")
-        process_video(video, out, keep_segments, [stream_markers[af]["spikes"] for af in video_to_audio_map[video]])
-        output_files.append(out)
+    if not args.no_render:
+        for video in args.inputs:
+            out = os.path.join(os.path.dirname(video), args.output_prefix + os.path.basename(video))
+            logger.info(f"Processing video {video} to {out}")
+            process_video(video, out, keep_segments, [stream_markers[af]["spikes"] for af in video_to_audio_map[video]], fps=fps)
+            output_files.append(out)
+    else:
+        output_files = args.inputs
 
     new_overlaps = adjust_timestamps(overlap_segments, keep_segments)
     new_reps = adjust_timestamps(repetition_segments, keep_segments)
 
+    stream_spikes_map = {v: [stream_markers[af]["spikes"] for af in video_to_audio_map[v]] for v in args.inputs}
+
     kdenlive_path = os.path.join(working_dir, "project.kdenlive")
-    generate_kdenlive_project(output_files, kdenlive_path, new_overlaps, new_reps)
+    generate_kdenlive_project(output_files, kdenlive_path, keep_segments, stream_spikes_map, new_overlaps, new_reps, fps=fps, is_rendered=(not args.no_render))
 
     for af, data in asr_results.items():
         if data["words"]:

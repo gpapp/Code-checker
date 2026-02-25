@@ -15,10 +15,7 @@ def get_audio_streams(video_path: str) -> int:
         "ffprobe", "-v", "error", "-select_streams", "a",
         "-show_entries", "stream=index", "-of", "json", video_path
     ]
-    result = subprocess.run(cmd, capture_output=True, text=True)
-    if result.returncode != 0:
-        logger.error(f"Failed to probe {video_path}: {result.stderr}")
-        return 0
+    result = subprocess.run(cmd, check=True, capture_output=True, text=True)
     data = json.loads(result.stdout)
     return len(data.get("streams", []))
 
@@ -128,5 +125,19 @@ def find_repetitions(audio_path: str, window_size: float = 2.0, step_size: float
 def get_video_duration(video_path: str) -> float:
     """Returns the duration of the video file in seconds."""
     cmd = ["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", video_path]
-    result = subprocess.run(cmd, capture_output=True, text=True)
-    return float(result.stdout.strip()) if result.returncode == 0 else 0.0
+    result = subprocess.run(cmd, check=True, capture_output=True, text=True)
+    return float(result.stdout.strip())
+
+def get_video_fps(video_path: str) -> float:
+    """Returns the frame rate of the video file."""
+    cmd = [
+        "ffprobe", "-v", "error", "-select_streams", "v:0",
+        "-show_entries", "stream=r_frame_rate",
+        "-of", "default=noprint_wrappers=1:nokey=1", video_path
+    ]
+    result = subprocess.run(cmd, check=True, capture_output=True, text=True)
+    rate = result.stdout.strip()
+    if "/" in rate:
+        num, den = rate.split("/")
+        return float(num) / float(den)
+    return float(rate)
