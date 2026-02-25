@@ -2,6 +2,40 @@
 
 A modular Python tool for synchronized multi-video editing based on audio stream analysis. Optimized for Hungarian language processing and NVIDIA 3060 GPUs.
 
+## Operation Flowchart
+
+```mermaid
+graph TD
+    A[MKV Input Files] --> B[audio_utils: extract_audio_streams]
+    B --> C[Working Directory: mono WAVs]
+    C --> D[audio_utils: detect_silence_and_spikes]
+    C --> E[nemo_processing: run_asr & find_fillers]
+    C --> F[nemo_processing: run_vad & find_overlaps]
+    C --> G[audio_utils: find_repetitions]
+
+    D --> H[interval_utils: merge_intervals]
+    E --> H
+
+    H --> I[interval_utils: calculate_keep_segments]
+
+    I --> J[exporter: process_video]
+    A --> J
+    D --> J
+
+    J --> K[Processed MKV Outputs]
+
+    I --> L[interval_utils: adjust_timestamps]
+    F --> L
+    G --> L
+    E --> L
+
+    L --> M[exporter: generate_kdenlive_project]
+    L --> N[exporter: generate_ass_file]
+
+    M --> O[project.kdenlive]
+    N --> P[ASR .ass files]
+```
+
 ## Features
 
 - **Synchronized Cutting**: Processes multiple MKV inputs simultaneously to maintain perfect synchronization.
