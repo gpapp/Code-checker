@@ -2,38 +2,74 @@
 
 A modular Python tool for synchronized multi-video editing based on audio stream analysis. Optimized for Hungarian language processing and NVIDIA 3060 GPUs.
 
-## Operation Flowchart
+## Operation Sequence
 
 ```mermaid
-graph TD
-    A[MKV Input Files] --> B[audio_utils: extract_audio_streams]
-    B --> C[Working Directory: mono WAVs]
-    C --> D[audio_utils: detect_silence_and_spikes]
-    C --> E[nemo_processing: run_asr & find_fillers]
-    C --> F[nemo_processing: run_vad & find_overlaps]
-    C --> G[audio_utils: find_repetitions]
+sequenceDiagram
+    participant User
+    participant Main as video_processor.py
+    participant AU as audio_utils.py
+    participant NP as nemo_processing.py
+    participant IU as interval_utils.py
+    participant EX as exporter.py
 
-    D --> H[interval_utils: merge_intervals]
-    E --> H
+    User->>Main: Execute with MKV inputs
+    Main->>AU: extract_audio_streams(inputs)
+    AU-->>Main: mono WAV files
 
-    H --> I[interval_utils: calculate_keep_segments]
+    loop Each Audio File
+        Main->>AU: detect_silence_and_spikes(wav)
+        AU-->>Main: silence & spike intervals
+        Main->>NP: run_asr(wav)
+        NP-->>Main: transcript & words
+        Main->>NP: find_fillers(words)
+        NP-->>Main: filler intervals
+    end
 
-    I --> J[exporter: process_video]
-    A --> J
-    D --> J
+    Main->>AU: find_global_silence(all_silence)
+    AU-->>Main: global cut intervals
 
-    J --> K[Processed MKV Outputs]
+    Main->>IU: merge_intervals(global_silence + fillers)
+    IU-->>Main: final cut_segments
 
-    I --> L[interval_utils: adjust_timestamps]
-    F --> L
-    G --> L
-    E --> L
+    Main->>AU: get_video_duration(input)
+    AU-->>Main: total_duration
 
-    L --> M[exporter: generate_kdenlive_project]
-    L --> N[exporter: generate_ass_file]
+    Main->>IU: calculate_keep_segments(cut_segments, total_duration)
+    IU-->>Main: keep_segments
 
-    M --> O[project.kdenlive]
-    N --> P[ASR .ass files]
+    loop Each Audio File
+        Main->>NP: run_vad(wav)
+        NP-->>Main: speech intervals
+        Main->>AU: find_repetitions(wav)
+        AU-->>Main: repetition intervals
+    end
+
+    Main->>NP: find_overlaps(all_speech)
+    NP-->>Main: overlap segments
+
+    loop Each Video Input
+        Main->>EX: process_video(input, output, keep_segments, spikes)
+        Note over EX: FFmpeg complex filters
+        EX-->>Main: Processed MKV
+    end
+
+    Main->>IU: adjust_timestamps(overlaps, keep_segments)
+    IU-->>Main: adjusted overlaps
+    Main->>IU: adjust_timestamps(repetitions, keep_segments)
+    IU-->>Main: adjusted repetitions
+
+    Main->>EX: generate_kdenlive_project(outputs, overlaps, repetitions)
+    EX-->>Main: project.kdenlive
+
+    loop Each ASR Result
+        Main->>IU: adjust_timestamps(word_times, keep_segments)
+        IU-->>Main: adjusted word_times
+        Main->>EX: generate_ass_file(adj_words, output)
+        EX-->>Main: .ass file
+    end
+
+    Main-->>User: Processing Complete
 ```
 
 ## Features
