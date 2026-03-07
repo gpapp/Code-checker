@@ -1,6 +1,6 @@
-from typing import List, Tuple
+# Interval utilities for merging and adjusting timestamps
 
-def merge_intervals(intervals: List[Tuple[float, float]]) -> List[Tuple[float, float]]:
+def merge_intervals(intervals: list[tuple[float, float]]) -> list[tuple[float, float]]:
     """Merges overlapping or adjacent intervals."""
     if not intervals:
         return []
@@ -14,7 +14,7 @@ def merge_intervals(intervals: List[Tuple[float, float]]) -> List[Tuple[float, f
             merged.append((curr_start, curr_end))
     return merged
 
-def calculate_keep_segments(cut_segments: List[Tuple[float, float]], total_duration: float) -> List[Tuple[float, float]]:
+def calculate_keep_segments(cut_segments: list[tuple[float, float]], total_duration: float) -> list[tuple[float, float]]:
     """Inverts cut segments to find segments to keep."""
     keep = []
     last_end = 0.0
@@ -26,7 +26,7 @@ def calculate_keep_segments(cut_segments: List[Tuple[float, float]], total_durat
         keep.append((last_end, total_duration))
     return keep
 
-def adjust_timestamps(segments: List[Tuple[float, float]], keep_segments: List[Tuple[float, float]]) -> List[Tuple[float, float]]:
+def adjust_timestamps(segments: list[tuple[float, float]], keep_segments: list[tuple[float, float]]) -> list[tuple[float, float]]:
     """Adjusts timestamps from original timeline to the cut timeline."""
     adjusted = []
     for start, end in segments:

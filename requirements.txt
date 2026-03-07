@@ -1,8 +1,12 @@
+qwen-asr
+transformers
+torch
+torchaudio
 nemo_toolkit[asr]
 librosa
 pydub
 lxml
 numpy
 scipy
-torch
 tqdm
+huggingface_hub[hf_xet]

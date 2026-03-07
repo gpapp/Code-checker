@@ -4,13 +4,25 @@ import json
 import logging
 import numpy as np
 import librosa
-from typing import List, Tuple, Dict
 from interval_utils import merge_intervals
 
 logger = logging.getLogger(__name__)
 
+def has_video_stream(file_path: str) -> bool:
+    """Returns True if the file contains at least one video stream."""
+    cmd = [
+        "ffprobe", "-v", "error", "-select_streams", "v",
+        "-show_entries", "stream=index", "-of", "json", file_path
+    ]
+    try:
+        result = subprocess.run(cmd, check=True, capture_output=True, text=True)
+        data = json.loads(result.stdout)
+        return len(data.get("streams", [])) > 0
+    except Exception:
+        return False
+
 def get_audio_streams(video_path: str) -> int:
-    """Returns the number of audio streams in the video file."""
+    """Returns the number of audio streams in the file."""
     cmd = [
         "ffprobe", "-v", "error", "-select_streams", "a",
         "-show_entries", "stream=index", "-of", "json", video_path
@@ -19,19 +31,44 @@ def get_audio_streams(video_path: str) -> int:
     data = json.loads(result.stdout)
     return len(data.get("streams", []))
 
-def extract_audio_streams(video_path: str, working_dir: str) -> List[str]:
+def extract_audio_streams(file_path: str, working_dir: str, normalize: bool = True) -> list[str]:
     """Extracts all audio streams to WAV files and returns their paths."""
-    num_streams = get_audio_streams(video_path)
-    base_name = os.path.splitext(os.path.basename(video_path))[0]
+    file_path = os.path.abspath(file_path)
+    working_dir = os.path.abspath(working_dir)
+    num_streams = get_audio_streams(file_path)
+    base_name = os.path.splitext(os.path.basename(file_path))[0]
     extracted_files = []
 
     for i in range(num_streams):
         output_path = os.path.join(working_dir, f"{base_name}_a{i}.wav")
+        
+        # Check if file already exists and has a valid size (at least 1KB to be a valid WAV)
+        if os.path.exists(output_path) and os.path.getsize(output_path) > 1000:
+            logger.info(f"Using existing audio stream: {output_path}")
+            extracted_files.append(output_path)
+            continue
+
         cmd = [
-            "ffmpeg", "-i", video_path, "-map", f"0:a:{i}",
-            "-ac", "1", "-ar", "16000", "-y", output_path
+            "ffmpeg", "-i", file_path, "-map", f"0:a:{i}"
         ]
-        logger.info(f"Extracting stream {i} from {video_path} to {output_path}")
+        
+        # Preprocessing to match Audacity macros before silence detection:
+        # 1. loudnorm: Normalize to -15 LUFS (matches Audacity LoudnessNormalization)
+        # 2. agate: Noise gate at -33dB threshold, 150ms attack/release
+        #    (matches Audacity NoiseGate with level-reduction=-100dB)
+        #    Note: FFmpeg agate doesn't support 'hold', only attack/release/range
+        filter_chain = (
+            "loudnorm=I=-15:TP=-1.5:LRA=11,"
+            "agate=threshold=0.022:attack=150:release=150:range=0.00001"
+        )
+        # agate threshold is linear amplitude: -33dB ≈ 10^(-33/20) ≈ 0.022
+        # range is linear: -100dB ≈ 10^(-100/20) ≈ 0.00001
+        cmd.extend(["-af", filter_chain])
+            
+        cmd.extend([
+            "-ac", "1", "-ar", "16000", "-y", output_path
+        ])
+        logger.info(f"Extracting and processing stream {i} from {file_path} to {output_path}")
         subprocess.run(cmd, check=True, capture_output=True)
         extracted_files.append(output_path)
 
@@ -63,7 +100,7 @@ def detect_silence_and_spikes(audio_path: str, threshold_db: float, min_silence_
 
     return silence_intervals, spikes
 
-def find_global_silence(stream_markers: Dict[str, Dict], min_duration: float) -> List[Tuple[float, float]]:
+def find_global_silence(stream_markers: dict[str, dict], min_duration: float) -> list[tuple[float, float]]:
     """Finds intervals where all streams are silent for at least min_duration."""
     if not stream_markers:
         return []
@@ -84,7 +121,7 @@ def find_global_silence(stream_markers: Dict[str, Dict], min_duration: float) ->
 
     return [s for s in global_silence if (s[1] - s[0]) >= min_duration]
 
-def find_repetitions(audio_path: str, window_size: float = 2.0, step_size: float = 1.0, threshold: float = 0.9) -> List[Tuple[float, float]]:
+def find_repetitions(audio_path: str, window_size: float = 2.0, step_size: float = 1.0, threshold: float = 0.9) -> list[tuple[float, float]]:
     """Finds repeated audio segments using acoustic similarity."""
     try:
         y, sr = librosa.load(audio_path, sr=16000)
@@ -123,13 +160,31 @@ def find_repetitions(audio_path: str, window_size: float = 2.0, step_size: float
     return merge_intervals(repetitions)
 
 def get_video_duration(video_path: str) -> float:
-    """Returns the duration of the video file in seconds."""
+    """Returns the duration of the file in seconds."""
     cmd = ["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", video_path]
     result = subprocess.run(cmd, check=True, capture_output=True, text=True)
-    return float(result.stdout.strip())
+    val = result.stdout.strip()
+    if val and val != "N/A":
+        return float(val)
+    # Fallback: try stream-level duration
+    cmd2 = ["ffprobe", "-v", "error", "-select_streams", "a:0", "-show_entries", "stream=duration", "-of", "default=noprint_wrappers=1:nokey=1", video_path]
+    result2 = subprocess.run(cmd2, check=True, capture_output=True, text=True)
+    val2 = result2.stdout.strip()
+    if val2 and val2 != "N/A":
+        return float(val2)
+    # Last resort: try video stream
+    cmd3 = ["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=duration", "-of", "default=noprint_wrappers=1:nokey=1", video_path]
+    result3 = subprocess.run(cmd3, check=True, capture_output=True, text=True)
+    val3 = result3.stdout.strip()
+    if val3 and val3 != "N/A":
+        return float(val3)
+    return 0.0
 
 def get_video_fps(video_path: str) -> float:
-    """Returns the frame rate of the video file."""
+    """Returns the frame rate of the file. Defaults to 25.0 for audio-only."""
+    if not has_video_stream(video_path):
+        return 25.0
+        
     cmd = [
         "ffprobe", "-v", "error", "-select_streams", "v:0",
         "-show_entries", "stream=r_frame_rate",
@@ -140,4 +195,7 @@ def get_video_fps(video_path: str) -> float:
     if "/" in rate:
         num, den = rate.split("/")
         return float(num) / float(den)
-    return float(rate)
+    try:
+        return float(rate)
+    except ValueError:
+        return 25.0
