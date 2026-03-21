@@ -1,5 +1,10 @@
-__Pycache__
-.pytest_cache
-.venv
-.vscode
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.venv/
+.vscode/
 .env
+video_processing_work/
+processed_*.mkv
+*.wav

@@ -1,163 +1,157 @@
-# Code Analyzer Service
+# Video Processing Tool
 
-This project provides a service for analyzing Python code (scripts or Jupyter Notebooks) using the Gemini large language model (LLM) from Google. It can analyze code from various sources, including direct code input, GitHub URLs, and Google Cloud Platform (GCP) Bucket URLs.
+A modular Python tool for synchronized multi-video editing based on audio stream analysis. Optimized for Hungarian language processing and NVIDIA 3060 GPUs.
+
+## Operation Sequence
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Main as video_processor.py
+    participant AU as audio_utils.py
+    participant NP as nemo_processing.py
+    participant IU as interval_utils.py
+    participant EX as exporter.py
+
+    User->>Main: Execute with MKV inputs
+    Main->>AU: extract_audio_streams(inputs)
+    Note over AU: Compression + DynAudNorm + Loudnorm
+    AU-->>Main: mono WAV files
+
+    loop Each Audio File
+        Main->>AU: detect_silence_and_spikes(wav)
+        Note over AU: Check .markers.json cache
+        AU-->>Main: silence & spike intervals
+        Main->>NP: run_asr(wav)
+        Note over NP: Check .asr.json cache
+        NP-->>Main: transcript & words
+        Main->>NP: find_fillers(words)
+        NP-->>Main: filler intervals
+    end
+
+    Main->>AU: find_global_silence(all_silence)
+    AU-->>Main: global cut intervals
+
+    Main->>IU: merge_intervals(global_silence + fillers)
+    IU-->>Main: final cut_segments
+
+    Main->>AU: get_video_duration(input)
+    AU-->>Main: total_duration
+
+    Main->>IU: calculate_keep_segments(cut_segments, total_duration)
+    IU-->>Main: keep_segments
+
+    loop Each Audio File
+        Main->>NP: run_vad(wav)
+        Note over NP: Check .vad.json cache
+        NP-->>Main: speech intervals
+        Main->>AU: find_repetitions(wav)
+        Note over AU: Check .reps.json cache
+        AU-->>Main: repetition intervals
+    end
+
+    Main->>NP: find_overlaps(all_speech)
+    NP-->>Main: overlap segments
+
+    alt Render Processed Videos
+        loop Each Video Input
+            Main->>EX: process_video(input, output, keep_segments, spikes)
+            Note over EX: FFmpeg complex filters
+            EX-->>Main: Processed MKV
+        end
+    else Kdenlive-Native (no-render)
+        Main->>AU: get_video_fps(input)
+        AU-->>Main: fps
+    end
+
+    Main->>IU: adjust_timestamps(overlaps, keep_segments)
+    IU-->>Main: adjusted overlaps
+    Main->>IU: adjust_timestamps(repetitions, keep_segments)
+    IU-->>Main: adjusted repetitions
+
+    Main->>EX: generate_kdenlive_project(files, keep_segments, spikes, overlaps, repetitions, fps, is_rendered)
+    Note over EX: Generates timeline with segments or single clip
+    EX-->>Main: project.kdenlive
+
+    loop Each ASR Result
+        Main->>IU: adjust_timestamps(word_times, keep_segments)
+        IU-->>Main: adjusted word_times
+        Main->>EX: generate_ass_file(adj_words, output)
+        EX-->>Main: .ass file
+    end
+
+    Main-->>User: Processing Complete
+```
 
 ## Features
 
--   **Code Analysis:** Provides a detailed analysis of the code's structure, logic, and clarity.
--   **Performance Evaluation:** Assesses the code's potential performance bottlenecks, efficiency, and scalability.
--   **Coding Standards Evaluation:** Evaluates the code's adherence to Python coding standards (PEP 8) and best practices.
--   **Error Handling Evaluation:** Assesses the code's error handling capabilities.
--   **Security Evaluation:** Evaluates the code's security aspects.
--   **No-Go Flag:** Determines if the code is acceptable or if it has too many errors to be considered acceptable.
--   **Multiple Input Sources:**
-    -   Direct code input.
-    -   GitHub URL (supports `.py` and `.ipynb` files).
-    -   GCP Bucket URL (supports `.py` and `.ipynb` files).
--   **Gemini LLM Integration:** Leverages the power of Google's Gemini model for code analysis.
--   **FastAPI Framework:** Built using the FastAPI framework for high performance and ease of use.
-- **Comprehensive testing**: Unit and integration tests are included.
+- **High-Quality Signal Processing**: Automatically applies compression, dynamic normalization, and targets -14 LUFS to all audio streams for consistent levels.
+- **Fast Execution via Caching**: Metadata (ASR, VAD, repetitions, silence) is cached in JSON files, allowing near-instant re-runs if analysis parameters haven't changed.
+- **Standalone Audio Support**: Handles `.mp3`, `.wav`, and `.m4a` files. If standalone audio is provided with video files, on-camera audio is ignored during analysis.
+- **Kdenlive-Native Editing**: Optionally avoids re-encoding by generating a Kdenlive timeline with virtual segments from original files using the `--no-render` flag.
+- **Synchronized Multi-Stream Cutting**: Processes multiple inputs simultaneously, maintaining perfect sync across all tracks.
+- **Silence Detection**: Automatically cuts segments where all audio streams are below -30dB (default) for more than 2 seconds.
+- **Spike Muting**: Identifies and mutes minor audio spikes (clicks, coughs) under 0.2s.
+- **Hungarian Filler Detection**: Uses NVIDIA Parakeet TDT ASR to find and cut "er" and "ő" filler sounds.
+- **Overlap Marking**: Identifies active discussions (>=5s) on multiple streams and marks them as Guide regions in Kdenlive.
+- **Repetition Detection**: Identifies repeated phrases or sounds using acoustic similarity (MFCC-based).
+- **ASR Subtitles**: Generates `.ass` subtitle files for ASR transcriptions with timestamps adjusted for the final edit.
+
+## Modular Structure
+
+- `video_processor.py`: Main entry point, CLI logic, and batch orchestration.
+- `audio_utils.py`: Audio extraction, signal processing, silence/spike/repetition detection using `librosa`.
+- `nemo_processing.py`: NVIDIA NeMo integration for VAD and ASR.
+- `interval_utils.py`: Mathematical logic for merging, inverting, and adjusting time intervals.
+- `exporter.py`: FFmpeg processing and file generation (Kdenlive XML, ASS).
 
 ## Prerequisites
 
--   Python 3.8+
--   Google Cloud Project (for GCP Bucket support)
--   GitHub Account (for GitHub URL support)
--   API keys:
-    -   Google Gemini API key
-    -   GitHub Personal Access Token (PAT)
+- [Python 3.10+](https://www.python.org/)
+- [uv](https://github.com/astral-sh/uv) (for environment and package management)
+- [FFmpeg](https://ffmpeg.org/) and `ffprobe` (must be in system PATH)
+- NVIDIA GPU with CUDA support (e.g., RTX 3060)
 
-## Installation
+### Installation
 
-1.  **Clone the repository:**
+#### Windows (Recommended)
+Simply run `setup.bat`. This will create a virtual environment, install PyTorch with CUDA support, and all dependencies using `uv`.
 
-    ```bash
-    git clone <repository_url>
-    cd Code-checker
-    ```
+#### Linux/macOS
+Using `uv`:
+```bash
+uv venv
+source .venv/bin/activate
+uv pip install -r requirements.txt
+```
 
-2.  **Create a virtual environment (recommended):**
+### Usage
 
-    ```bash
-    python3 -m venv .venv
-    source .venv/bin/activate  # On Linux/macOS
-    .venv\Scripts\activate  # On Windows
-    ```
+#### Basic Command
+Use `process.bat` with a file or a directory:
+```batch
+process.bat "C:\MyRecording\Source" --video-offsets 0.5
+```
 
-3.  **Install dependencies:**
+#### Advanced Options
+- `--no-render`: Generates the Kdenlive project using original files (lossless and fast).
+- `--video-offsets`: Comma-separated or single value in seconds (e.g., `1.2` or `0.5,-0.2,0`) to align tracks.
+- `--silence-threshold`: Set dB level for silence (default: `-30.0`).
+- `--filler-words`: Comma-separated list of Hungarian filler words to cut (default: `er,ő`).
 
-    ```bash
-    pip install -r requirements.txt
-    ```
+### Automatic File Discovery
+When a directory is provided, the tool automatically finds:
+- **Video**: `.mkv`, `.mp4`, `.avi`
+- **Audio**: `.mp3`, `.wav`, `.m4a`
 
-4.  **Set up environment variables:**
+### Directory Structure
+- **Working Directory**: The tool creates a `video_processing_work` folder in the **parent directory** of your input source to store cache files (`.asr.json`, etc.) and extracted audio.
+- **Output Position**: Rendered videos and the `project.kdenlive` file are placed in the **parent directory** of the input source.
 
-    -   Create a `.env` file in the root directory of the project.
-    -   Add the following variables to the `.env` file, replacing the placeholders with your actual keys:
+## Project Output
 
-    ```properties
-    GOOGLE_API_KEY=YOUR_GOOGLE_GEMINI_API_KEY
-    GITHUB_TOKEN=YOUR_GITHUB_PERSONAL_ACCESS_TOKEN
-    ```
-
-## Usage
-
-1.  **Run the FastAPI application:**
-
-    ```bash
-    uvicorn server:app --reload
-    ```
-
-    This will start the server on `http://0.0.0.0:8000`.
-
-2.  **Interact with the API:**
-
-    You can interact with the API using tools like `curl`, `Postman`, or any HTTP client.
-
-    **Endpoint:** `/analyze/`
-
-    **Method:** `POST`
-
-    **Request Body (JSON):**
-
-    You can provide one of the following in the request body:
-
-    -   **Direct Code Input:**
-
-        ```json
-        {
-          "code": "print('Hello, world!')",
-          "file_type": "python"
-        }
-        ```
-    - **Direct Code Input for jupyter notebook:**
-
-        ```json
-        {
-          "code": "print('Hello, world!')",
-          "file_type": "jupyter notebook"
-        }
-        ```
-
-    -   **GitHub URL:**
-
-        ```json
-        {
-          "github_url": "https://github.com/username/repo/blob/main/file.py"
-        }
-        ```
-        or
-        ```json
-        {
-          "github_url": "https://github.com/username/repo/blob/main/file.ipynb"
-        }
-        ```
-
-    -   **GCP Bucket URL:**
-
-        ```json
-        {
-          "gcp_bucket_url": "gs://your-bucket-name/file.py"
-        }
-        ```
-        or
-        ```json
-        {
-          "gcp_bucket_url": "gs://your-bucket-name/file.ipynb"
-        }
-        ```
-
-    **Response Body (JSON):**
-
-    ```json
-    {
-      "analysis": "...",
-      "performance_evaluation": "...",
-      "coding_standards_evaluation": "...",
-      "no_go": true/false,
-      "raw_gemini_response": "..."
-    }
-    ```
-
-    **Example using curl:**
-
-    ```bash
-    curl -X POST -H "Content-Type: application/json" -d '{"code": "print(\"Hello, world!\")", "file_type": "python"}' http://0.0.0.0:8000/analyze/
-    ```
-    ```bash
-    curl -X POST -H "Content-Type: application/json" -d '{"github_url": "https://github.com/gpapp/notebooks/blob/main/Clean%20up%20transcription.ipynb"}' http://0.0.0.0:8000/analyze/
-    ```
-
-## Testing
-
-To run the tests:
-
-1.  Ensure you have installed the test dependencies from `requirements.txt`.
-2.  Run pytest from the project root:
-
-    ```bash
-    pytest
-    ```
-
-## Project Structure
-
+The `video_processing_work` directory will contain:
+- Extracted and normalized mono WAV files.
+- Transcribed `.ass` files.
+- A `project.kdenlive` file ready for further editing.
+- Cache files: `*.markers.json`, `*.asr.json`, `*.vad.json`, `*.reps.json`.

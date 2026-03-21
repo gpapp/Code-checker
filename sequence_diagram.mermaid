@@ -1,0 +1,65 @@
+sequenceDiagram
+    participant User
+    participant Main as video_processor.py
+    participant AU as audio_utils.py
+    participant NP as nemo_processing.py
+    participant IU as interval_utils.py
+    participant EX as exporter.py
+
+    User->>Main: Execute with MKV inputs
+    Main->>AU: extract_audio_streams(inputs)
+    AU-->>Main: mono WAV files
+
+    loop Each Audio File
+        Main->>AU: detect_silence_and_spikes(wav)
+        AU-->>Main: silence & spike intervals
+        Main->>NP: run_asr(wav)
+        NP-->>Main: transcript & words
+        Main->>NP: find_fillers(words)
+        NP-->>Main: filler intervals
+    end
+
+    Main->>AU: find_global_silence(all_silence)
+    AU-->>Main: global cut intervals
+
+    Main->>IU: merge_intervals(global_silence + fillers)
+    IU-->>Main: final cut_segments
+
+    Main->>AU: get_video_duration(input)
+    AU-->>Main: total_duration
+
+    Main->>IU: calculate_keep_segments(cut_segments, total_duration)
+    IU-->>Main: keep_segments
+
+    loop Each Audio File
+        Main->>NP: run_vad(wav)
+        NP-->>Main: speech intervals
+        Main->>AU: find_repetitions(wav)
+        AU-->>Main: repetition intervals
+    end
+
+    Main->>NP: find_overlaps(all_speech)
+    NP-->>Main: overlap segments
+
+    loop Each Video Input
+        Main->>EX: process_video(input, output, keep_segments, spikes)
+        Note over EX: FFmpeg complex filters
+        EX-->>Main: Processed MKV
+    end
+
+    Main->>IU: adjust_timestamps(overlaps, keep_segments)
+    IU-->>Main: adjusted overlaps
+    Main->>IU: adjust_timestamps(repetitions, keep_segments)
+    IU-->>Main: adjusted repetitions
+
+    Main->>EX: generate_kdenlive_project(outputs, overlaps, repetitions)
+    EX-->>Main: project.kdenlive
+
+    loop Each ASR Result
+        Main->>IU: adjust_timestamps(word_times, keep_segments)
+        IU-->>Main: adjusted word_times
+        Main->>EX: generate_ass_file(adj_words, output)
+        EX-->>Main: .ass file
+    end
+
+    Main-->>User: Processing Complete
