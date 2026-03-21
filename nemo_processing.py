@@ -41,8 +41,8 @@ def run_vad(audio_path: str):
 
     return segments
 
-def run_asr(audio_path: str, model_name: str, silence_intervals: list[tuple[float, float]] = None):
-    """Runs ASR using Qwen3-ASR (primary) or NeMo (fallback) and returns transcription and word-level timestamps."""
+def run_asr(audio_path: str, model_name: str, silence_intervals: list[tuple[float, float]] = None, language: str = "auto"):
+    """Runs ASR using WhisperX (primary), Qwen3-ASR, or NeMo (fallback) and returns transcription and word-level timestamps."""
     device = "cuda" if os.environ.get("CUDA_VISIBLE_DEVICES") or "cuda" else "cpu"
     # Note: Torch check for cuda is more reliable
     try:
@@ -54,8 +54,213 @@ def run_asr(audio_path: str, model_name: str, silence_intervals: list[tuple[floa
 
     if "qwen" in model_name.lower():
         return _run_qwen_asr(audio_path, model_name, device, silence_intervals)
-    else:
+    elif "parakeet" in model_name.lower() or "nemo" in model_name.lower():
         return _run_nemo_asr(audio_path, model_name, device, silence_intervals)
+    elif "crisper" in model_name.lower():
+        return _run_crisper_whisper(audio_path, model_name, device, silence_intervals, language=language)
+    else:
+        return _run_whisperx_asr(audio_path, model_name, device, silence_intervals)
+
+def adjust_pauses_for_hf_pipeline_output(pipeline_output, split_threshold=0.12):
+    """
+    Adjust pause timings by distributing pauses up to the threshold evenly between adjacent words.
+    From nyrahealth/CrisperWhisper/utils.py
+    """
+    adjusted_chunks = pipeline_output["chunks"].copy()
+
+    for i in range(len(adjusted_chunks) - 1):
+        current_chunk = adjusted_chunks[i]
+        next_chunk = adjusted_chunks[i + 1]
+
+        current_start, current_end = current_chunk["timestamp"]
+        next_start, next_end = next_chunk["timestamp"]
+        pause_duration = next_start - current_end
+
+        if pause_duration > 0:
+            if pause_duration > split_threshold:
+                distribute = split_threshold / 2
+            else:
+                distribute = pause_duration / 2
+
+            # Adjust current chunk end time
+            adjusted_chunks[i]["timestamp"] = (current_start, current_end + distribute)
+
+            # Adjust next chunk start time
+            adjusted_chunks[i + 1]["timestamp"] = (next_start - distribute, next_end)
+    pipeline_output["chunks"] = adjusted_chunks
+
+    return pipeline_output
+
+def _run_crisper_whisper(audio_path: str, model_name: str, device: str, silence_intervals: list = None, language: str = "auto"):
+    """
+    Highly optimized CrisperWhisper using speech-only chunking.
+    Automatically skips all silence segments longer than a few seconds.
+    Uses 'int8_float16' for ~2GB VRAM footprint on RTX 3060.
+    """
+    try:
+        from faster_whisper import WhisperModel
+        import torch
+        import gc
+    except ImportError:
+        logger.warning("faster-whisper not found. Attempting to install...")
+        return "", []
+
+    if device == "cuda":
+        gc.collect()
+        torch.cuda.empty_cache()
+
+    faster_model_id = "nyrahealth/faster_CrisperWhisper"
+    logger.info(f"Using Speech-Only CrisperWhisper: {faster_model_id} (language: {language})")
+    
+    try:
+        model = WhisperModel(faster_model_id, device=device, compute_type="int8_float16")
+        duration = librosa.get_duration(path=audio_path)
+        
+        # 1. FIND SPEECH SEGMENTS by inverting silence_intervals
+        # Only treat silences longer than 2.0s as "true gaps" to keep chunks combined
+        SILENCE_THRESHOLD = 2.0
+        speech_segments = []
+        if not silence_intervals:
+            speech_segments = [(0.0, duration)]
+        else:
+            silences = sorted(silence_intervals)
+            # Filter for significant silences only
+            long_silences = [s for s in silences if (s[1] - s[0]) >= SILENCE_THRESHOLD]
+            
+            last_end = 0.0
+            for start, end in long_silences:
+                if start > last_end + 0.1:
+                    speech_segments.append((last_end, start))
+                last_end = max(last_end, end)
+            if last_end < duration - 0.1:
+                speech_segments.append((last_end, duration))
+        
+        # 2. SUB-SPLIT large speech segments for VRAM safety (target 300s)
+        final_chunks = []
+        max_chunk = 300.0
+        overlap = 2.0
+        
+        for s_start, s_end in speech_segments:
+            seg_dur = s_end - s_start
+            if seg_dur <= max_chunk:
+                final_chunks.append((s_start, s_end))
+            else:
+                curr = s_start
+                while curr < s_end:
+                    chunk_end = min(curr + max_chunk, s_end)
+                    final_chunks.append((curr, chunk_end))
+                    curr += max_chunk
+        
+        logger.info(f"Generated {len(final_chunks)} transcription chunks (skipped {duration - sum(e-s for s,e in final_chunks):.2f}s of silence).")
+        
+        full_text = []
+        all_words = []
+        num_chunks = len(final_chunks)
+        
+        from tqdm import tqdm
+        with tempfile.TemporaryDirectory() as tmpdir:
+            for i in tqdm(range(num_chunks), desc="ASR Progress"):
+                # Use overlap for context
+                seg_start, seg_end = final_chunks[i]
+                start = max(0.0, seg_start - (overlap if i > 0 else 0.0))
+                end = seg_end
+                
+                chunk_path = os.path.join(tmpdir, "chunk.wav")
+                subprocess.run([
+                    "ffmpeg", "-i", audio_path, "-ss", str(start), "-to", str(end),
+                    "-ac", "1", "-ar", "16000", "-y", chunk_path
+                ], capture_output=True, check=True)
+
+                # Transcribe speech-containing chunk
+                segments, info = model.transcribe(
+                    chunk_path,
+                    beam_size=5,
+                    word_timestamps=True,
+                    language=language if language != "auto" else None,
+                    initial_prompt="I, uh, er, um, like stuttering, mhm."
+                )
+                
+                for segment in segments:
+                    full_text.append(segment.text.strip())
+                    if segment.words:
+                        for w in segment.words:
+                            actual_start = w.start + start
+                            actual_end = w.end + start
+                            midpoint = (actual_start + actual_end) / 2
+                            # Only include words whose midpoint falls within the segment's non-overlap range
+                            if midpoint >= seg_start and midpoint < seg_end:
+                                all_words.append({
+                                    "word": w.word,
+                                    "start": actual_start,
+                                    "end": actual_end
+                                })
+                
+                os.remove(chunk_path)
+        
+        del model
+        if device == "cuda":
+            gc.collect()
+            torch.cuda.empty_cache()
+            
+        return " ".join(full_text), all_words
+        
+    except Exception as e:
+        logger.error(f"Speech-Only CrisperWhisper error: {e}")
+        return "", []
+
+def _run_whisperx_asr(audio_path: str, model_name: str, device: str, silence_intervals: list[tuple[float, float]] = None):
+    try:
+        import whisperx
+    except ImportError as e:
+        logger.warning(f"whisperx not found: {e}. Falling back to Qwen.")
+        return _run_qwen_asr(audio_path, "Qwen/Qwen3-ASR-1.7B", device, silence_intervals)
+
+    logger.info(f"Using WhisperX with model: {model_name} on {device}")
+    
+    try:
+        model = whisperx.load_model(model_name, device, compute_type="int8")
+        audio = whisperx.load_audio(audio_path)
+        batch_size = 16 if device == "cuda" else 4
+        
+        logger.info("Transcribing audio with WhisperX...")
+        result = model.transcribe(audio, batch_size=batch_size)
+    except Exception as e:
+        logger.error(f"Failed to transcribe with WhisperX: {e}")
+        return "", []
+
+    try:
+        logger.info("Aligning transcription for precise timestamps...")
+        model_a, metadata = whisperx.load_align_model(language_code=result["language"], device=device)
+        result = whisperx.align(result["segments"], model_a, metadata, audio, device, return_char_alignments=False)
+    except Exception as e:
+        logger.error(f"Failed to align with WhisperX: {e}")
+
+    full_text = []
+    all_words = []
+    
+    for segment in result.get("segments", []):
+        full_text.append(segment.get("text", "").strip())
+        if "words" in segment:
+            for w in segment["words"]:
+                if "start" in w and "end" in w:
+                    all_words.append({
+                        "word": w["word"],
+                        "start": w["start"],
+                        "end": w["end"]
+                    })
+
+    if device == "cuda":
+        import torch
+        import gc
+        del model
+        try:
+            del model_a
+        except NameError:
+            pass
+        gc.collect()
+        torch.cuda.empty_cache()
+        
+    return " ".join(full_text), all_words
 
 def _run_qwen_asr(audio_path: str, model_name: str, device: str, silence_intervals: list[tuple[float, float]] = None):
     try:

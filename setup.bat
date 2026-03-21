@@ -12,7 +12,7 @@ if errorlevel 1 (
 
 echo Creating/Ensuring virtual environment...
 if not exist .venv\ (
-    uv venv
+    uv venv --python 3.13
 )
 if errorlevel 1 (
     echo [ERROR] Failed to create virtual environment.
@@ -20,24 +20,20 @@ if errorlevel 1 (
     exit /b 1
 )
 
-echo [1/3] Installing PyTorch with CUDA 12.4 support...
-uv pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124
+call .venv\Scripts\activate  
+
+echo [1/2] Installing other dependencies from requirements.txt...
+uv pip install --upgrade -r requirements.txt
 if errorlevel 1 (
-    echo [ERROR] Failed to install PyTorch with CUDA.
+    echo [ERROR] Failed to install dependencies.
     pause
     exit /b 1
 )
 
-echo [2/3] Installing ONNX Runtime GPU for faster NeMo inference...
-uv pip install onnxruntime-gpu
+echo [2/2] Installing PyTorch with CUDA 12.6 support...
+uv pip install torch torchvision torchaudio --upgrade --index-url https://download.pytorch.org/whl/cu126
 if errorlevel 1 (
-    echo [WARNING] Failed to install onnxruntime-gpu. Falling back to standard execution.
-)
-
-echo [3/3] Installing other dependencies from requirements.txt...
-uv pip install -r requirements.txt
-if errorlevel 1 (
-    echo [ERROR] Failed to install dependencies.
+    echo [ERROR] Failed to install PyTorch with CUDA.
     pause
     exit /b 1
 )

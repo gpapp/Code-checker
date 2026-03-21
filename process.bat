@@ -16,6 +16,8 @@ if "%~1" == "" (
     exit /b 0
 )
 
+call .venv\Scripts\activate  
+
 echo Running Video Processor...
 uv run python video_processor.py %*
 

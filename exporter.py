@@ -92,7 +92,9 @@ def generate_kdenlive_project(
     is_rendered: bool = False,
     video_offsets: List[float] = None,
     ass_paths: List[str] = None,
-    asr_words: List[List[Dict]] = None
+    asr_words: List[List[Dict]] = None,
+    stream_markers_global: Dict = None,
+    video_to_audio_map: Dict = None
 ):
     if video_offsets is None:
         video_offsets = []
@@ -263,77 +265,104 @@ def generate_kdenlive_project(
             
         filter_counter = 0
 
+        # Get silence intervals for this stream
+        silence_list = []
+        af_list = video_to_audio_map.get(video_path, [])
+        if af_list and af_list[0] in stream_markers_global:
+            silence_list = sorted(stream_markers_global[af_list[0]]["silence"])
+            
+        # 1. FIND SPEECH SEGMENTS (Invert silence with 2s threshold)
+        SILENCE_THRESHOLD = 2.0
+        long_silences = [s for s in silence_list if (s[1] - s[0]) >= SILENCE_THRESHOLD]
+        
+        # We need to map speech segments to the GLOBAL keep_segments
+        def get_speech_in_keep(ks, ke):
+            # Returns sub-segments of [ks, ke] that represent speech
+            speech_subs = []
+            last_end = ks
+            for s_start, s_end in long_silences:
+                if s_start >= ke: break
+                if s_end <= ks: continue
+                # We found a silence that overlaps with our keep segment
+                effective_start = max(ks, s_start)
+                effective_end = min(ke, s_end)
+                if effective_start > last_end + 0.1:
+                    speech_subs.append((last_end, effective_start))
+                last_end = max(last_end, effective_end)
+            if last_end < ke - 0.1:
+                speech_subs.append((last_end, ke))
+            return speech_subs
+
         for ks, ke in keep_segments:
-            src_in = ks - offset
-            src_out = ke - offset
-            if src_out <= 0:
+            speech_subs = get_speech_in_keep(ks, ke)
+            
+            if not speech_subs:
+                # This whole keep segment is silent, just add a blank
                 ET.SubElement(main_pl, "blank", length=secs_to_tc(ke - ks))
                 continue
+            
+            # Map speech subs to the timeline
+            curr_timeline = ks
+            for ss_start, ss_end in speech_subs:
+                # Add blank for the silence before this speech sub within the keep segment
+                if ss_start > curr_timeline:
+                    ET.SubElement(main_pl, "blank", length=secs_to_tc(ss_start - curr_timeline))
                 
-            blank_dur = 0.0
-            if src_in < 0:
-                blank_dur = -src_in
-                src_in = 0.0
-            
-            if blank_dur > 0:
-                ET.SubElement(main_pl, "blank", length=secs_to_tc(blank_dur))
+                src_in = ss_start - offset
+                src_out = ss_end - offset
                 
-            ent = ET.SubElement(main_pl, "entry", producer=f"chain{prod_num}_tl", **{
-                "in": secs_to_tc(src_in),
-                "out": secs_to_tc(src_out)
-            })
-            ET.SubElement(ent, "property", name="kdenlive:id").text = str(prod_num)
-            
-            # The audio index depends on if it's a video file or audio-only file.
-            # Assuming video stream is index 0 and audio stream is index 1 for MKV,
-            # and audio stream is index 0 for MP3.
-            ET.SubElement(ent, "property", name="audio_index").text = "1" if is_vid else "0"
-            
-            spikes_list = stream_spikes_map.get(video_path, [])
-            if spikes_list and len(spikes_list) > 0:
-                spikes = spikes_list[0]
-                rel_spikes = [s for s in spikes if s[0] < ke and s[1] > ks]
+                ent = ET.SubElement(main_pl, "entry", producer=f"chain{prod_num}_tl", **{
+                    "in": secs_to_tc(src_in),
+                    "out": secs_to_tc(src_out)
+                })
+                ET.SubElement(ent, "property", name="kdenlive:id").text = str(prod_num)
+                ET.SubElement(ent, "property", name="audio_index").text = "1" if is_vid else "0"
+                
+                # Apply Volume/Spike filters to this chunk
+                spikes_list = stream_markers_global.get(af_list[0], {}).get("spikes", []) if af_list else []
+                rel_spikes = [s for s in spikes_list if s[0] < ss_end and s[1] > ss_start]
                 if rel_spikes:
                     filter_id = f"filter_{pl_idx}_{filter_counter}"
                     filter_counter += 1
-                    
                     f_node = ET.SubElement(ent, "filter", id=filter_id)
                     ET.SubElement(f_node, "property", name="mlt_service").text = "volume"
                     ET.SubElement(f_node, "property", name="kdenlive_id").text = "volume"
                     kf = ["0=1.0"]
                     for ss, se in rel_spikes:
-                        rs = max(0, int((ss - ks - offset) * fps))
-                        re = int((min(ke, se) - ks - offset) * fps)
+                        # Frame relative to THIS chunk's beginning
+                        rs = max(0, int((ss - ss_start) * fps))
+                        re = int((min(ss_end, se) - ss_start) * fps)
                         if rs > 0: kf.append(f"{rs-1}=1.0")
                         kf.append(f"{rs}=0.0")
                         kf.append(f"{re}=0.0")
                         kf.append(f"{re+1}=1.0")
-                    last_frame = int((src_out - src_in) * fps) - 1
+                    last_frame = int((ss_end - ss_start) * fps) - 1
                     if last_frame < 0: last_frame = 0
                     kf.append(f"{last_frame}=1.0")
                     ET.SubElement(f_node, "property", name="level").text = ";".join(kf)
-                    
-            # Postprocessing filters applied per audio clip
-            # Filter 1: Simple Compressor RMS (ladspa.1073)
-            filter_id_comp = f"filter_{pl_idx}_{filter_counter}"
-            filter_counter += 1
-            f_comp = ET.SubElement(ent, "filter", id=filter_id_comp)
-            ET.SubElement(f_comp, "property", name="mlt_service").text = "ladspa.1073"
-            ET.SubElement(f_comp, "property", name="kdenlive_id").text = "ladspa.1073"
-            ET.SubElement(f_comp, "property", name="0").text = "1.0"     # Decay/Release 1s
-            ET.SubElement(f_comp, "property", name="1").text = "0.5"     # Ratio 2:1
-            ET.SubElement(f_comp, "property", name="2").text = "0.25"    # Threshold -12dB ≈ 0.25 linear
-            ET.SubElement(f_comp, "property", name="3").text = "0.0"     # No makeup gain
-            ET.SubElement(f_comp, "property", name="disable").text = "0"
-            
-            # Filter 2: Dynamic Audio Normalizer
-            filter_id_dyn = f"filter_{pl_idx}_{filter_counter}"
-            filter_counter += 1
-            f_dyn = ET.SubElement(ent, "filter", id=filter_id_dyn)
-            ET.SubElement(f_dyn, "property", name="mlt_service").text = "dynamic_loudness"
-            ET.SubElement(f_dyn, "property", name="target").text = "-14"
-            ET.SubElement(f_dyn, "property", name="kdenlive_id").text = "dynamic_loudness"
-            ET.SubElement(f_dyn, "property", name="disable").text = "0"
+
+                # Filter 1: Simple Compressor RMS (ladspa.1073)
+                filter_id_comp = f"filter_{pl_idx}_{filter_counter}"
+                filter_counter += 1
+                f_comp = ET.SubElement(ent, "filter", id=filter_id_comp)
+                ET.SubElement(f_comp, "property", name="mlt_service").text = "ladspa.1073"
+                ET.SubElement(f_comp, "property", name="kdenlive_id").text = "ladspa.1073"
+                ET.SubElement(f_comp, "property", name="0").text = "1.0"     # Decay/Release 1s
+                ET.SubElement(f_comp, "property", name="1").text = "0.5"     # Ratio 2:1
+                ET.SubElement(f_comp, "property", name="2").text = "0.25"    # Threshold -12dB ≈ 0.25 linear
+                ET.SubElement(f_comp, "property", name="3").text = "0.0"     # No makeup gain
+                ET.SubElement(f_comp, "property", name="disable").text = "0"
+                
+                # Filter 2: Dynamic Audio Normalizer
+                filter_id_dyn = f"filter_{pl_idx}_{filter_counter}"
+                filter_counter += 1
+                f_dyn = ET.SubElement(ent, "filter", id=filter_id_dyn)
+                ET.SubElement(f_dyn, "property", name="mlt_service").text = "dynamic_loudness"
+                ET.SubElement(f_dyn, "property", name="target").text = "-14"
+                ET.SubElement(f_dyn, "property", name="kdenlive_id").text = "dynamic_loudness"
+                ET.SubElement(f_dyn, "property", name="disable").text = "0"
+
+                curr_timeline = ss_end
 
         tr_id = f"tractor{t_idx}"
         tr = ET.SubElement(root, "tractor", id=tr_id, **{"in":"00:00:00.000"})

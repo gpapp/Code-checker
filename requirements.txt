@@ -1,7 +1,6 @@
 qwen-asr
+whisperx
 transformers
-torch
-torchaudio
 nemo_toolkit[asr]
 librosa
 pydub
@@ -10,3 +9,7 @@ numpy
 scipy
 tqdm
 huggingface_hub[hf_xet]
+onnxruntime-gpu
+torchcodec
+git+https://github.com/nyrahealth/transformers.git@crisper_whisper
+accelerate

@@ -30,7 +30,8 @@ def parse_args():
     parser.add_argument("--silence-duration", type=float, default=2.0, help="Minimum silence duration in seconds for cutting (default: 2.0)")
     parser.add_argument("--spike-duration", type=float, default=0.2, help="Maximum duration in seconds for a spike to be silenced (default: 0.2)")
     parser.add_argument("--overlap-duration", type=float, default=5.0, help="Minimum duration in seconds for overlapping talk to be marked (default: 5.0)")
-    parser.add_argument("--model-name", default="Qwen/Qwen3-ASR-1.7B", help="ASR model name (default: Qwen/Qwen3-ASR-1.7B)")
+    parser.add_argument("--model-name", default="nyrahealth/CrisperWhisper", help="ASR model name (default: nyrahealth/CrisperWhisper for WhisperX, Qwen/Qwen3-ASR-1.7B for Qwen)")
+    parser.add_argument("--language", default="auto", help="Language code (e.g. 'hu', 'en'). Default is 'auto' for automatic detection.")
     parser.add_argument("--filler-words", default="er,ő", help="Comma-separated filler words to cut (default: er,ő)")
     parser.add_argument("--output-prefix", default="processed_", help="Prefix for output video files")
     parser.add_argument("--render", action="store_true", help="Render the processed videos into new files (slow and space consuming). Default: virtual cut in Kdenlive only.")
@@ -141,7 +142,7 @@ def main():
                 text = data["text"]
                 words = data["words"]
         else:
-            text, words = run_asr(af, args.model_name, silence_intervals=stream_markers[af]["silence"])
+            text, words = run_asr(af, args.model_name, silence_intervals=stream_markers[af]["silence"], language=args.language)
             with open(cache_path, "w", encoding="utf-8") as f:
                 json.dump({"text": text, "words": words}, f, ensure_ascii=False)
         
@@ -240,7 +241,9 @@ def main():
         is_rendered=args.render,
         video_offsets=offsets,
         ass_paths=[p[2] for p in ass_files],
-        asr_words=source_asr_words
+        asr_words=source_asr_words,
+        stream_markers_global=stream_markers,
+        video_to_audio_map=video_to_audio_map
     )
 
     for af, data, ass_path in tqdm(ass_files, desc="Generating Subtitles"):
