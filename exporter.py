@@ -111,6 +111,8 @@ def generate_kdenlive_project(
     if not keep_segments:
         logger.warning("No keep segments, setting max_dur to 0")
 
+    from interval_utils import merge_intervals
+
     seq_uuid = f"{{{uuid.uuid4()}}}"
 
     # root attribute tells MLT where to resolve relative resource paths from
@@ -276,63 +278,75 @@ def generate_kdenlive_project(
         # 1. FIND SPEECH SEGMENTS (Invert silence with 2s threshold)
         SILENCE_THRESHOLD = 2.0
         long_silences = [s for s in silence_list if (s[1] - s[0]) >= SILENCE_THRESHOLD]
-        
-        # We need to map speech segments to the GLOBAL keep_segments
-        def get_speech_in_keep(ks, ke):
-            # Returns sub-segments of [ks, ke] that represent speech
-            speech_subs = []
-            last_end = ks
-            for s_start, s_end in long_silences:
-                if s_start >= ke: break
-                if s_end <= ks: continue
-                # We found a silence that overlaps with our keep segment
-                effective_start = max(ks, s_start)
-                effective_end = min(ke, s_end)
-                if effective_start > last_end + 0.1:
-                    speech_subs.append((last_end, effective_start))
-                last_end = max(last_end, effective_end)
-            if last_end < ke - 0.1:
-                speech_subs.append((last_end, ke))
-            return speech_subs
-
-        # Track position in the new COLLAPSED timeline
-        current_collapsed_time = 0.0
 
         for ks, ke in keep_segments:
-            speech_subs = get_speech_in_keep(ks, ke)
-            keep_dur = ke - ks
-            
-            if not speech_subs:
-                ET.SubElement(main_pl, "blank", length=secs_to_tc(keep_dur))
-                current_collapsed_time += keep_dur
+            src_in = ks + offset
+            src_out = ke + offset
+            if src_out <= 0:
+                ET.SubElement(main_pl, "blank", length=secs_to_tc(ke - ks))
                 continue
+                
+            blank_dur = 0.0
+            if src_in < 0:
+                blank_dur = -src_in
+                src_in = 0.0
             
-            curr_in_ks = ks
-            for ss_start, ss_end in speech_subs:
-                if ss_start > curr_in_ks:
-                    silence_dur = ss_start - curr_in_ks
-                    ET.SubElement(main_pl, "blank", length=secs_to_tc(silence_dur))
-                    current_collapsed_time += silence_dur
+            if blank_dur > 0:
+                ET.SubElement(main_pl, "blank", length=secs_to_tc(blank_dur))
                 
-                src_in = ss_start - offset
-                src_out = ss_end - offset
-                speech_dur = ss_end - ss_start
-                
-                ent = ET.SubElement(main_pl, "entry", producer=f"chain{prod_num}_tl", **{
-                    "in": secs_to_tc(src_in),
-                    "out": secs_to_tc(src_out)
-                })
-                ET.SubElement(ent, "property", name="kdenlive:id").text = str(prod_num)
-                ET.SubElement(ent, "property", name="audio_index").text = "1" if is_vid else "0"
+            ent = ET.SubElement(main_pl, "entry", producer=f"chain{prod_num}_tl", **{
+                "in": secs_to_tc(src_in),
+                "out": secs_to_tc(src_out)
+            })
+            ET.SubElement(ent, "property", name="kdenlive:id").text = str(prod_num)
+            ET.SubElement(ent, "property", name="audio_index").text = "1" if is_vid else "0"
 
-                current_collapsed_time += speech_dur
-                curr_in_ks = ss_end
+            mute_intervals = []
             
-            # Trailing blank for rest of keep segment
-            if curr_in_ks < ke:
-                trailing_dur = ke - curr_in_ks
-                ET.SubElement(main_pl, "blank", length=secs_to_tc(trailing_dur))
-                current_collapsed_time += trailing_dur
+            # Local silences (> 2.0s) from the ORIGINAL uncut timeline
+            for s_start, s_end in long_silences:
+                if s_end > ks and s_start < ke:
+                    mute_start = max(ks, s_start)
+                    mute_end = min(ke, s_end)
+                    if mute_end - mute_start > 0.01:
+                        mute_intervals.append((mute_start, mute_end))
+
+            # Spikes (pops/clicks)
+            spikes_list = stream_markers_global.get(af_list[0], {}).get("spikes", []) if af_list else []
+            for s_start, s_end in spikes_list:
+                if s_end > ks and s_start < ke:
+                    mute_start = max(ks, s_start)
+                    mute_end = min(ke, s_end)
+                    mute_intervals.append((mute_start, mute_end))
+            
+            mute_intervals = merge_intervals(mute_intervals)
+            if mute_intervals:
+                filter_id = f"filter_{pl_idx}_{filter_counter}"
+                filter_counter += 1
+                f_node = ET.SubElement(ent, "filter", id=filter_id)
+                ET.SubElement(f_node, "property", name="mlt_service").text = "volume"
+                ET.SubElement(f_node, "property", name="kdenlive_id").text = "volume"
+                kf = ["0=1.0"]
+                clip_dur = ke - ks
+                
+                for m_start, m_end in mute_intervals:
+                    # Convert original timeline time to clip-relative time in seconds
+                    c_start = m_start - ks
+                    c_end = m_end - ks
+                    
+                    rs = max(0, int(c_start * fps))
+                    re = int(c_end * fps)
+                    
+                    if rs > 0:
+                        kf.append(f"{rs-1}=1.0")
+                    kf.append(f"{rs}=0.0")
+                    kf.append(f"{re}=0.0")
+                    kf.append(f"{re+1}=1.0")
+                    
+                last_frame = int(clip_dur * fps) - 1
+                if last_frame < 0: last_frame = 0
+                kf.append(f"{last_frame}=1.0")
+                ET.SubElement(f_node, "property", name="level").text = ";".join(kf)
 
         tr_id = f"tractor{t_idx}"
         tr = ET.SubElement(root, "tractor", id=tr_id, **{"in":"00:00:00.000"})

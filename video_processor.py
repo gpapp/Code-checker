@@ -151,13 +151,10 @@ def main():
 
     # Compress global silence: instead of cutting it entirely, keep a compressed portion
     # Rules: >1s truncated to 1s, then >0.2s compressed to half
-    global_silence = find_global_silence(stream_markers, args.silence_duration)
+    # We use a 0.2s threshold here because we want to capture ALL silences that are candidates for compression.
+    global_silence = find_global_silence(stream_markers, 0.2)
     silence_excess_cuts = compress_global_silence(global_silence)
     cutting_segments.extend(silence_excess_cuts)
-
-    # Cut detected spikes (short pops/clicks) from the timeline
-    for af in all_audio_files:
-        cutting_segments.extend(stream_markers[af]["spikes"])
 
     cutting_segments = merge_intervals(cutting_segments)
     
