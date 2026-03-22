@@ -13,89 +13,57 @@ sequenceDiagram
     participant IU as interval_utils.py
     participant EX as exporter.py
 
-    User->>Main: Execute with MKV inputs
+    User->>Main: Execute with MKV/Audio inputs
     Main->>AU: extract_audio_streams(inputs)
-    Note over AU: Compression + DynAudNorm + Loudnorm
+    Note over AU: Compression + Normalization (-14 LUFS)
     AU-->>Main: mono WAV files
 
     loop Each Audio File
         Main->>AU: detect_silence_and_spikes(wav)
-        Note over AU: Check .markers.json cache
-        AU-->>Main: silence & spike intervals
-        Main->>NP: run_asr(wav)
-        Note over NP: Check .asr.json cache
-        NP-->>Main: transcript & words
+        Note over AU: Significant silences list (>=2s)
+        AU-->>Main: .markers.json (silence/spikes)
+        
+        Main->>NP: run_asr(wav, silence_intervals)
+        Note over NP: Unified-Stream CrisperWhisper (int8)
+        Note over NP: Concatenate speech + 0.3s stubs
+        NP-->>Main: .asr.json (transcript & words)
+        
         Main->>NP: find_fillers(words)
+        Note over NP: Check against [UH],[UM], etc.
         NP-->>Main: filler intervals
     end
 
     Main->>AU: find_global_silence(all_silence)
-    AU-->>Main: global cut intervals
+    AU-->>Main: global cut intervals (all streams quiet)
 
     Main->>IU: merge_intervals(global_silence + fillers)
     IU-->>Main: final cut_segments
 
-    Main->>AU: get_video_duration(input)
-    AU-->>Main: total_duration
-
     Main->>IU: calculate_keep_segments(cut_segments, total_duration)
-    IU-->>Main: keep_segments
+    IU-->>Main: synchronized keep_segments
 
-    loop Each Audio File
-        Main->>NP: run_vad(wav)
-        Note over NP: Check .vad.json cache
-        NP-->>Main: speech intervals
-        Main->>AU: find_repetitions(wav)
-        Note over AU: Check .reps.json cache
-        AU-->>Main: repetition intervals
+    loop Each Video Input
+        Main->>EX: generate_kdenlive_project(...)
+        Note over EX: Silence-Aware timeline placement
+        Note over EX: Apply Volume/Comp/Norm filters
+        EX-->>Main: project.kdenlive
     end
 
-    Main->>NP: find_overlaps(all_speech)
-    NP-->>Main: overlap segments
-
-    alt Render Processed Videos
-        loop Each Video Input
-            Main->>EX: process_video(input, output, keep_segments, spikes)
-            Note over EX: FFmpeg complex filters
-            EX-->>Main: Processed MKV
-        end
-    else Kdenlive-Native (no-render)
-        Main->>AU: get_video_fps(input)
-        AU-->>Main: fps
-    end
-
-    Main->>IU: adjust_timestamps(overlaps, keep_segments)
-    IU-->>Main: adjusted overlaps
-    Main->>IU: adjust_timestamps(repetitions, keep_segments)
-    IU-->>Main: adjusted repetitions
-
-    Main->>EX: generate_kdenlive_project(files, keep_segments, spikes, overlaps, repetitions, fps, is_rendered)
-    Note over EX: Generates timeline with segments or single clip
-    EX-->>Main: project.kdenlive
-
-    loop Each ASR Result
-        Main->>IU: adjust_timestamps(word_times, keep_segments)
-        IU-->>Main: adjusted word_times
-        Main->>EX: generate_ass_file(adj_words, output)
-        EX-->>Main: .ass file
-    end
-
-    Main-->>User: Processing Complete
+    Main-->>User: Done (Ready for Kdenlive)
 ```
 
 ## Features
 
-- **High-Quality Signal Processing**: Automatically applies compression, dynamic normalization, and targets -14 LUFS to all audio streams for consistent levels.
-- **Fast Execution via Caching**: Metadata (ASR, VAD, repetitions, silence) is cached in JSON files, allowing near-instant re-runs if analysis parameters haven't changed.
-- **Standalone Audio Support**: Handles `.mp3`, `.wav`, and `.m4a` files. If standalone audio is provided with video files, on-camera audio is ignored during analysis.
-- **Kdenlive-Native Editing**: Optionally avoids re-encoding by generating a Kdenlive timeline with virtual segments from original files using the `--no-render` flag.
-- **Synchronized Multi-Stream Cutting**: Processes multiple inputs simultaneously, maintaining perfect sync across all tracks.
-- **Silence Detection**: Automatically cuts segments where all audio streams are below -30dB (default) for more than 2 seconds.
-- **Spike Muting**: Identifies and mutes minor audio spikes (clicks, coughs) under 0.2s.
-- **Hungarian Filler Detection**: Uses NVIDIA Parakeet TDT ASR to find and cut "er" and "ő" filler sounds.
-- **Overlap Marking**: Identifies active discussions (>=5s) on multiple streams and marks them as Guide regions in Kdenlive.
-- **Repetition Detection**: Identifies repeated phrases or sounds using acoustic similarity (MFCC-based).
-- **ASR Subtitles**: Generates `.ass` subtitle files for ASR transcriptions with timestamps adjusted for the final edit.
+- **Unified-Stream Transcription**: Uses `nyrahealth/CrisperWhisper` with a custom concatenation strategy. Speech segments are unified with 0.3s silence stubs to maximize model context and prevent recalibration drift.
+- **VRAM Optimizations**: Uses `int8_float16` quantization via `faster-whisper`, reducing VRAM footprint to ~2GB (perfect for RTX 3060) while maintaining verbatim accuracy.
+- **Precision Timestamps**: Re-maps transcript timestamps from unified audio back to the original timeline with millisecond precision.
+- **High-Quality Signal Processing**: Automatically applies compression and targets -14 LUFS for consistent levels across all streams.
+- **Fast Execution via Caching**: Metadata (ASR, repetitions, silence) is cached in JSON files for instant re-runs.
+- **Silence-Aware Export**: Kdenlive project generator matches ASR logic, skipping long silences (>=2s) to create a clean, synchronized multi-track timeline.
+- **Automatic Audio Filters**: Every audio clip on the Kdenlive timeline automatically receives high-quality Compressor, Limiter, and Loudness Normalization filters.
+- **Filler Detection**: Automatically identifies and cuts Hungarian/English filler words like `[UH]`, `[UM]`, `er`, and `ő`.
+- **Overlap & Repetition Detection**: Highlights active discussions and marks duplicate acoustic patterns for easy editing.
+- **ASR Subtitles**: Generates synchronized `.ass` and `.srt` files with timestamps adjusted for the final cut.
 
 ## Modular Structure
 

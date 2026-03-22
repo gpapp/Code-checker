@@ -107,9 +107,7 @@ def generate_kdenlive_project(
     from audio_utils import get_video_duration, has_video_stream
     import xml.etree.ElementTree as ET
 
-    max_dur = 0.0
-    for s, e in keep_segments:
-        max_dur += (e - s)
+    max_dur = sum(e - s for s, e in keep_segments)
     if not keep_segments:
         logger.warning("No keep segments, setting max_dur to 0")
 
@@ -159,7 +157,8 @@ def generate_kdenlive_project(
 
     # Pre-calculate tracks to generate correct tractor IDs
     num_video_tracks = sum(1 for f in video_files if has_video_stream(f))
-    num_audio_tracks = len(video_files) # Every file gets an audio track
+    # Only count audio tracks for files that actually have audio
+    num_audio_tracks = sum(1 for f in video_files if video_to_audio_map is None or video_to_audio_map.get(f, []))
     total_track_pairs = num_video_tracks + num_audio_tracks
     
     seq_tractor_id = f"tractor{total_track_pairs}"
@@ -248,11 +247,15 @@ def generate_kdenlive_project(
         pl_idx += 2
         t_idx += 1
 
-    # PASS 2: AUDIO TRACKS
+    # PASS 2: AUDIO TRACKS (skip files with no audio mapping)
     for i, video_path in enumerate(video_files):
+        # Skip video files whose on-camera audio is unused (external audio present)
+        af_list = video_to_audio_map.get(video_path, []) if video_to_audio_map else []
+        if not af_list:
+            continue
+            
         prod_num = i + 1
         is_vid = has_video_stream(video_path)
-        num_audio_tracks += 1
         
         # Audio tracks are the reference for cuts, so they don't get shifted.
         offset = 0.0
@@ -267,8 +270,7 @@ def generate_kdenlive_project(
 
         # Get silence intervals for this stream
         silence_list = []
-        af_list = video_to_audio_map.get(video_path, [])
-        if af_list and af_list[0] in stream_markers_global:
+        if af_list[0] in stream_markers_global:
             silence_list = sorted(stream_markers_global[af_list[0]]["silence"])
             
         # 1. FIND SPEECH SEGMENTS (Invert silence with 2s threshold)
@@ -293,23 +295,28 @@ def generate_kdenlive_project(
                 speech_subs.append((last_end, ke))
             return speech_subs
 
+        # Track position in the new COLLAPSED timeline
+        current_collapsed_time = 0.0
+
         for ks, ke in keep_segments:
             speech_subs = get_speech_in_keep(ks, ke)
+            keep_dur = ke - ks
             
             if not speech_subs:
-                # This whole keep segment is silent, just add a blank
-                ET.SubElement(main_pl, "blank", length=secs_to_tc(ke - ks))
+                ET.SubElement(main_pl, "blank", length=secs_to_tc(keep_dur))
+                current_collapsed_time += keep_dur
                 continue
             
-            # Map speech subs to the timeline
-            curr_timeline = ks
+            curr_in_ks = ks
             for ss_start, ss_end in speech_subs:
-                # Add blank for the silence before this speech sub within the keep segment
-                if ss_start > curr_timeline:
-                    ET.SubElement(main_pl, "blank", length=secs_to_tc(ss_start - curr_timeline))
+                if ss_start > curr_in_ks:
+                    silence_dur = ss_start - curr_in_ks
+                    ET.SubElement(main_pl, "blank", length=secs_to_tc(silence_dur))
+                    current_collapsed_time += silence_dur
                 
                 src_in = ss_start - offset
                 src_out = ss_end - offset
+                speech_dur = ss_end - ss_start
                 
                 ent = ET.SubElement(main_pl, "entry", producer=f"chain{prod_num}_tl", **{
                     "in": secs_to_tc(src_in),
@@ -317,52 +324,15 @@ def generate_kdenlive_project(
                 })
                 ET.SubElement(ent, "property", name="kdenlive:id").text = str(prod_num)
                 ET.SubElement(ent, "property", name="audio_index").text = "1" if is_vid else "0"
-                
-                # Apply Volume/Spike filters to this chunk
-                spikes_list = stream_markers_global.get(af_list[0], {}).get("spikes", []) if af_list else []
-                rel_spikes = [s for s in spikes_list if s[0] < ss_end and s[1] > ss_start]
-                if rel_spikes:
-                    filter_id = f"filter_{pl_idx}_{filter_counter}"
-                    filter_counter += 1
-                    f_node = ET.SubElement(ent, "filter", id=filter_id)
-                    ET.SubElement(f_node, "property", name="mlt_service").text = "volume"
-                    ET.SubElement(f_node, "property", name="kdenlive_id").text = "volume"
-                    kf = ["0=1.0"]
-                    for ss, se in rel_spikes:
-                        # Frame relative to THIS chunk's beginning
-                        rs = max(0, int((ss - ss_start) * fps))
-                        re = int((min(ss_end, se) - ss_start) * fps)
-                        if rs > 0: kf.append(f"{rs-1}=1.0")
-                        kf.append(f"{rs}=0.0")
-                        kf.append(f"{re}=0.0")
-                        kf.append(f"{re+1}=1.0")
-                    last_frame = int((ss_end - ss_start) * fps) - 1
-                    if last_frame < 0: last_frame = 0
-                    kf.append(f"{last_frame}=1.0")
-                    ET.SubElement(f_node, "property", name="level").text = ";".join(kf)
 
-                # Filter 1: Simple Compressor RMS (ladspa.1073)
-                filter_id_comp = f"filter_{pl_idx}_{filter_counter}"
-                filter_counter += 1
-                f_comp = ET.SubElement(ent, "filter", id=filter_id_comp)
-                ET.SubElement(f_comp, "property", name="mlt_service").text = "ladspa.1073"
-                ET.SubElement(f_comp, "property", name="kdenlive_id").text = "ladspa.1073"
-                ET.SubElement(f_comp, "property", name="0").text = "1.0"     # Decay/Release 1s
-                ET.SubElement(f_comp, "property", name="1").text = "0.5"     # Ratio 2:1
-                ET.SubElement(f_comp, "property", name="2").text = "0.25"    # Threshold -12dB ≈ 0.25 linear
-                ET.SubElement(f_comp, "property", name="3").text = "0.0"     # No makeup gain
-                ET.SubElement(f_comp, "property", name="disable").text = "0"
-                
-                # Filter 2: Dynamic Audio Normalizer
-                filter_id_dyn = f"filter_{pl_idx}_{filter_counter}"
-                filter_counter += 1
-                f_dyn = ET.SubElement(ent, "filter", id=filter_id_dyn)
-                ET.SubElement(f_dyn, "property", name="mlt_service").text = "dynamic_loudness"
-                ET.SubElement(f_dyn, "property", name="target").text = "-14"
-                ET.SubElement(f_dyn, "property", name="kdenlive_id").text = "dynamic_loudness"
-                ET.SubElement(f_dyn, "property", name="disable").text = "0"
-
-                curr_timeline = ss_end
+                current_collapsed_time += speech_dur
+                curr_in_ks = ss_end
+            
+            # Trailing blank for rest of keep segment
+            if curr_in_ks < ke:
+                trailing_dur = ke - curr_in_ks
+                ET.SubElement(main_pl, "blank", length=secs_to_tc(trailing_dur))
+                current_collapsed_time += trailing_dur
 
         tr_id = f"tractor{t_idx}"
         tr = ET.SubElement(root, "tractor", id=tr_id, **{"in":"00:00:00.000"})
@@ -370,6 +340,24 @@ def generate_kdenlive_project(
         ET.SubElement(tr, "property", name="kdenlive:trackheight").text = "61"
         ET.SubElement(tr, "track", hide="video", producer=f"playlist{pl_idx}")
         ET.SubElement(tr, "track", hide="video", producer=f"playlist{pl_idx+1}")
+        
+        # Track-level audio effects (apply to all content on this track)
+        # Compressor (ladspa.1073)
+        f_comp = ET.SubElement(tr, "filter", id=f"trackfilter_comp_{t_idx}")
+        ET.SubElement(f_comp, "property", name="mlt_service").text = "ladspa.1073"
+        ET.SubElement(f_comp, "property", name="kdenlive_id").text = "ladspa.1073"
+        ET.SubElement(f_comp, "property", name="0").text = "1.0"
+        ET.SubElement(f_comp, "property", name="1").text = "0.5"
+        ET.SubElement(f_comp, "property", name="2").text = "0.25"
+        ET.SubElement(f_comp, "property", name="3").text = "0.0"
+        ET.SubElement(f_comp, "property", name="disable").text = "0"
+        
+        # Dynamic Loudness Normalizer
+        f_dyn = ET.SubElement(tr, "filter", id=f"trackfilter_dyn_{t_idx}")
+        ET.SubElement(f_dyn, "property", name="mlt_service").text = "dynamic_loudness"
+        ET.SubElement(f_dyn, "property", name="target").text = "-14"
+        ET.SubElement(f_dyn, "property", name="kdenlive_id").text = "dynamic_loudness"
+        ET.SubElement(f_dyn, "property", name="disable").text = "0"
             
         multitrack_producers.append(tr_id)
         pl_idx += 2
@@ -389,15 +377,21 @@ def generate_kdenlive_project(
     for mtp in multitrack_producers:
         ET.SubElement(seq_tr, "track", producer=mtp)
         
-    # Apply subtitles to the sequence tractor
-    for sf_idx, ap in enumerate(ass_paths):
-        if os.path.exists(ap):
-            sub_filter = ET.SubElement(seq_tr, "filter", id=f"subtitle_filter_{sf_idx}")
-            ET.SubElement(sub_filter, "property", name="mlt_service").text = "avfilter.subtitles"
-            ET.SubElement(sub_filter, "property", name="av.f").text = os.path.basename(ap)
-            ET.SubElement(sub_filter, "property", name="kdenlive_id").text = "avfilter.subtitles"
-            ET.SubElement(sub_filter, "property", name="kdenlive:locked").text = "0"
-            ET.SubElement(sub_filter, "property", name="disable").text = "0"
+    # Write Kdenlive-native subtitle file (project.kdenlive.srt)
+    # Kdenlive expects a companion .srt file named exactly "<project_file>.srt"
+    if ass_paths:
+        combined_srt_path = output_path + ".srt"
+        try:
+            # Read and combine all SRT content
+            combined_words = []
+            for ap in ass_paths:
+                srt_companion = os.path.splitext(ap)[0] + ".srt"
+                if os.path.exists(srt_companion):
+                    import shutil
+                    shutil.copy2(srt_companion, combined_srt_path)
+                    break  # Use first available SRT as the project subtitle
+        except Exception as e:
+            logger.warning(f"Could not create Kdenlive subtitle file: {e}")
 
     for ti in range(1, len(multitrack_producers)):
         trans = ET.SubElement(seq_tr, "transition", id=f"transition{ti-1}")

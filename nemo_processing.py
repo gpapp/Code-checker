@@ -93,16 +93,24 @@ def adjust_pauses_for_hf_pipeline_output(pipeline_output, split_threshold=0.12):
 
 def _run_crisper_whisper(audio_path: str, model_name: str, device: str, silence_intervals: list = None, language: str = "auto"):
     """
-    Highly optimized CrisperWhisper using speech-only chunking.
-    Automatically skips all silence segments longer than a few seconds.
+    CrisperWhisper with unified audio stream processing.
+    
+    Strategy: Instead of transcribing many small speech-only chunks (which causes
+    model recalibration on each), we build unified ~5-minute audio files by
+    concatenating speech segments with short silence stubs (0.3s) between them.
+    After transcription, word timestamps are re-mapped back to the original
+    timeline by expanding stubs back to their original silence durations.
+    
     Uses 'int8_float16' for ~2GB VRAM footprint on RTX 3060.
     """
     try:
         from faster_whisper import WhisperModel
         import torch
         import gc
-    except ImportError:
-        logger.warning("faster-whisper not found. Attempting to install...")
+        import soundfile as sf
+        import numpy as np
+    except ImportError as e:
+        logger.warning(f"Missing dependency for CrisperWhisper: {e}")
         return "", []
 
     if device == "cuda":
@@ -110,68 +118,103 @@ def _run_crisper_whisper(audio_path: str, model_name: str, device: str, silence_
         torch.cuda.empty_cache()
 
     faster_model_id = "nyrahealth/faster_CrisperWhisper"
-    logger.info(f"Using Speech-Only CrisperWhisper: {faster_model_id} (language: {language})")
+    logger.info(f"Using Unified-Stream CrisperWhisper: {faster_model_id} (language: {language})")
+    
+    SILENCE_THRESHOLD = 2.0   # Only truncate silences longer than this
+    STUB_DURATION = 0.3       # Replace long silences with this short stub
+    MAX_UNIFIED_CHUNK = 300.0 # Target ~5 min unified chunks
+    SR = 16000                # Sample rate for processing
     
     try:
         model = WhisperModel(faster_model_id, device=device, compute_type="int8_float16")
         duration = librosa.get_duration(path=audio_path)
         
-        # 1. FIND SPEECH SEGMENTS by inverting silence_intervals
-        # Only treat silences longer than 2.0s as "true gaps" to keep chunks combined
-        SILENCE_THRESHOLD = 2.0
-        speech_segments = []
+        # Load the full audio once at 16kHz mono
+        full_audio, _ = librosa.load(audio_path, sr=SR, mono=True)
+        
+        # 1. BUILD A TIME MAP: list of (orig_start, orig_end, type)
+        #    type = "speech" or "silence"
+        #    Speech segments play as-is, long silences get truncated to STUB_DURATION
+        time_map = []  # list of (orig_start, orig_end, is_long_silence)
+        
         if not silence_intervals:
-            speech_segments = [(0.0, duration)]
+            time_map.append((0.0, duration, False))
         else:
             silences = sorted(silence_intervals)
-            # Filter for significant silences only
-            long_silences = [s for s in silences if (s[1] - s[0]) >= SILENCE_THRESHOLD]
+            long_silences = [(s, e) for s, e in silences if (e - s) >= SILENCE_THRESHOLD]
             
             last_end = 0.0
-            for start, end in long_silences:
-                if start > last_end + 0.1:
-                    speech_segments.append((last_end, start))
-                last_end = max(last_end, end)
-            if last_end < duration - 0.1:
-                speech_segments.append((last_end, duration))
+            for s_start, s_end in long_silences:
+                if s_start > last_end + 0.05:
+                    time_map.append((last_end, s_start, False))    # speech
+                time_map.append((s_start, s_end, True))            # long silence
+                last_end = s_end
+            if last_end < duration - 0.05:
+                time_map.append((last_end, duration, False))       # trailing speech
         
-        # 2. SUB-SPLIT large speech segments for VRAM safety (target 300s)
-        final_chunks = []
-        max_chunk = 300.0
-        overlap = 2.0
+        # 2. GROUP segments into unified chunks of ~MAX_UNIFIED_CHUNK (by unified duration)
+        unified_chunks = []  # each is a list of (orig_start, orig_end, is_long_silence)
+        current_group = []
+        current_unified_dur = 0.0
         
-        for s_start, s_end in speech_segments:
-            seg_dur = s_end - s_start
-            if seg_dur <= max_chunk:
-                final_chunks.append((s_start, s_end))
-            else:
-                curr = s_start
-                while curr < s_end:
-                    chunk_end = min(curr + max_chunk, s_end)
-                    final_chunks.append((curr, chunk_end))
-                    curr += max_chunk
+        for orig_start, orig_end, is_long_silence in time_map:
+            orig_dur = orig_end - orig_start
+            unified_dur = STUB_DURATION if is_long_silence else orig_dur
+            
+            # If adding this segment would exceed the limit, and we already have content, start a new group
+            if current_unified_dur + unified_dur > MAX_UNIFIED_CHUNK and current_group:
+                unified_chunks.append(current_group)
+                current_group = []
+                current_unified_dur = 0.0
+            
+            current_group.append((orig_start, orig_end, is_long_silence))
+            current_unified_dur += unified_dur
         
-        logger.info(f"Generated {len(final_chunks)} transcription chunks (skipped {duration - sum(e-s for s,e in final_chunks):.2f}s of silence).")
+        if current_group:
+            unified_chunks.append(current_group)
         
+        logger.info(f"Built {len(unified_chunks)} unified chunks from {len(time_map)} segments.")
+        
+        # 3. FOR EACH UNIFIED CHUNK: build concatenated audio, transcribe, re-map timestamps
         full_text = []
         all_words = []
-        num_chunks = len(final_chunks)
+        stub_samples = np.zeros(int(STUB_DURATION * SR), dtype=np.float32)
         
         from tqdm import tqdm
         with tempfile.TemporaryDirectory() as tmpdir:
-            for i in tqdm(range(num_chunks), desc="ASR Progress"):
-                # Use overlap for context
-                seg_start, seg_end = final_chunks[i]
-                start = max(0.0, seg_start - (overlap if i > 0 else 0.0))
-                end = seg_end
+            for chunk_idx in tqdm(range(len(unified_chunks)), desc="ASR Progress"):
+                group = unified_chunks[chunk_idx]
                 
-                chunk_path = os.path.join(tmpdir, "chunk.wav")
-                subprocess.run([
-                    "ffmpeg", "-i", audio_path, "-ss", str(start), "-to", str(end),
-                    "-ac", "1", "-ar", "16000", "-y", chunk_path
-                ], capture_output=True, check=True)
-
-                # Transcribe speech-containing chunk
+                # Build the concatenated audio and a mapping table
+                # mapping_table: list of (unified_start, unified_end, orig_start, orig_end, is_silence)
+                audio_pieces = []
+                mapping_table = []
+                unified_pos = 0.0
+                
+                for orig_start, orig_end, is_long_silence in group:
+                    if is_long_silence:
+                        # Insert a short silence stub
+                        audio_pieces.append(stub_samples.copy())
+                        unified_end = unified_pos + STUB_DURATION
+                        mapping_table.append((unified_pos, unified_end, orig_start, orig_end, True))
+                        unified_pos = unified_end
+                    else:
+                        # Insert the actual speech audio
+                        s_sample = int(orig_start * SR)
+                        e_sample = int(orig_end * SR)
+                        speech_audio = full_audio[s_sample:e_sample]
+                        audio_pieces.append(speech_audio)
+                        unified_dur = len(speech_audio) / SR
+                        unified_end = unified_pos + unified_dur
+                        mapping_table.append((unified_pos, unified_end, orig_start, orig_end, False))
+                        unified_pos = unified_end
+                
+                # Write the unified chunk
+                concat_audio = np.concatenate(audio_pieces)
+                chunk_path = os.path.join(tmpdir, f"unified_{chunk_idx}.wav")
+                sf.write(chunk_path, concat_audio, SR)
+                
+                # Transcribe
                 segments, info = model.transcribe(
                     chunk_path,
                     beam_size=5,
@@ -180,24 +223,38 @@ def _run_crisper_whisper(audio_path: str, model_name: str, device: str, silence_
                     initial_prompt="I, uh, er, um, like stuttering, mhm."
                 )
                 
+                # Re-map timestamps from unified back to original timeline
+                def unified_to_original(t_unified):
+                    """Map a timestamp in unified audio back to original timeline."""
+                    for u_start, u_end, o_start, o_end, is_sil in mapping_table:
+                        if t_unified < u_end + 0.001:  # small epsilon for boundary
+                            if is_sil:
+                                # Place it proportionally within the original silence
+                                ratio = (t_unified - u_start) / max(u_end - u_start, 0.001)
+                                return o_start + ratio * (o_end - o_start)
+                            else:
+                                # Direct offset within speech segment
+                                offset = t_unified - u_start
+                                return o_start + offset
+                    # Past the end: return last original end
+                    return mapping_table[-1][3] if mapping_table else t_unified
+                
                 for segment in segments:
                     full_text.append(segment.text.strip())
                     if segment.words:
                         for w in segment.words:
-                            actual_start = w.start + start
-                            actual_end = w.end + start
-                            midpoint = (actual_start + actual_end) / 2
-                            # Only include words whose midpoint falls within the segment's non-overlap range
-                            if midpoint >= seg_start and midpoint < seg_end:
-                                all_words.append({
-                                    "word": w.word,
-                                    "start": actual_start,
-                                    "end": actual_end
-                                })
+                            orig_start = unified_to_original(w.start)
+                            orig_end = unified_to_original(w.end)
+                            all_words.append({
+                                "word": w.word,
+                                "start": orig_start,
+                                "end": orig_end
+                            })
                 
                 os.remove(chunk_path)
         
         del model
+        del full_audio
         if device == "cuda":
             gc.collect()
             torch.cuda.empty_cache()
@@ -205,7 +262,9 @@ def _run_crisper_whisper(audio_path: str, model_name: str, device: str, silence_
         return " ".join(full_text), all_words
         
     except Exception as e:
-        logger.error(f"Speech-Only CrisperWhisper error: {e}")
+        logger.error(f"Unified-Stream CrisperWhisper error: {e}")
+        import traceback
+        traceback.print_exc()
         return "", []
 
 def _run_whisperx_asr(audio_path: str, model_name: str, device: str, silence_intervals: list[tuple[float, float]] = None):
