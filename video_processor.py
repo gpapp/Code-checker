@@ -14,7 +14,7 @@ from audio_utils import (
     get_video_fps,
     has_video_stream
 )
-from nemo_processing import run_vad, process_filler_detection_asr, find_fillers, find_overlaps, _process_filler_detection_asr_with_crisper_whisper
+from filler_processor import run_vad, process_filler_detection_asr, find_fillers, find_overlaps
 from interval_utils import merge_intervals, calculate_keep_segments, adjust_timestamps, compress_global_silence
 from exporter import process_video, generate_kdenlive_project, generate_ass_file, generate_srt_file
 
@@ -31,7 +31,7 @@ def parse_args():
     parser.add_argument("--spike-duration", type=float, default=0.2, help="Maximum duration in seconds for a spike to be silenced (default: 0.2)")
     parser.add_argument("--overlap-duration", type=float, default=5.0, help="Minimum duration in seconds for overlapping talk to be marked (default: 5.0)")
     parser.add_argument("--model-name", default="nyrahealth/CrisperWhisper", help="ASR model name (default: nyrahealth/CrisperWhisper for WhisperX, Qwen/Qwen3-ASR-1.7B for Qwen)")
-    parser.add_argument("--language", default="auto", help="Language code (e.g. 'hu', 'en'). Default is 'auto' for automatic detection.")
+    parser.add_argument("--language", default="hu", help="Language code (e.g. 'hu', 'en'). Default is 'hu' for Hungarian.")
     parser.add_argument("--filler-words", default="[UH],[UM],-hm,-hm.,-hmm,", help="Comma-separated filler words to cut (default: er,ő)")
     parser.add_argument("--output-prefix", default="processed_", help="Prefix for output video files")
     parser.add_argument("--render", action="store_true", help="Render the processed videos into new files (slow and space consuming). Default: virtual cut in Kdenlive only.")
