@@ -14,7 +14,7 @@ from audio_utils import (
     get_video_fps,
     has_video_stream
 )
-from nemo_processing import run_vad, run_asr, find_fillers, find_overlaps
+from nemo_processing import run_vad, process_filler_detection_asr, find_fillers, find_overlaps, _process_filler_detection_asr_with_crisper_whisper
 from interval_utils import merge_intervals, calculate_keep_segments, adjust_timestamps, compress_global_silence
 from exporter import process_video, generate_kdenlive_project, generate_ass_file, generate_srt_file
 
@@ -141,7 +141,7 @@ def main():
                 text = data["text"]
                 words = data["words"]
         else:
-            text, words = run_asr(af, args.model_name, silence_intervals=stream_markers[af]["silence"], language=args.language)
+            text, words = process_filler_detection_asr(af, args.model_name, silence_intervals=stream_markers[af]["silence"], language=args.language)
             with open(cache_path, "w", encoding="utf-8") as f:
                 json.dump({"text": text, "words": words}, f, ensure_ascii=False)
         

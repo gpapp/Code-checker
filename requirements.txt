@@ -1,7 +1,4 @@
-qwen-asr
-whisperx
 transformers
-nemo_toolkit[asr]
 librosa
 pydub
 lxml

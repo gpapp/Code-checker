@@ -275,79 +275,122 @@ def generate_kdenlive_project(
         if af_list[0] in stream_markers_global:
             silence_list = sorted(stream_markers_global[af_list[0]]["silence"])
             
-        # 1. FIND SPEECH SEGMENTS (Invert silence with 2s threshold)
+        # 1. FIND SPEECH SEGMENTS (Invert silence with 2.0s threshold to keep short pauses together)
         SILENCE_THRESHOLD = 2.0
         long_silences = [s for s in silence_list if (s[1] - s[0]) >= SILENCE_THRESHOLD]
-
+        
+        # Spikes (pops/clicks)
+        spikes_list = stream_markers_global.get(af_list[0], {}).get("spikes", []) if af_list else []
+            
+        # FIRST PASS: Generate base audio entries perfectly identical to the video track logic
+        audio_entries = []
         for ks, ke in keep_segments:
             src_in = ks + offset
             src_out = ke + offset
             if src_out <= 0:
-                ET.SubElement(main_pl, "blank", length=secs_to_tc(ke - ks))
+                audio_entries.append({"type": "blank", "in": ks, "out": ke})
                 continue
                 
             blank_dur = 0.0
             if src_in < 0:
-                blank_dur = -src_in
+                audio_entries.append({"type": "blank", "in": src_in, "out": 0.0})
                 src_in = 0.0
             
-            if blank_dur > 0:
-                ET.SubElement(main_pl, "blank", length=secs_to_tc(blank_dur))
+            if src_in < src_out:
+                audio_entries.append({"type": "entry", "in": src_in, "out": src_out})
+
+        def frames_to_tc(frames):
+            return secs_to_tc(frames / fps)
+
+        # SECOND PASS: Sub-divide entries by silences natively in frames
+        # This completely removes and trims silent portions as physical cuts!
+        processed_elements = []
+        for item in audio_entries:
+            if item["type"] == "blank":
+                dur_frames = int(round(item["out"] * fps)) - int(round(item["in"] * fps))
+                processed_elements.append({"type": "blank", "dur_frames": dur_frames})
+                continue
                 
-            ent = ET.SubElement(main_pl, "entry", producer=f"chain{prod_num}_tl", **{
-                "in": secs_to_tc(src_in),
-                "out": secs_to_tc(src_out)
-            })
-            ET.SubElement(ent, "property", name="kdenlive:id").text = str(prod_num)
-            ET.SubElement(ent, "property", name="audio_index").text = "1" if is_vid else "0"
-
-            mute_intervals = []
+            e_in = item["in"]
+            e_out = item["out"]
+            e_in_frame = int(round(e_in * fps))
+            e_out_frame = int(round(e_out * fps))
             
-            # Local silences (> 2.0s) from the ORIGINAL uncut timeline
-            for s_start, s_end in long_silences:
-                if s_end > ks and s_start < ke:
-                    mute_start = max(ks, s_start)
-                    mute_end = min(ke, s_end)
-                    if mute_end - mute_start > 0.01:
-                        mute_intervals.append((mute_start, mute_end))
-
-            # Spikes (pops/clicks)
-            spikes_list = stream_markers_global.get(af_list[0], {}).get("spikes", []) if af_list else []
-            for s_start, s_end in spikes_list:
-                if s_end > ks and s_start < ke:
-                    mute_start = max(ks, s_start)
-                    mute_end = min(ke, s_end)
-                    mute_intervals.append((mute_start, mute_end))
+            # Since offset is 0 for audio, e_in and e_out match source timeline
+            overlap_silences = [s for s in long_silences if s[0] < e_out and s[1] > e_in]
             
-            mute_intervals = merge_intervals(mute_intervals)
-            if mute_intervals:
-                filter_id = f"filter_{pl_idx}_{filter_counter}"
-                filter_counter += 1
-                f_node = ET.SubElement(ent, "filter", id=filter_id)
-                ET.SubElement(f_node, "property", name="mlt_service").text = "volume"
-                ET.SubElement(f_node, "property", name="kdenlive_id").text = "volume"
-                kf = ["0=1.0"]
-                clip_dur = ke - ks
+            if not overlap_silences:
+                processed_elements.append({"type": "entry", "in_frames": e_in_frame, "out_frames": e_out_frame})
+                continue
                 
-                for m_start, m_end in mute_intervals:
-                    # Convert original timeline time to clip-relative time in seconds
-                    c_start = m_start - ks
-                    c_end = m_end - ks
+            # Slicing e_in_frame to e_out_frame using overlap silences guarantees exact sum
+            curr_frame = e_in_frame
+            
+            for s in overlap_silences:
+                s_in_frame = int(round(s[0] * fps))
+                s_out_frame = int(round(s[1] * fps))
+                
+                # Constrain to current entry bounds
+                s_in_frame = max(curr_frame, s_in_frame)
+                s_out_frame = min(e_out_frame, s_out_frame)
+                
+                if s_in_frame > curr_frame:
+                    # Speech before the silence
+                    processed_elements.append({"type": "entry", "in_frames": curr_frame, "out_frames": s_in_frame})
                     
-                    rs = max(0, int(c_start * fps))
-                    re = int(c_end * fps)
+                if s_out_frame > s_in_frame:
+                    # The silence itself
+                    processed_elements.append({"type": "blank", "dur_frames": s_out_frame - s_in_frame})
                     
-                    if rs > 0:
-                        kf.append(f"{rs-1}=1.0")
-                    kf.append(f"{rs}=0.0")
-                    kf.append(f"{re}=0.0")
-                    kf.append(f"{re+1}=1.0")
-                    
-                last_frame = int(clip_dur * fps) - 1
-                if last_frame < 0: last_frame = 0
-                kf.append(f"{last_frame}=1.0")
-                ET.SubElement(f_node, "property", name="level").text = ";".join(kf)
+                curr_frame = max(curr_frame, s_out_frame)
+                
+            if curr_frame < e_out_frame:
+                # Remaining speech
+                processed_elements.append({"type": "entry", "in_frames": curr_frame, "out_frames": e_out_frame})
 
+        # BUILD THE PLAYLIST
+        for item in processed_elements:
+            if item["type"] == "blank":
+                ET.SubElement(main_pl, "blank", length=frames_to_tc(item["dur_frames"]))
+            else:
+                s_in_frame = item["in_frames"]
+                s_out_frame = item["out_frames"]
+                ss_in = s_in_frame / fps
+                ss_out = s_out_frame / fps
+                
+                ent = ET.SubElement(main_pl, "entry", producer=f"chain{prod_num}_tl", **{
+                    "in": frames_to_tc(s_in_frame),
+                    "out": frames_to_tc(s_out_frame)
+                })
+                ET.SubElement(ent, "property", name="kdenlive:id").text = str(prod_num)
+                ET.SubElement(ent, "property", name="audio_index").text = "1" if is_vid else "0"
+                
+                # Setup spike filters inside this chopped entry
+                spikes_list = stream_markers_global.get(af_list[0], {}).get("spikes", []) if af_list else []
+                rel_spikes = [s for s in spikes_list if s[0] < ss_out and s[1] > ss_in]
+                if rel_spikes:
+                    filter_id = f"filter_{pl_idx}_{filter_counter}"
+                    filter_counter += 1
+                    f_node = ET.SubElement(ent, "filter", id=filter_id)
+                    ET.SubElement(f_node, "property", name="mlt_service").text = "volume"
+                    ET.SubElement(f_node, "property", name="kdenlive_id").text = "volume"
+                    kf = ["0=1.0"]
+                    dur_frames = s_out_frame - s_in_frame
+                    
+                    for spike_s, spike_e in rel_spikes:
+                        c_start = max(0, spike_s - ss_in)
+                        c_end = min(ss_out, spike_e) - ss_in
+                        rs = int(c_start * fps)
+                        re = int(c_end * fps)
+                        if rs > 0: kf.append(f"{rs-1}=1.0")
+                        kf.append(f"{rs}=0.0")
+                        kf.append(f"{re}=0.0")
+                        kf.append(f"{re+1}=1.0")
+                        
+                    last_frame = dur_frames - 1
+                    if last_frame < 0: last_frame = 0
+                    kf.append(f"{last_frame}=1.0")
+                    ET.SubElement(f_node, "property", name="level").text = ";".join(kf)
         tr_id = f"tractor{t_idx}"
         tr = ET.SubElement(root, "tractor", id=tr_id, **{"in":"00:00:00.000"})
         ET.SubElement(tr, "property", name="kdenlive:audio_track").text = "1"

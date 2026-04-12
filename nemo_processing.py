@@ -53,13 +53,13 @@ def run_asr(audio_path: str, model_name: str, silence_intervals: list[tuple[floa
         pass
 
     if "qwen" in model_name.lower():
-        return _run_qwen_asr(audio_path, model_name, device, silence_intervals)
+        return _process_filler_detection_asr_with_qwen_fallback(audio_path, model_name, device, silence_intervals)
     elif "parakeet" in model_name.lower() or "nemo" in model_name.lower():
-        return _run_nemo_asr(audio_path, model_name, device, silence_intervals)
+        return _process_filler_detection_asr_with_nemo_fallback(audio_path, model_name, device, silence_intervals)
     elif "crisper" in model_name.lower():
-        return _run_crisper_whisper(audio_path, model_name, device, silence_intervals, language=language)
+        return _process_filler_detection_asr_with_crisper_whisper(audio_path, model_name, device, silence_intervals, language=language)
     else:
-        return _run_whisperx_asr(audio_path, model_name, device, silence_intervals)
+        return _process_filler_detection_asr_with_whisperx(audio_path, model_name, device, silence_intervals)
 
 def adjust_pauses_for_hf_pipeline_output(pipeline_output, split_threshold=0.12):
     """
@@ -91,7 +91,7 @@ def adjust_pauses_for_hf_pipeline_output(pipeline_output, split_threshold=0.12):
 
     return pipeline_output
 
-def _run_crisper_whisper(audio_path: str, model_name: str, device: str, silence_intervals: list = None, language: str = "auto"):
+def _process_filler_detection_asr_with_crisper_whisper(audio_path: str, model_name: str, device: str, silence_intervals: list = None, language: str = "auto"):
     """
     CrisperWhisper with unified audio stream processing.
     
@@ -267,12 +267,12 @@ def _run_crisper_whisper(audio_path: str, model_name: str, device: str, silence_
         traceback.print_exc()
         return "", []
 
-def _run_whisperx_asr(audio_path: str, model_name: str, device: str, silence_intervals: list[tuple[float, float]] = None):
+def _process_filler_detection_asr_with_whisperx(audio_path: str, model_name: str, device: str, silence_intervals: list[tuple[float, float]] = None):
     try:
         import whisperx
     except ImportError as e:
         logger.warning(f"whisperx not found: {e}. Falling back to Qwen.")
-        return _run_qwen_asr(audio_path, "Qwen/Qwen3-ASR-1.7B", device, silence_intervals)
+        return _process_filler_detection_asr_with_qwen_fallback(audio_path, "Qwen/Qwen3-ASR-1.7B", device, silence_intervals)
 
     logger.info(f"Using WhisperX with model: {model_name} on {device}")
     
@@ -321,13 +321,13 @@ def _run_whisperx_asr(audio_path: str, model_name: str, device: str, silence_int
         
     return " ".join(full_text), all_words
 
-def _run_qwen_asr(audio_path: str, model_name: str, device: str, silence_intervals: list[tuple[float, float]] = None):
+def _process_filler_detection_asr_with_qwen_fallback(audio_path: str, model_name: str, device: str, silence_intervals: list[tuple[float, float]] = None):
     try:
         from qwen_asr import Qwen3ASRModel
         import torch
     except ImportError as e:
         logger.warning(f"qwen-asr or torch not found: {e}. Falling back to NeMo if available.")
-        return _run_nemo_asr(audio_path, "nvidia/parakeet-tdt-0.6b-v3", device, silence_intervals)
+        return _process_filler_detection_asr_with_nemo_fallback(audio_path, "nvidia/parakeet-tdt-0.6b-v3", device, silence_intervals)
 
     logger.info(f"Using Qwen3-ASR with model: {model_name} on {device}")
     
@@ -417,7 +417,7 @@ def _run_qwen_asr(audio_path: str, model_name: str, device: str, silence_interva
 
     return " ".join(full_text), all_words
 
-def _run_nemo_asr(audio_path: str, model_name: str, device: str, silence_intervals: list[tuple[float, float]] = None):
+def _process_filler_detection_asr_with_nemo_fallback(audio_path: str, model_name: str, device: str, silence_intervals: list[tuple[float, float]] = None):
     try:
         import nemo.collections.asr as nemo_asr
         import torch
