@@ -137,8 +137,21 @@ def find_repetitions(audio_path: str, window_size: float = 2.0, step_size: float
     embeddings = []
     times = []
     for i in range(0, len(mfcc) - window_frames, step_frames):
+        y_start = int(i * 512)
+        y_end = int((i + window_frames) * 512)
+        if y_end > len(y):
+            break
+            
+        y_window = y[y_start:y_end]
+        rms_energy = np.sqrt(np.mean(y_window**2))
+        
+        # Skip silent or extremely quiet frames which artificially inflate cosine similarity
+        if rms_energy < 0.01:
+            continue
+            
         window = mfcc[i:i+window_frames]
-        embeddings.append(np.mean(window, axis=0))
+        # Flatten preserves the temporal pattern; averaging destroys temporal structure
+        embeddings.append(window.flatten())
         times.append(i * 512 / sr)
 
     if not embeddings:

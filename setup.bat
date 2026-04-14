@@ -38,6 +38,20 @@ if errorlevel 1 (
     exit /b 1
 )
 
+echo [3/3] Checking for PodcastFillerLib model...
+if not exist filler_detector.pth (
+    if exist PodcastFillerDataset\PodcastFillers.csv (
+        echo [INFO] filler_detector.pth missing. Starting training on dataset...
+        python PodcastFillerLib.py --mode train --csv PodcastFillerDataset\PodcastFillers.csv --clips_dir PodcastFillerDataset\clip_wav
+    ) else (
+        echo [SKIP] Trained model missing AND PodcastFillerDataset not found. 
+        echo        Download Fillers from: https://zenodo.org/records/7121457
+        echo        Unpack to .\PodcastFillerDataset\ before running setup again.
+    )
+) else (
+    echo [OK] filler_detector.pth exists.
+)
+
 echo.
 echo Setup complete! NVIDIA GPU support is enabled.
 echo You can now use process.bat to run the tool.

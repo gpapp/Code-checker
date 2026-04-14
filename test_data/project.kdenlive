@@ -1,0 +1,1214 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mlt LC_NUMERIC="C" version="7.28.0" title="Anonymous Submission" producer="main_bin" root="C:\Users\gerge\source\repos\video-processing-tool\test_data">
+ <profile description="HD 1080p 25.0fps" frame_rate_num="25" frame_rate_den="1" width="1920" height="1080" progressive="1" sample_aspect_num="1" sample_aspect_den="1" display_aspect_num="16" display_aspect_den="9" colorspace="709" />
+ <chain id="chain1" out="00:06:18.456">
+  <property name="length">9461</property>
+  <property name="eof">pause</property>
+  <property name="resource">C:\Users\gerge\source\repos\video-processing-tool\test_data\2026-04-04--t08-13-10am--5e73b6ace3b63000158e6774--statler.mp3</property>
+  <property name="mlt_service">avformat</property>
+  <property name="seekable">1</property>
+  <property name="audio_index">0</property>
+  <property name="video_index">-1</property>
+  <property name="astream">0</property>
+  <property name="kdenlive:control_uuid">{3b903aae-f953-4de6-bd22-8d190d6773da}</property>
+  <property name="kdenlive:proxy">-</property>
+  <property name="kdenlive:originalurl">2026-04-04--t08-13-10am--5e73b6ace3b63000158e6774--statler.mp3</property>
+  <property name="kdenlive:id">1</property>
+  <property name="kdenlive:clip_type">1</property>
+  <property name="kdenlive:file_size">5051026</property>
+  <property name="kdenlive:folderid">-1</property>
+  <property name="kdenlive:speech">&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd"&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name="qrichtext" content="1" /&gt;&lt;meta charset="utf-8" /&gt;&lt;style type="text/css"&gt;
+p, li { white-space: pre-wrap; }
+hr { height: 1px; border-width: 0; }
+li.unchecked::marker { content: "\2610"; }
+li.checked::marker { content: "\2612"; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=" font-family:'Segoe UI'; font-size:9pt; font-weight:400; font-style:normal;"&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#0.00:0.78"&gt; I&lt;/a&gt; &lt;a href="1#0.78:1.30"&gt; think&lt;/a&gt; &lt;a href="1#1.30:1.72"&gt; it's&lt;/a&gt; &lt;a href="1#1.72:2.02"&gt; a&lt;/a&gt; &lt;a href="1#2.02:2.02"&gt; little&lt;/a&gt; &lt;a href="1#2.02:2.02"&gt; bit&lt;/a&gt; &lt;a href="1#2.02:2.02"&gt; of&lt;/a&gt; &lt;a href="1#2.02:2.04"&gt; a&lt;/a&gt; &lt;a href="1#2.04:2.04"&gt; challenge&lt;/a&gt; &lt;a href="1#2.04:2.06"&gt; to&lt;/a&gt; &lt;a href="1#2.06:2.06"&gt; make&lt;/a&gt; &lt;a href="1#2.06:2.32"&gt; sure&lt;/a&gt; &lt;a href="1#2.32:2.32"&gt; that&lt;/a&gt; &lt;a href="1#2.32:2.42"&gt; you&lt;/a&gt; &lt;a href="1#2.42:2.42"&gt; don't&lt;/a&gt; &lt;a href="1#2.42:2.42"&gt; have&lt;/a&gt; &lt;a href="1#2.42:2.42"&gt; to&lt;/a&gt; &lt;a href="1#2.42:2.42"&gt; work&lt;/a&gt; &lt;a href="1#2.42:3.12"&gt; too&lt;/a&gt; &lt;a href="1#3.12:3.12"&gt; hard&lt;/a&gt; &lt;a href="1#3.12:3.24"&gt; to&lt;/a&gt; &lt;a href="1#3.24:4.38"&gt; get&lt;/a&gt; &lt;a href="1#4.38:7.42"&gt; a&lt;/a&gt; &lt;a href="1#7.42:7.56"&gt; new&lt;/a&gt; &lt;a href="1#7.56:7.80"&gt; one.&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#7.80:9.46"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#9.46:10.10"&gt; But,&lt;/a&gt; &lt;a href="1#10.96:12.26"&gt; compared&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#12.26:13.29"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#13.29:13.73"&gt; to&lt;/a&gt; &lt;a href="1#13.73:13.93"&gt; not&lt;/a&gt; &lt;a href="1#13.93:14.47"&gt; being&lt;/a&gt; &lt;a href="1#14.47:14.71"&gt; active&lt;/a&gt; &lt;a href="1#14.71:15.21"&gt; in&lt;/a&gt; &lt;a href="1#15.21:15.33"&gt; it,&lt;/a&gt; &lt;a href="1#15.47:15.93"&gt; all&lt;/a&gt; &lt;a href="1#15.93:16.21"&gt; the&lt;/a&gt; &lt;a href="1#16.21:16.45"&gt; sensors&lt;/a&gt; &lt;a href="1#16.45:16.93"&gt; and&lt;/a&gt; &lt;a href="1#16.93:17.43"&gt; microphones&lt;/a&gt; &lt;a href="1#17.43:17.85"&gt; and&lt;/a&gt; &lt;a href="1#17.85:18.53"&gt; things&lt;/a&gt; &lt;a href="1#18.53:18.65"&gt; like&lt;/a&gt; &lt;a href="1#18.65:18.77"&gt; that,&lt;/a&gt; &lt;a href="1#18.77:19.51"&gt; it's&lt;/a&gt; &lt;a href="1#19.51:19.63"&gt; pretty&lt;/a&gt; &lt;a href="1#19.63:19.85"&gt; hard&lt;/a&gt; &lt;a href="1#19.85:20.91"&gt; to&lt;/a&gt; &lt;a href="1#20.91:21.33"&gt; indicate&lt;/a&gt; &lt;a href="1#21.33:21.49"&gt; a&lt;/a&gt; &lt;a href="1#21.49:21.49"&gt; microphone.&lt;/a&gt; &lt;a href="1#21.49:21.69"&gt; I&lt;/a&gt; &lt;a href="1#21.69:22.83"&gt; think&lt;/a&gt; &lt;a href="1#23.69:25.03"&gt; it's&lt;/a&gt; &lt;a href="1#25.03:25.03"&gt; pretty&lt;/a&gt; &lt;a href="1#25.03:25.11"&gt; hard&lt;/a&gt; &lt;a href="1#25.11:25.11"&gt; to&lt;/a&gt; &lt;a href="1#25.11:25.11"&gt; indicate&lt;/a&gt; &lt;a href="1#25.11:25.13"&gt; a&lt;/a&gt; &lt;a href="1#25.13:30.51"&gt; microphone.&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#30.51:71.36"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#71.36:71.94"&gt; RAM&lt;/a&gt; &lt;a href="1#71.94:72.54"&gt; COPALIPS&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#72.54:130.98"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#130.98:132.38"&gt; RAMCOPALIPS&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#132.38:191.81"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#191.81:193.21"&gt; RAMCOPALIPS&lt;/a&gt; &lt;a href="1#193.23:194.15"&gt; RAMCOPALIPS&lt;/a&gt; &lt;a href="1#194.15:195.23"&gt; RAMCOPALIPS&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#195.23:201.54"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#201.54:202.94"&gt; RAMCOPALIPS&lt;/a&gt; &lt;a href="1#202.94:205.58"&gt; RAMCOPALIPS&lt;/a&gt; &lt;a href="1#205.58:206.18"&gt; RAMCOPALIPS&lt;/a&gt; &lt;a href="1#206.18:208.12"&gt; RAMCOPALIPS&lt;/a&gt; &lt;a href="1#208.18:209.02"&gt; RAMCOPALIPS&lt;/a&gt; &lt;a href="1#209.02:209.30"&gt; RAMCOPALIPS&lt;/a&gt; &lt;a href="1#209.30:209.34"&gt; RAMCOPALIPS&lt;/a&gt; &lt;a href="1#209.34:209.46"&gt; RAMCOPALIPS&lt;/a&gt; &lt;a href="1#209.46:209.98"&gt; RAMCOPALIPS&lt;/a&gt; &lt;a href="1#209.98:210.68"&gt; RAMCOPALIPS&lt;/a&gt; &lt;a href="1#210.96:211.16"&gt; RAMCOPALIPS&lt;/a&gt; &lt;a href="1#211.16:212.40"&gt; RAMCOPALIPS&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#212.40:213.42"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#213.42:214.24"&gt; RAMCOPALIPS&lt;/a&gt; &lt;a href="1#214.24:215.04"&gt; RAMCOPALIPS&lt;/a&gt; &lt;a href="1#215.04:215.22"&gt; RAMCOPALIPS&lt;/a&gt; &lt;a href="1#215.22:215.54"&gt; RAMCOPALIPS&lt;/a&gt; &lt;a href="1#215.54:215.82"&gt; RAMCOPALIPS&lt;/a&gt; &lt;a href="1#215.82:216.76"&gt; RAMCOPALIPS&lt;/a&gt; &lt;a href="1#216.76:218.06"&gt; RAMCOPALIPS&lt;/a&gt; &lt;a href="1#218.06:219.18"&gt; RAMCOPALIPS&lt;/a&gt; &lt;a href="1#219.18:219.56"&gt; RAMCOPALIPS&lt;/a&gt; &lt;a href="1#219.56:220.64"&gt; RAMCOPALIPS&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#220.64:229.97"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#229.97:231.37"&gt; RAMCOPALIPS&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#231.37:232.48"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#232.48:233.68"&gt; ennél&lt;/a&gt; &lt;a href="1#233.68:234.18"&gt; a&lt;/a&gt; &lt;a href="1#235.11:236.47"&gt; kezdeti&lt;/a&gt; &lt;a href="1#236.47:236.71"&gt; Linux&lt;/a&gt; &lt;a href="1#236.71:237.23"&gt; -aim&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#237.23:238.25"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#238.25:239.63"&gt; szerintem&lt;/a&gt; &lt;a href="1#239.63:239.89"&gt; ennél&lt;/a&gt; &lt;a href="1#239.89:240.33"&gt; kisebb&lt;/a&gt; &lt;a href="1#240.33:240.57"&gt; helyen&lt;/a&gt; &lt;a href="1#240.57:241.11"&gt; elférte.&lt;/a&gt; &lt;a href="1#241.29:242.15"&gt; És&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#242.15:250.19"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#250.19:250.81"&gt; képes&lt;/a&gt; &lt;a href="1#250.81:251.01"&gt; volt&lt;/a&gt; &lt;a href="1#251.01:251.55"&gt; megoldani&lt;/a&gt; &lt;a href="1#251.55:251.77"&gt; azt,&lt;/a&gt; &lt;a href="1#251.83:251.95"&gt; hogy&lt;/a&gt; &lt;a href="1#251.95:252.01"&gt; a&lt;/a&gt; &lt;a href="1#252.01:252.57"&gt; Ryzen&lt;/a&gt; &lt;a href="1#252.57:253.27"&gt; processzoron&lt;/a&gt; &lt;a href="1#253.27:254.13"&gt; levő&lt;/a&gt; &lt;a href="1#254.13:254.65"&gt; 32&lt;/a&gt; &lt;a href="1#254.65:255.33"&gt; megabyte&lt;/a&gt; &lt;a href="1#255.33:255.65"&gt; -os&lt;/a&gt; &lt;a href="1#255.65:257.23"&gt; L3K&lt;/a&gt; &lt;a href="1#257.23:257.39"&gt; -sen&lt;/a&gt; &lt;a href="1#257.39:258.13"&gt; futtassa&lt;/a&gt; &lt;a href="1#258.13:258.41"&gt; az&lt;/a&gt; &lt;a href="1#258.41:259.07"&gt; operációs&lt;/a&gt; &lt;a href="1#259.07:259.67"&gt; rendszerét,&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#259.67:261.00"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#261.00:261.48"&gt; ami&lt;/a&gt; &lt;a href="1#262.06:263.16"&gt; némileg&lt;/a&gt; &lt;a href="1#263.16:263.28"&gt; ki&lt;/a&gt; &lt;a href="1#263.28:263.46"&gt; volt&lt;/a&gt; &lt;a href="1#263.46:264.40"&gt; belezve,&lt;/a&gt; &lt;a href="1#264.82:265.30"&gt; de&lt;/a&gt; &lt;a href="1#265.30:265.72"&gt; képzeld&lt;/a&gt; &lt;a href="1#265.72:265.80"&gt; el,&lt;/a&gt; &lt;a href="1#265.84:265.94"&gt; hogy&lt;/a&gt; &lt;a href="1#265.94:266.24"&gt; mennyire&lt;/a&gt; &lt;a href="1#266.24:266.70"&gt; gyorsan&lt;/a&gt; &lt;a href="1#266.70:267.10"&gt; lehetne&lt;/a&gt; &lt;a href="1#267.10:267.66"&gt; például&lt;/a&gt; &lt;a href="1#267.66:268.20"&gt; ezen&lt;/a&gt; &lt;a href="1#268.20:269.20"&gt; a&lt;/a&gt; &lt;a href="1#269.20:269.62"&gt; 32&lt;/a&gt; &lt;a href="1#269.62:270.34"&gt; megával&lt;/a&gt; &lt;a href="1#270.34:271.00"&gt; dúmozni.&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#271.00:272.49"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#272.49:273.37"&gt; Mert&lt;/a&gt; &lt;a href="1#273.37:273.47"&gt; hogy&lt;/a&gt; &lt;a href="1#273.47:273.77"&gt; az&lt;/a&gt; &lt;a href="1#273.77:274.17"&gt; bőven&lt;/a&gt; &lt;a href="1#274.17:274.67"&gt; belefér.&lt;/a&gt; &lt;a href="1#275.21:275.31"&gt; én&lt;/a&gt; &lt;a href="1#275.31:275.51"&gt; 8&lt;/a&gt; &lt;a href="1#275.51:275.97"&gt; megával&lt;/a&gt; &lt;a href="1#275.97:276.53"&gt; futtattam&lt;/a&gt; &lt;a href="1#276.53:276.75"&gt; annak&lt;/a&gt; &lt;a href="1#276.75:277.07"&gt; idején.&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#277.07:296.05"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#296.05:296.42"&gt; Tehát&lt;/a&gt; &lt;a href="1#296.42:297.16"&gt; igazából&lt;/a&gt; &lt;a href="1#297.16:297.32"&gt; most&lt;/a&gt; &lt;a href="1#297.32:298.74"&gt; ezzel&lt;/a&gt; &lt;a href="1#298.74:298.90"&gt; már&lt;/a&gt; &lt;a href="1#298.90:299.46"&gt; majdnem&lt;/a&gt; &lt;a href="1#299.46:299.76"&gt; át&lt;/a&gt; &lt;a href="1#299.76:299.78"&gt; is&lt;/a&gt; &lt;a href="1#299.78:300.24"&gt; kötöttünk&lt;/a&gt; &lt;a href="1#300.24:300.34"&gt; a&lt;/a&gt; &lt;a href="1#300.34:300.86"&gt; következő&lt;/a&gt; &lt;a href="1#300.86:301.28"&gt; hírünkre,&lt;/a&gt; &lt;a href="1#301.32:301.42"&gt; mert&lt;/a&gt; &lt;a href="1#301.42:301.80"&gt; hogy&lt;/a&gt; &lt;a href="1#301.80:302.68"&gt; most&lt;/a&gt; &lt;a href="1#302.68:302.84"&gt; nem&lt;/a&gt; &lt;a href="1#302.84:303.38"&gt; hoztam&lt;/a&gt; &lt;a href="1#303.38:303.98"&gt; működő&lt;/a&gt; &lt;a href="1#303.98:304.28"&gt; dúmot.&lt;/a&gt; &lt;a href="1#304.74:305.48"&gt; Csak&lt;/a&gt; &lt;a href="1#305.48:306.78"&gt; ezt&lt;/a&gt; &lt;a href="1#306.78:307.14"&gt; hoztam&lt;/a&gt; &lt;a href="1#307.14:307.30"&gt; el,&lt;/a&gt; &lt;a href="1#307.34:307.48"&gt; hogy&lt;/a&gt; &lt;a href="1#307.48:308.52"&gt; igazából&lt;/a&gt; &lt;a href="1#308.52:308.68"&gt; már&lt;/a&gt; &lt;a href="1#308.68:308.92"&gt; RAM&lt;/a&gt; &lt;a href="1#308.92:309.38"&gt; nélkül&lt;/a&gt; &lt;a href="1#309.38:309.48"&gt; is&lt;/a&gt; &lt;a href="1#309.48:309.68"&gt; lehet&lt;/a&gt; &lt;a href="1#309.68:310.48"&gt; számítógépet&lt;/a&gt; &lt;a href="1#310.48:311.06"&gt; indítani.&lt;/a&gt; &lt;a href="1#311.38:312.12"&gt; A&lt;/a&gt; &lt;a href="1#312.92:313.54"&gt; következő&lt;/a&gt; &lt;a href="1#313.54:313.84"&gt; az,&lt;/a&gt; &lt;a href="1#313.90:314.36"&gt; hogy&lt;/a&gt; &lt;a href="1#314.36:315.00"&gt; nyilván&lt;/a&gt; &lt;a href="1#315.00:315.24"&gt; akkor&lt;/a&gt; &lt;a href="1#315.24:315.60"&gt; kell&lt;/a&gt; &lt;a href="1#315.60:315.78"&gt; a&lt;/a&gt; &lt;a href="1#315.78:316.52"&gt; dúmnak&lt;/a&gt; &lt;a href="1#316.52:317.22"&gt; valami&lt;/a&gt; &lt;a href="1#317.22:317.86"&gt; olyan&lt;/a&gt; &lt;a href="1#317.86:318.20"&gt; hely,&lt;/a&gt; &lt;a href="1#318.28:318.92"&gt; ahonnan&lt;/a&gt; &lt;a href="1#319.76:320.50"&gt; bárhol&lt;/a&gt; &lt;a href="1#320.50:321.56"&gt; le&lt;/a&gt; &lt;a href="1#321.78:321.98"&gt; tud&lt;/a&gt; &lt;a href="1#321.98:322.56"&gt; tölteni,&lt;/a&gt; &lt;a href="1#322.56:322.72"&gt; le&lt;/a&gt; &lt;a href="1#322.72:323.04"&gt; tudod&lt;/a&gt; &lt;a href="1#323.04:323.66"&gt; tölteni,&lt;/a&gt; &lt;a href="1#323.66:323.92"&gt; és&lt;/a&gt; &lt;a href="1#323.92:324.58"&gt; meg&lt;/a&gt; &lt;a href="1#324.58:324.96"&gt; tudod&lt;/a&gt; &lt;a href="1#324.96:325.46"&gt; nézni,&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#325.46:327.74"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#327.74:328.08"&gt; És&lt;/a&gt; &lt;a href="1#328.08:329.12"&gt; visszatudod&lt;/a&gt; &lt;a href="1#329.12:330.22"&gt; akkor&lt;/a&gt; &lt;a href="1#330.22:330.44"&gt; is,&lt;/a&gt; &lt;a href="1#330.48:330.64"&gt; hogyha&lt;/a&gt; &lt;a href="1#330.64:330.98"&gt; mondjuk&lt;/a&gt; &lt;a href="1#330.98:331.36"&gt; nincsen&lt;/a&gt; &lt;a href="1#331.36:332.54"&gt; semmi&lt;/a&gt; &lt;a href="1#332.54:332.68"&gt; más,&lt;/a&gt; &lt;a href="1#332.74:332.90"&gt; hogy&lt;/a&gt; &lt;a href="1#332.90:333.02"&gt; csak&lt;/a&gt; &lt;a href="1#333.02:333.22"&gt; egy&lt;/a&gt; &lt;a href="1#333.22:333.92"&gt; puszta&lt;/a&gt; &lt;a href="1#333.92:334.26"&gt; network&lt;/a&gt; &lt;a href="1#334.26:334.82"&gt; kábeled&lt;/a&gt; &lt;a href="1#334.82:336.04"&gt; szerezni&lt;/a&gt; &lt;a href="1#336.04:336.30"&gt; a&lt;/a&gt; &lt;a href="1#336.30:337.26"&gt; saját&lt;/a&gt; &lt;a href="1#337.26:337.82"&gt; dúmadat.&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#337.82:339.60"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#339.60:339.94"&gt; És&lt;/a&gt; &lt;a href="1#339.94:340.14"&gt; egy&lt;/a&gt; &lt;a href="1#340.14:340.48"&gt; másik&lt;/a&gt; &lt;a href="1#340.48:341.14"&gt; szentőrült&lt;/a&gt; &lt;a href="1#341.14:341.66"&gt; az&lt;/a&gt; &lt;a href="1#341.66:342.88"&gt; azzal&lt;/a&gt; &lt;a href="1#343.00:343.68"&gt; foglalkozott,&lt;/a&gt; &lt;a href="1#343.80:344.08"&gt; hogy&lt;/a&gt; &lt;a href="1#344.08:344.80"&gt; a&lt;/a&gt; &lt;a href="1#344.80:345.16"&gt; DNS&lt;/a&gt; &lt;a href="1#345.16:345.56"&gt; DNS&lt;/a&gt; &lt;a href="1#345.56:345.96"&gt; -ről&lt;/a&gt; &lt;a href="1#345.96:346.50"&gt; hallottál&lt;/a&gt; &lt;a href="1#346.50:346.62"&gt; már,&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#346.62:351.32"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#351.32:351.66"&gt; Egy&lt;/a&gt; &lt;a href="1#351.66:352.18"&gt; másik&lt;/a&gt; &lt;a href="1#352.18:352.44"&gt; DNS&lt;/a&gt; &lt;a href="1#352.44:352.80"&gt; -re&lt;/a&gt; &lt;a href="1#352.80:353.40"&gt; gondoltam&lt;/a&gt; &lt;a href="1#353.40:353.62"&gt; ebben&lt;/a&gt; &lt;a href="1#353.62:353.76"&gt; a&lt;/a&gt; &lt;a href="1#353.76:354.32"&gt; pillanatban,&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#354.32:356.31"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#356.31:356.65"&gt; az&lt;/a&gt; &lt;a href="1#356.65:356.99"&gt; igen,&lt;/a&gt; &lt;a href="1#357.05:357.21"&gt; az&lt;/a&gt; &lt;a href="1#357.21:358.19"&gt; de&lt;/a&gt; &lt;a href="1#358.96:359.54"&gt; magyarul&lt;/a&gt; &lt;a href="1#359.54:360.78"&gt; elfogadható&lt;/a&gt; &lt;a href="1#360.78:360.84"&gt; a&lt;/a&gt; &lt;a href="1#360.84:361.28"&gt; válasz,&lt;/a&gt; &lt;a href="1#361.28:361.36"&gt; de&lt;/a&gt; &lt;a href="1#361.36:361.56"&gt; ez&lt;/a&gt; &lt;a href="1#361.56:362.36"&gt; a&lt;/a&gt; &lt;a href="1#362.45:363.81"&gt; Domain&lt;/a&gt; &lt;a href="1#363.81:363.97"&gt; Name&lt;/a&gt; &lt;a href="1#363.97:364.21"&gt; System,&lt;/a&gt; &lt;a href="1#364.55:364.83"&gt; ami&lt;/a&gt; &lt;a href="1#364.83:365.09"&gt; az&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#365.09:367.17"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#367.17:367.95"&gt; internetes&lt;/a&gt; &lt;a href="1#367.95:368.73"&gt; névfeloldási&lt;/a&gt; &lt;a href="1#368.73:369.87"&gt; rendszerről&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#369.87:371.66"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#371.66:372.44"&gt; rendszernek&lt;/a&gt; &lt;a href="1#372.44:372.62"&gt; a&lt;/a&gt; &lt;a href="1#372.62:373.58"&gt; neve.&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#373.58:374.80"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#374.80:375.58"&gt; Valaki&lt;/a&gt; &lt;a href="1#375.58:375.86"&gt; egy&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#375.86:377.52"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#377.52:378.38"&gt; ...&lt;/a&gt; &lt;/p&gt;
+&lt;/body&gt;&lt;/html&gt;</property>
+ </chain>
+ <chain id="chain1_tl" out="00:06:18.456">
+  <property name="length">9461</property>
+  <property name="eof">pause</property>
+  <property name="resource">2026-04-04--t08-13-10am--5e73b6ace3b63000158e6774--statler.mp3</property>
+  <property name="mlt_service">avformat-novalidate</property>
+  <property name="seekable">1</property>
+  <property name="audio_index">0</property>
+  <property name="video_index">-1</property>
+  <property name="astream">0</property>
+  <property name="kdenlive:control_uuid">{3b903aae-f953-4de6-bd22-8d190d6773da}</property>
+  <property name="kdenlive:proxy">-</property>
+  <property name="kdenlive:originalurl">2026-04-04--t08-13-10am--5e73b6ace3b63000158e6774--statler.mp3</property>
+  <property name="kdenlive:id">1</property>
+  <property name="kdenlive:clip_type">1</property>
+  <property name="kdenlive:file_size">5051026</property>
+  <property name="kdenlive:folderid">-1</property>
+  <property name="set.test_audio">0</property>
+  <property name="set.test_image">1</property>
+ </chain>
+ <chain id="chain2" out="00:06:18.456">
+  <property name="length">9461</property>
+  <property name="eof">pause</property>
+  <property name="resource">C:\Users\gerge\source\repos\video-processing-tool\test_data\2026-04-04--t08-13-10am--615e0811aa193a007ec6f9b7--gaganetz_gmail_com.mp3</property>
+  <property name="mlt_service">avformat</property>
+  <property name="seekable">1</property>
+  <property name="audio_index">0</property>
+  <property name="video_index">-1</property>
+  <property name="astream">0</property>
+  <property name="kdenlive:control_uuid">{22d3b360-3bc0-4e12-9dfa-1837b321dddf}</property>
+  <property name="kdenlive:proxy">-</property>
+  <property name="kdenlive:originalurl">2026-04-04--t08-13-10am--615e0811aa193a007ec6f9b7--gaganetz_gmail_com.mp3</property>
+  <property name="kdenlive:id">2</property>
+  <property name="kdenlive:clip_type">1</property>
+  <property name="kdenlive:file_size">2231685</property>
+  <property name="kdenlive:folderid">-1</property>
+  <property name="kdenlive:speech">&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd"&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name="qrichtext" content="1" /&gt;&lt;meta charset="utf-8" /&gt;&lt;style type="text/css"&gt;
+p, li { white-space: pre-wrap; }
+hr { height: 1px; border-width: 0; }
+li.unchecked::marker { content: "\2610"; }
+li.checked::marker { content: "\2612"; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=" font-family:'Segoe UI'; font-size:9pt; font-weight:400; font-style:normal;"&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#0.00:67.22"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#67.22:67.70"&gt; RAM&lt;/a&gt; &lt;a href="2#67.70:67.90"&gt; -OKA,&lt;/a&gt; &lt;a href="2#67.92:68.16"&gt; RAM&lt;/a&gt; &lt;a href="2#68.16:68.64"&gt; -OKA&lt;/a&gt; &lt;a href="2#68.64:68.88"&gt; -LI,&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#68.88:70.09"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#70.09:70.85"&gt; a&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#70.85:154.78"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#154.78:155.30"&gt; virtuális&lt;/a&gt; &lt;a href="2#155.30:155.76"&gt; memúria&lt;/a&gt; &lt;a href="2#155.76:156.10"&gt; mindig&lt;/a&gt; &lt;a href="2#156.10:156.22"&gt; is&lt;/a&gt; &lt;a href="2#156.22:156.40"&gt; jól&lt;/a&gt; &lt;a href="2#156.40:156.96"&gt; működött,&lt;/a&gt; &lt;a href="2#156.98:157.26"&gt; sose&lt;/a&gt; &lt;a href="2#157.26:157.48"&gt; volt&lt;/a&gt; &lt;a href="2#157.48:157.94"&gt; lassú,&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#157.94:174.01"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#174.01:175.45"&gt; lehetett&lt;/a&gt; &lt;a href="2#175.45:175.71"&gt; jól&lt;/a&gt; &lt;a href="2#175.71:176.53"&gt; volna&lt;/a&gt; &lt;a href="2#176.53:177.61"&gt; gyorsabb,&lt;/a&gt; &lt;a href="2#177.65:177.87"&gt; igen,&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#177.87:203.02"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#203.02:204.16"&gt; lévő&lt;/a&gt; &lt;a href="2#204.16:204.34"&gt; cache,&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#204.34:220.71"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#220.71:221.81"&gt; 640&lt;/a&gt; &lt;a href="2#221.81:222.51"&gt; kilobyte&lt;/a&gt; &lt;a href="2#222.51:222.67"&gt; -ba,&lt;/a&gt; &lt;a href="2#222.75:223.03"&gt; minden&lt;/a&gt; &lt;a href="2#223.03:223.45"&gt; belefér,&lt;/a&gt; &lt;a href="2#223.49:223.65"&gt; ezt&lt;/a&gt; &lt;a href="2#223.65:224.51"&gt; hallottuk&lt;/a&gt; &lt;a href="2#224.51:225.15"&gt; Geerts&lt;/a&gt; &lt;a href="2#225.15:225.41"&gt; -től,&lt;/a&gt; &lt;a href="2#225.43:225.87"&gt; saját&lt;/a&gt; &lt;a href="2#225.87:226.61"&gt; magától,&lt;/a&gt; &lt;a href="2#226.61:227.51"&gt; mert&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#227.51:240.28"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#240.28:240.48"&gt; arra&lt;/a&gt; &lt;a href="2#240.48:240.68"&gt; úgy&lt;/a&gt; &lt;a href="2#240.68:240.94"&gt; volt,&lt;/a&gt; &lt;a href="2#241.10:242.32"&gt; Microsoft&lt;/a&gt; &lt;a href="2#242.32:243.06"&gt; termék,&lt;/a&gt; &lt;a href="2#243.06:243.24"&gt; ami&lt;/a&gt; &lt;a href="2#243.24:243.72"&gt; elfuthott&lt;/a&gt; &lt;a href="2#243.72:244.32"&gt; kisebben,&lt;/a&gt; &lt;a href="2#244.60:245.50"&gt; MS&lt;/a&gt; &lt;a href="2#245.50:245.80"&gt; -DOS&lt;/a&gt; &lt;a href="2#245.80:245.96"&gt; 6&lt;/a&gt; &lt;a href="2#245.96:246.80"&gt; .22,&lt;/a&gt; &lt;a href="2#247.38:250.48"&gt; ennyi,&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#250.48:275.84"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#275.84:276.74"&gt; simán,&lt;/a&gt; &lt;a href="2#276.88:277.74"&gt; simán,&lt;/a&gt; &lt;a href="2#278.28:278.60"&gt; nem,&lt;/a&gt; &lt;a href="2#278.62:278.76"&gt; nem,&lt;/a&gt; &lt;a href="2#278.96:279.02"&gt; hogy&lt;/a&gt; &lt;a href="2#279.02:279.32"&gt; 8&lt;/a&gt; &lt;a href="2#279.32:279.90"&gt; megával,&lt;/a&gt; &lt;a href="2#280.48:280.58"&gt; az&lt;/a&gt; &lt;a href="2#280.58:281.16"&gt; 32&lt;/a&gt; &lt;a href="2#281.16:281.96"&gt; mega,&lt;/a&gt; &lt;a href="2#282.02:282.38"&gt; az&lt;/a&gt; &lt;a href="2#282.38:283.34"&gt; gyakorlatilag&lt;/a&gt; &lt;a href="2#283.34:283.66"&gt; elég&lt;/a&gt; &lt;a href="2#283.66:284.14"&gt; magának&lt;/a&gt; &lt;a href="2#284.14:284.24"&gt; a&lt;/a&gt; &lt;a href="2#284.24:284.44"&gt; Doom&lt;/a&gt; &lt;a href="2#284.44:284.66"&gt; -nak,&lt;/a&gt; &lt;a href="2#284.74:284.92"&gt; meg&lt;/a&gt; &lt;a href="2#284.92:285.04"&gt; a&lt;/a&gt; &lt;a href="2#285.04:285.66"&gt; futásnak,&lt;/a&gt; &lt;a href="2#285.78:286.70"&gt; tehát&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#286.70:287.85"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#287.85:287.97"&gt; a&lt;/a&gt; &lt;a href="2#287.97:288.13"&gt; Doom&lt;/a&gt; &lt;a href="2#288.13:288.67"&gt; egzének,&lt;/a&gt; &lt;a href="2#288.79:289.17"&gt; az&lt;/a&gt; &lt;a href="2#289.17:289.51"&gt; MS&lt;/a&gt; &lt;a href="2#289.51:289.81"&gt; -DOS&lt;/a&gt; &lt;a href="2#289.81:290.31"&gt; egzének,&lt;/a&gt; &lt;a href="2#290.41:290.61"&gt; meg&lt;/a&gt; &lt;a href="2#290.61:291.05"&gt; a&lt;/a&gt; &lt;a href="2#291.05:293.15"&gt; magának&lt;/a&gt; &lt;a href="2#293.15:293.35"&gt; a&lt;/a&gt; &lt;a href="2#293.67:295.33"&gt; gyorsításnak.&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#295.33:305.00"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#305.00:305.42"&gt; Na,&lt;/a&gt; &lt;a href="2#305.50:305.76"&gt; nem,&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#305.76:347.36"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#347.36:347.44"&gt; igen,&lt;/a&gt; &lt;a href="2#347.52:347.64"&gt; de&lt;/a&gt; &lt;a href="2#347.64:347.90"&gt; azok,&lt;/a&gt; &lt;a href="2#347.90:347.98"&gt; hogy&lt;/a&gt; &lt;a href="2#347.98:349.66"&gt; ribonuklein&lt;/a&gt; &lt;a href="2#349.66:349.88"&gt; sav,&lt;/a&gt; &lt;a href="2#350.06:350.92"&gt; ja,&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#350.92:354.50"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#354.50:354.66"&gt; hogy&lt;/a&gt; &lt;a href="2#354.66:354.82"&gt; azt&lt;/a&gt; &lt;a href="2#354.82:355.26"&gt; angolul&lt;/a&gt; &lt;a href="2#355.26:355.54"&gt; DNA&lt;/a&gt; &lt;a href="2#355.54:355.92"&gt; -nak&lt;/a&gt; &lt;a href="2#355.92:356.48"&gt; mondják.&lt;/a&gt; &lt;/p&gt;
+&lt;/body&gt;&lt;/html&gt;</property>
+ </chain>
+ <chain id="chain2_tl" out="00:06:18.456">
+  <property name="length">9461</property>
+  <property name="eof">pause</property>
+  <property name="resource">2026-04-04--t08-13-10am--615e0811aa193a007ec6f9b7--gaganetz_gmail_com.mp3</property>
+  <property name="mlt_service">avformat-novalidate</property>
+  <property name="seekable">1</property>
+  <property name="audio_index">0</property>
+  <property name="video_index">-1</property>
+  <property name="astream">0</property>
+  <property name="kdenlive:control_uuid">{22d3b360-3bc0-4e12-9dfa-1837b321dddf}</property>
+  <property name="kdenlive:proxy">-</property>
+  <property name="kdenlive:originalurl">2026-04-04--t08-13-10am--615e0811aa193a007ec6f9b7--gaganetz_gmail_com.mp3</property>
+  <property name="kdenlive:id">2</property>
+  <property name="kdenlive:clip_type">1</property>
+  <property name="kdenlive:file_size">2231685</property>
+  <property name="kdenlive:folderid">-1</property>
+  <property name="set.test_audio">0</property>
+  <property name="set.test_image">1</property>
+ </chain>
+ <playlist id="main_bin">
+  <entry in="00:00:00.000" out="00:06:18.456" producer="chain1">
+   <property name="kdenlive:id">1</property>
+  </entry>
+  <entry in="00:00:00.000" out="00:06:18.456" producer="chain2">
+   <property name="kdenlive:id">2</property>
+  </entry>
+  <entry in="00:00:00.000" out="00:04:56.922" producer="tractor2" />
+  <property name="kdenlive:docproperties.activetimeline">{c9aefbb3-8a43-4b10-b80b-f807adffbd8c}</property>
+  <property name="kdenlive:docproperties.audioChannels">2</property>
+  <property name="kdenlive:docproperties.version">1.1</property>
+  <property name="kdenlive:docproperties.decimalPoint">.</property>
+  <property name="xml_retain">1</property>
+ </playlist>
+ <producer id="black_track" in="00:00:00.000" out="00:04:56.922">
+  <property name="length">2147483647</property>
+  <property name="eof">continue</property>
+  <property name="resource">black</property>
+  <property name="mlt_service">color</property>
+  <property name="mlt_image_format">rgba</property>
+ </producer>
+ <playlist id="playlist0">
+  <property name="kdenlive:audio_track">1</property>
+  <entry producer="chain1_tl" in="00:00:00.000" out="00:00:04.800">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:00:05.040" out="00:00:07.920">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <blank length="00:00:00.600" />
+  <entry producer="chain1_tl" in="00:00:10.000" out="00:00:10.080">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:00:10.400" out="00:00:11.880">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:00:13.040" out="00:00:20.800">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:00:20.880" out="00:00:22.360">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:00:23.520" out="00:00:24.480">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:00:24.480" out="00:00:28.640">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:00:28.960" out="00:00:30.280">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:00:30.480" out="00:00:31.560">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:00:31.760" out="00:00:34.480">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:00:35.280" out="00:00:36.520">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:00:37.520" out="00:00:38.640">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <blank length="00:00:00.600" />
+  <entry producer="chain1_tl" in="00:00:43.440" out="00:00:44.200">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+   <filter id="filter_0_0">
+    <property name="mlt_service">volume</property>
+    <property name="kdenlive_id">volume</property>
+    <property name="level">0=1.0;0=0.0;3=0.0;4=1.0;18=1.0</property>
+   </filter>
+  </entry>
+  <entry producer="chain1_tl" in="00:00:44.760" out="00:00:45.280">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <blank length="00:00:00.600" />
+  <entry producer="chain1_tl" in="00:00:48.240" out="00:00:49.960">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:00:50.680" out="00:00:52.280">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:00:52.320" out="00:00:53.360">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:00:53.640" out="00:00:54.320">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <blank length="00:00:00.600" />
+  <entry producer="chain1_tl" in="00:00:59.920" out="00:01:03.280">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:01:03.720" out="00:01:06.800">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <blank length="00:00:00.600" />
+  <blank length="00:00:00.600" />
+  <blank length="00:00:00.080" />
+  <entry producer="chain1_tl" in="00:01:11.800" out="00:01:12.880">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <blank length="00:00:00.600" />
+  <entry producer="chain1_tl" in="00:01:16.320" out="00:01:16.880">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <blank length="00:00:00.600" />
+  <entry producer="chain1_tl" in="00:01:23.120" out="00:01:23.520">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+   <filter id="filter_0_1">
+    <property name="mlt_service">volume</property>
+    <property name="kdenlive_id">volume</property>
+    <property name="level">0=1.0;0=0.0;3=0.0;4=1.0;9=1.0</property>
+   </filter>
+  </entry>
+  <entry producer="chain1_tl" in="00:01:23.600" out="00:01:25.840">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:01:26.960" out="00:01:27.760">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:01:28.000" out="00:01:29.640">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:01:30.720" out="00:01:32.080">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:01:32.240" out="00:01:33.040">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:01:33.160" out="00:01:34.280">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:01:34.320" out="00:01:38.360">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:01:38.760" out="00:01:42.240">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+   <filter id="filter_0_2">
+    <property name="mlt_service">volume</property>
+    <property name="kdenlive_id">volume</property>
+    <property name="level">0=1.0;65=1.0;66=0.0;71=0.0;72=1.0;86=1.0</property>
+   </filter>
+  </entry>
+  <entry producer="chain1_tl" in="00:01:42.800" out="00:01:46.280">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:01:46.800" out="00:01:49.600">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:01:50.040" out="00:01:50.640">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:01:50.640" out="00:01:51.840">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+   <filter id="filter_0_3">
+    <property name="mlt_service">volume</property>
+    <property name="kdenlive_id">volume</property>
+    <property name="level">0=1.0;20=1.0;21=0.0;25=0.0;26=1.0;29=1.0</property>
+   </filter>
+  </entry>
+  <entry producer="chain1_tl" in="00:01:51.880" out="00:01:53.120">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <blank length="00:00:00.600" />
+  <entry producer="chain1_tl" in="00:01:55.840" out="00:01:57.440">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:01:58.600" out="00:01:59.840">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:01:59.960" out="00:02:01.720">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:02:02.440" out="00:02:07.520">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:02:07.640" out="00:02:08.640">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:02:08.720" out="00:02:10.600">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:02:10.760" out="00:02:11.520">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:02:11.760" out="00:02:13.560">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:02:13.840" out="00:02:14.560">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+   <filter id="filter_0_4">
+    <property name="mlt_service">volume</property>
+    <property name="kdenlive_id">volume</property>
+    <property name="level">0=1.0;0=0.0;2=0.0;3=1.0;17=1.0</property>
+   </filter>
+  </entry>
+  <entry producer="chain1_tl" in="00:02:15.280" out="00:02:18.560">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:02:18.600" out="00:02:19.680">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:02:19.800" out="00:02:20.640">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:02:21.000" out="00:02:23.080">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:02:23.440" out="00:02:24.520">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:02:24.880" out="00:02:26.040">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:02:26.280" out="00:02:27.520">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:02:27.600" out="00:02:29.760">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:02:29.840" out="00:02:32.000">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:02:32.080" out="00:02:33.520">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <blank length="00:00:00.600" />
+  <blank length="00:00:02.040" />
+  <blank length="00:00:00.440" />
+  <blank length="00:00:00.360" />
+  <blank length="00:00:00.680" />
+  <entry producer="chain1_tl" in="00:02:39.200" out="00:02:46.000">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:02:46.080" out="00:02:49.200">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <blank length="00:00:00.600" />
+  <entry producer="chain1_tl" in="00:02:51.960" out="00:02:54.320">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:02:54.480" out="00:02:56.240">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:02:56.240" out="00:02:57.000">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:02:57.200" out="00:02:58.880">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:02:59.560" out="00:03:02.560">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <blank length="00:00:00.600" />
+  <entry producer="chain1_tl" in="00:03:05.040" out="00:03:05.760">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:03:06.000" out="00:03:06.440">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:03:06.480" out="00:03:07.640">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:03:07.760" out="00:03:08.200">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <blank length="00:00:00.600" />
+  <entry producer="chain1_tl" in="00:03:10.960" out="00:03:12.360">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:03:12.720" out="00:03:15.600">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <blank length="00:00:00.600" />
+  <entry producer="chain1_tl" in="00:03:17.720" out="00:03:19.720">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:03:20.440" out="00:03:21.880">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:03:22.160" out="00:03:23.520">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:03:23.760" out="00:03:24.840">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+   <filter id="filter_0_5">
+    <property name="mlt_service">volume</property>
+    <property name="kdenlive_id">volume</property>
+    <property name="level">0=1.0;16=1.0;17=0.0;21=0.0;22=1.0;26=1.0</property>
+   </filter>
+  </entry>
+  <entry producer="chain1_tl" in="00:03:24.880" out="00:03:26.560">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:03:26.600" out="00:03:27.440">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:03:27.720" out="00:03:28.800">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:03:28.840" out="00:03:30.000">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:03:30.280" out="00:03:31.560">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:03:31.760" out="00:03:32.800">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:03:33.960" out="00:03:38.440">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:03:38.480" out="00:03:41.000">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <blank length="00:00:00.280" />
+  <blank length="00:00:05.560" />
+  <entry producer="chain1_tl" in="00:03:47.120" out="00:03:52.000">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:03:52.080" out="00:03:52.960">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:03:53.360" out="00:03:54.440">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:03:55.480" out="00:03:58.120">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:03:59.200" out="00:04:01.360">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <blank length="00:00:00.720" />
+  <blank length="00:00:02.920" />
+  <blank length="00:00:00.080" />
+  <entry producer="chain1_tl" in="00:04:05.440" out="00:04:05.840">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <blank length="00:00:02.400" />
+  <blank length="00:00:00.760" />
+  <entry producer="chain1_tl" in="00:04:09.920" out="00:04:10.000">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:04:10.200" out="00:04:10.480">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:04:10.520" out="00:04:16.560">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:04:16.640" out="00:04:20.400">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:04:21.120" out="00:04:21.480">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:04:22.080" out="00:04:25.040">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:04:25.240" out="00:04:28.880">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:04:29.120" out="00:04:31.080">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <blank length="00:00:00.600" />
+  <blank length="00:00:00.760" />
+  <entry producer="chain1_tl" in="00:04:33.200" out="00:04:34.800">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:04:35.840" out="00:04:37.200">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <blank length="00:00:00.240" />
+  <blank length="00:00:00.440" />
+  <blank length="00:00:01.760" />
+  <blank length="00:00:01.280" />
+  <entry producer="chain1_tl" in="00:04:41.760" out="00:04:42.160">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <blank length="00:00:04.240" />
+  <entry producer="chain1_tl" in="00:04:46.840" out="00:04:47.160">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <blank length="00:00:00.400" />
+  <blank length="00:00:03.520" />
+  <blank length="00:00:00.560" />
+  <blank length="00:00:02.160" />
+  <blank length="00:00:01.280" />
+  <entry producer="chain1_tl" in="00:04:56.240" out="00:04:56.680">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+   <filter id="filter_0_6">
+    <property name="mlt_service">volume</property>
+    <property name="kdenlive_id">volume</property>
+    <property name="level">0=1.0;0=0.0;4=0.0;5=1.0;10=1.0</property>
+   </filter>
+  </entry>
+  <entry producer="chain1_tl" in="00:04:56.720" out="00:04:57.680">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:04:57.680" out="00:05:02.400">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:05:02.640" out="00:05:04.920">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:05:05.200" out="00:05:07.920">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:05:08.080" out="00:05:11.840">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:05:12.880" out="00:05:16.560">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:05:16.600" out="00:05:19.480">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:05:19.560" out="00:05:21.320">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:05:21.720" out="00:05:24.400">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:05:24.400" out="00:05:25.520">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:05:25.720" out="00:05:25.920">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <blank length="00:00:00.480" />
+  <blank length="00:00:00.920" />
+  <entry producer="chain1_tl" in="00:05:27.960" out="00:05:28.560">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:05:28.560" out="00:05:29.720">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:05:30.000" out="00:05:32.040">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:05:32.240" out="00:05:33.560">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:05:33.560" out="00:05:35.440">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:05:35.600" out="00:05:36.880">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:05:36.960" out="00:05:38.480">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:05:39.840" out="00:05:41.520">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:05:41.520" out="00:05:42.400">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:05:42.760" out="00:05:44.600">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:05:44.760" out="00:05:46.640">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:05:46.840" out="00:05:47.040">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <blank length="00:00:00.120" />
+  <blank length="00:00:03.320" />
+  <entry producer="chain1_tl" in="00:05:51.520" out="00:05:57.960">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:05:58.920" out="00:06:02.920">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:06:03.240" out="00:06:05.800">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:06:06.120" out="00:06:07.440">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:06:07.520" out="00:06:09.120">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:06:09.240" out="00:06:10.440">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:06:10.600" out="00:06:11.600">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:06:12.000" out="00:06:13.200">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:06:13.360" out="00:06:14.360">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain1_tl" in="00:06:15.160" out="00:06:15.840">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <blank length="00:00:00.600" />
+  <entry producer="chain1_tl" in="00:06:18.280" out="00:06:18.440">
+   <property name="kdenlive:id">1</property>
+   <property name="audio_index">0</property>
+   <filter id="filter_0_7">
+    <property name="mlt_service">volume</property>
+    <property name="kdenlive_id">volume</property>
+    <property name="level">0=1.0;0=0.0;3=0.0;4=1.0;3=1.0</property>
+   </filter>
+  </entry>
+ </playlist>
+ <playlist id="playlist1">
+  <property name="kdenlive:audio_track">1</property>
+ </playlist>
+ <tractor id="tractor0" in="00:00:00.000">
+  <property name="kdenlive:audio_track">1</property>
+  <property name="kdenlive:trackheight">61</property>
+  <track hide="video" producer="playlist0" />
+  <track hide="video" producer="playlist1" />
+  <filter id="trackfilter_comp_0">
+   <property name="mlt_service">ladspa.1073</property>
+   <property name="kdenlive_id">ladspa.1073</property>
+   <property name="0">1.0</property>
+   <property name="1">0.5</property>
+   <property name="2">0.25</property>
+   <property name="3">0.0</property>
+   <property name="disable">0</property>
+  </filter>
+  <filter id="trackfilter_dyn_0">
+   <property name="mlt_service">dynamic_loudness</property>
+   <property name="target">-14</property>
+   <property name="kdenlive_id">dynamic_loudness</property>
+   <property name="disable">0</property>
+  </filter>
+ </tractor>
+ <playlist id="playlist2">
+  <property name="kdenlive:audio_track">1</property>
+  <blank length="00:00:04.800" />
+  <blank length="00:00:03.480" />
+  <blank length="00:00:00.080" />
+  <blank length="00:00:01.480" />
+  <blank length="00:00:07.760" />
+  <blank length="00:00:01.480" />
+  <blank length="00:00:00.960" />
+  <blank length="00:00:04.160" />
+  <blank length="00:00:01.320" />
+  <blank length="00:00:01.080" />
+  <blank length="00:00:02.720" />
+  <blank length="00:00:01.240" />
+  <blank length="00:00:01.720" />
+  <blank length="00:00:00.760" />
+  <blank length="00:00:01.120" />
+  <blank length="00:00:01.720" />
+  <blank length="00:00:01.600" />
+  <blank length="00:00:01.040" />
+  <blank length="00:00:01.280" />
+  <blank length="00:00:03.360" />
+  <blank length="00:00:03.680" />
+  <entry producer="chain2_tl" in="00:01:08.160" out="00:01:08.760">
+   <property name="kdenlive:id">2</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain2_tl" in="00:01:08.880" out="00:01:08.960">
+   <property name="kdenlive:id">2</property>
+   <property name="audio_index">0</property>
+   <filter id="filter_2_0">
+    <property name="mlt_service">volume</property>
+    <property name="kdenlive_id">volume</property>
+    <property name="level">0=1.0;0=0.0;1=0.0;2=1.0;1=1.0</property>
+   </filter>
+  </entry>
+  <blank length="00:00:01.680" />
+  <blank length="00:00:01.160" />
+  <blank length="00:00:00.400" />
+  <blank length="00:00:02.240" />
+  <blank length="00:00:00.800" />
+  <blank length="00:00:01.640" />
+  <blank length="00:00:01.360" />
+  <blank length="00:00:00.800" />
+  <blank length="00:00:01.120" />
+  <blank length="00:00:04.040" />
+  <blank length="00:00:03.480" />
+  <blank length="00:00:03.480" />
+  <blank length="00:00:02.800" />
+  <blank length="00:00:00.600" />
+  <blank length="00:00:01.200" />
+  <blank length="00:00:01.840" />
+  <blank length="00:00:01.600" />
+  <blank length="00:00:01.240" />
+  <blank length="00:00:01.760" />
+  <blank length="00:00:05.080" />
+  <blank length="00:00:01.000" />
+  <blank length="00:00:01.880" />
+  <blank length="00:00:00.760" />
+  <blank length="00:00:01.800" />
+  <blank length="00:00:00.720" />
+  <blank length="00:00:03.280" />
+  <blank length="00:00:01.080" />
+  <blank length="00:00:00.840" />
+  <blank length="00:00:02.080" />
+  <blank length="00:00:01.080" />
+  <blank length="00:00:01.160" />
+  <blank length="00:00:01.240" />
+  <blank length="00:00:02.160" />
+  <blank length="00:00:02.160" />
+  <blank length="00:00:02.040" />
+  <entry producer="chain2_tl" in="00:02:34.840" out="00:02:36.880">
+   <property name="kdenlive:id">2</property>
+   <property name="audio_index">0</property>
+   <filter id="filter_2_1">
+    <property name="mlt_service">volume</property>
+    <property name="kdenlive_id">volume</property>
+    <property name="level">0=1.0;31=1.0;32=0.0;33=0.0;34=1.0;50=1.0</property>
+   </filter>
+  </entry>
+  <entry producer="chain2_tl" in="00:02:36.880" out="00:02:37.320">
+   <property name="kdenlive:id">2</property>
+   <property name="audio_index">0</property>
+   <filter id="filter_2_2">
+    <property name="mlt_service">volume</property>
+    <property name="kdenlive_id">volume</property>
+    <property name="level">0=1.0;0=0.0;2=0.0;3=1.0;10=1.0</property>
+   </filter>
+  </entry>
+  <entry producer="chain2_tl" in="00:02:37.520" out="00:02:37.880">
+   <property name="kdenlive:id">2</property>
+   <property name="audio_index">0</property>
+   <filter id="filter_2_3">
+    <property name="mlt_service">volume</property>
+    <property name="kdenlive_id">volume</property>
+    <property name="level">0=1.0;0=0.0;1=0.0;2=1.0;8=1.0</property>
+   </filter>
+  </entry>
+  <entry producer="chain2_tl" in="00:02:38.000" out="00:02:38.080">
+   <property name="kdenlive:id">2</property>
+   <property name="audio_index">0</property>
+   <filter id="filter_2_4">
+    <property name="mlt_service">volume</property>
+    <property name="kdenlive_id">volume</property>
+    <property name="level">0=1.0;0=0.0;2=0.0;3=1.0;1=1.0</property>
+   </filter>
+  </entry>
+  <blank length="00:00:00.600" />
+  <blank length="00:00:06.800" />
+  <blank length="00:00:03.720" />
+  <blank length="00:00:02.360" />
+  <blank length="00:00:00.640" />
+  <entry producer="chain2_tl" in="00:02:55.120" out="00:02:56.240">
+   <property name="kdenlive:id">2</property>
+   <property name="audio_index">0</property>
+   <filter id="filter_2_5">
+    <property name="mlt_service">volume</property>
+    <property name="kdenlive_id">volume</property>
+    <property name="level">0=1.0;6=1.0;7=0.0;10=0.0;11=1.0;27=1.0</property>
+   </filter>
+  </entry>
+  <entry producer="chain2_tl" in="00:02:56.240" out="00:02:57.000">
+   <property name="kdenlive:id">2</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain2_tl" in="00:02:57.200" out="00:02:58.080">
+   <property name="kdenlive:id">2</property>
+   <property name="audio_index">0</property>
+   <filter id="filter_2_6">
+    <property name="mlt_service">volume</property>
+    <property name="kdenlive_id">volume</property>
+    <property name="level">0=1.0;0=0.0;3=0.0;4=1.0;21=1.0</property>
+   </filter>
+  </entry>
+  <blank length="00:00:00.800" />
+  <blank length="00:00:03.600" />
+  <blank length="00:00:00.720" />
+  <blank length="00:00:00.440" />
+  <blank length="00:00:01.160" />
+  <blank length="00:00:01.040" />
+  <blank length="00:00:01.400" />
+  <blank length="00:00:03.480" />
+  <blank length="00:00:02.000" />
+  <blank length="00:00:01.440" />
+  <blank length="00:00:01.360" />
+  <blank length="00:00:00.120" />
+  <entry producer="chain2_tl" in="00:03:23.880" out="00:03:24.520">
+   <property name="kdenlive:id">2</property>
+   <property name="audio_index">0</property>
+   <filter id="filter_2_7">
+    <property name="mlt_service">volume</property>
+    <property name="kdenlive_id">volume</property>
+    <property name="level">0=1.0;9=1.0;10=0.0;15=0.0;16=1.0;15=1.0</property>
+   </filter>
+  </entry>
+  <blank length="00:00:00.320" />
+  <blank length="00:00:01.680" />
+  <blank length="00:00:00.840" />
+  <blank length="00:00:01.080" />
+  <blank length="00:00:01.160" />
+  <blank length="00:00:01.280" />
+  <blank length="00:00:01.040" />
+  <blank length="00:00:04.480" />
+  <blank length="00:00:02.800" />
+  <entry producer="chain2_tl" in="00:03:41.400" out="00:03:46.640">
+   <property name="kdenlive:id">2</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <blank length="00:00:00.320" />
+  <blank length="00:00:04.880" />
+  <entry producer="chain2_tl" in="00:03:52.080" out="00:03:52.400">
+   <property name="kdenlive:id">2</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <blank length="00:00:00.560" />
+  <blank length="00:00:01.080" />
+  <blank length="00:00:02.640" />
+  <blank length="00:00:01.000" />
+  <entry producer="chain2_tl" in="00:04:00.200" out="00:04:02.080">
+   <property name="kdenlive:id">2</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain2_tl" in="00:04:02.120" out="00:04:05.040">
+   <property name="kdenlive:id">2</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain2_tl" in="00:04:05.360" out="00:04:08.240">
+   <property name="kdenlive:id">2</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain2_tl" in="00:04:08.400" out="00:04:08.560">
+   <property name="kdenlive:id">2</property>
+   <property name="audio_index">0</property>
+   <filter id="filter_2_8">
+    <property name="mlt_service">volume</property>
+    <property name="kdenlive_id">volume</property>
+    <property name="level">0=1.0;0=0.0;3=0.0;4=1.0;3=1.0</property>
+   </filter>
+  </entry>
+  <blank length="00:00:00.600" />
+  <blank length="00:00:00.080" />
+  <blank length="00:00:00.280" />
+  <blank length="00:00:06.040" />
+  <blank length="00:00:03.760" />
+  <blank length="00:00:00.360" />
+  <blank length="00:00:02.960" />
+  <blank length="00:00:03.640" />
+  <entry producer="chain2_tl" in="00:04:29.120" out="00:04:29.840">
+   <property name="kdenlive:id">2</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <blank length="00:00:01.840" />
+  <entry producer="chain2_tl" in="00:04:32.280" out="00:04:32.680">
+   <property name="kdenlive:id">2</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <blank length="00:00:00.360" />
+  <blank length="00:00:01.600" />
+  <entry producer="chain2_tl" in="00:04:35.840" out="00:04:37.440">
+   <property name="kdenlive:id">2</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain2_tl" in="00:04:37.440" out="00:04:37.880">
+   <property name="kdenlive:id">2</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain2_tl" in="00:04:38.280" out="00:04:40.040">
+   <property name="kdenlive:id">2</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain2_tl" in="00:04:40.480" out="00:04:46.400">
+   <property name="kdenlive:id">2</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain2_tl" in="00:04:46.840" out="00:04:47.560">
+   <property name="kdenlive:id">2</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain2_tl" in="00:04:47.760" out="00:04:51.280">
+   <property name="kdenlive:id">2</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain2_tl" in="00:04:51.360" out="00:04:51.920">
+   <property name="kdenlive:id">2</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain2_tl" in="00:04:52.000" out="00:04:54.160">
+   <property name="kdenlive:id">2</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <entry producer="chain2_tl" in="00:04:54.640" out="00:04:55.440">
+   <property name="kdenlive:id">2</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <blank length="00:00:00.480" />
+  <blank length="00:00:00.440" />
+  <blank length="00:00:00.960" />
+  <blank length="00:00:04.720" />
+  <blank length="00:00:02.280" />
+  <entry producer="chain2_tl" in="00:05:05.200" out="00:05:05.960">
+   <property name="kdenlive:id">2</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <blank length="00:00:01.960" />
+  <blank length="00:00:03.760" />
+  <blank length="00:00:03.680" />
+  <blank length="00:00:02.880" />
+  <blank length="00:00:01.760" />
+  <blank length="00:00:02.680" />
+  <blank length="00:00:01.120" />
+  <blank length="00:00:00.680" />
+  <entry producer="chain2_tl" in="00:05:26.680" out="00:05:27.080">
+   <property name="kdenlive:id">2</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <blank length="00:00:00.520" />
+  <blank length="00:00:00.600" />
+  <blank length="00:00:01.160" />
+  <blank length="00:00:02.040" />
+  <blank length="00:00:01.320" />
+  <blank length="00:00:01.880" />
+  <blank length="00:00:01.280" />
+  <blank length="00:00:01.520" />
+  <blank length="00:00:00.440" />
+  <entry producer="chain2_tl" in="00:05:40.280" out="00:05:40.480">
+   <property name="kdenlive:id">2</property>
+   <property name="audio_index">0</property>
+   <filter id="filter_2_9">
+    <property name="mlt_service">volume</property>
+    <property name="kdenlive_id">volume</property>
+    <property name="level">0=1.0;0=0.0;5=0.0;6=1.0;4=1.0</property>
+   </filter>
+  </entry>
+  <blank length="00:00:01.040" />
+  <blank length="00:00:00.880" />
+  <blank length="00:00:01.840" />
+  <blank length="00:00:01.880" />
+  <blank length="00:00:00.320" />
+  <entry producer="chain2_tl" in="00:05:47.360" out="00:05:50.080">
+   <property name="kdenlive:id">2</property>
+   <property name="audio_index">0</property>
+  </entry>
+  <blank length="00:00:00.600" />
+  <blank length="00:00:01.360" />
+  <entry producer="chain2_tl" in="00:05:52.880" out="00:05:57.040">
+   <property name="kdenlive:id">2</property>
+   <property name="audio_index">0</property>
+   <filter id="filter_2_10">
+    <property name="mlt_service">volume</property>
+    <property name="kdenlive_id">volume</property>
+    <property name="level">0=1.0;29=1.0;30=0.0;34=0.0;35=1.0;103=1.0</property>
+   </filter>
+  </entry>
+  <blank length="00:00:00.920" />
+  <blank length="00:00:04.000" />
+  <blank length="00:00:02.560" />
+  <blank length="00:00:01.320" />
+  <blank length="00:00:01.600" />
+  <blank length="00:00:01.200" />
+  <blank length="00:00:01.000" />
+  <blank length="00:00:01.200" />
+  <blank length="00:00:01.000" />
+  <blank length="00:00:01.280" />
+  <blank length="00:00:00.120" />
+  <entry producer="chain2_tl" in="00:06:18.400" out="00:06:18.440">
+   <property name="kdenlive:id">2</property>
+   <property name="audio_index">0</property>
+  </entry>
+ </playlist>
+ <playlist id="playlist3">
+  <property name="kdenlive:audio_track">1</property>
+ </playlist>
+ <tractor id="tractor1" in="00:00:00.000">
+  <property name="kdenlive:audio_track">1</property>
+  <property name="kdenlive:trackheight">61</property>
+  <track hide="video" producer="playlist2" />
+  <track hide="video" producer="playlist3" />
+  <filter id="trackfilter_comp_1">
+   <property name="mlt_service">ladspa.1073</property>
+   <property name="kdenlive_id">ladspa.1073</property>
+   <property name="0">1.0</property>
+   <property name="1">0.5</property>
+   <property name="2">0.25</property>
+   <property name="3">0.0</property>
+   <property name="disable">0</property>
+  </filter>
+  <filter id="trackfilter_dyn_1">
+   <property name="mlt_service">dynamic_loudness</property>
+   <property name="target">-14</property>
+   <property name="kdenlive_id">dynamic_loudness</property>
+   <property name="disable">0</property>
+  </filter>
+ </tractor>
+ <tractor id="tractor2" in="00:00:00.000" out="00:04:56.922">
+  <property name="kdenlive:clipname">Sequence 1</property>
+  <property name="kdenlive:uuid">{c9aefbb3-8a43-4b10-b80b-f807adffbd8c}</property>
+  <property name="kdenlive:clip_type">0</property>
+  <property name="kdenlive:producer_type">17</property>
+  <property name="kdenlive:sequenceproperties.hasAudio">0</property>
+  <property name="kdenlive:sequenceproperties.hasVideo">0</property>
+  <property name="kdenlive:sequenceproperties.tracksCount">0</property>
+  <property name="kdenlive:sequenceproperties.tracks">0</property>
+  <track producer="black_track" />
+  <track producer="tractor0" />
+  <track producer="tractor1" />
+  <transition id="transition0">
+   <property name="a_track">0</property>
+   <property name="b_track">1</property>
+   <property name="mlt_service">mix</property>
+   <property name="kdenlive_id">mix</property>
+   <property name="internal_added">237</property>
+   <property name="always_active">1</property>
+  </transition>
+  <transition id="transition1">
+   <property name="a_track">0</property>
+   <property name="b_track">2</property>
+   <property name="mlt_service">mix</property>
+   <property name="kdenlive_id">mix</property>
+   <property name="internal_added">237</property>
+   <property name="always_active">1</property>
+  </transition>
+ </tractor>
+ <tractor id="tractor3" in="00:00:00.000" out="00:04:56.922">
+  <property name="kdenlive:projectTractor">1</property>
+  <track producer="tractor2" in="00:00:00.000" out="00:04:56.922" />
+ </tractor>
+</mlt>

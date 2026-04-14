@@ -6,38 +6,6 @@ from typing import List, Tuple, Dict
 
 logger = logging.getLogger(__name__)
 
-def process_video(input_path: str, output_path: str, keep_segments: List[Tuple[float, float]], stream_spikes: List[List[Tuple[float, float]]], fps: float = 25.0, video_offset: float = 0.0):
-    """Cuts the video and mutes spikes using FFmpeg complex filters."""
-    if not keep_segments:
-        logger.warning(f"No keep segments for {input_path}")
-        return
-
-    # Video filter: use numeric fps and apply video_offset to align video stream to audio before cutting
-    v_select = "+".join([f"between(t,{s + video_offset},{e + video_offset})" for s, e in keep_segments])
-    vf = f"select='{v_select}',setpts=N/({fps})/TB"
-    filter_complex = [f"[0:v]{vf}[v]"]
-
-    audio_outputs = []
-    for i, spikes in enumerate(stream_spikes):
-        af = ""
-        if spikes:
-            mute_expr = "+".join([f"between(t,{ss},{se})" for ss, se in spikes])
-            af += f"volume=enable='{mute_expr}':volume=0,"
-
-        a_select = "+".join([f"between(t,{s},{e})" for s, e in keep_segments])
-        af += f"aselect='{a_select}',asetpts=N/(16000)/TB" # Assuming 16k SR from extraction
-
-        filter_complex.append(f"[0:a:{i}]{af}[a{i}]")
-        audio_outputs.append(f"[a{i}]")
-
-    cmd = ["ffmpeg", "-i", input_path, "-filter_complex", ";".join(filter_complex), "-map", "[v]"]
-    for ao in audio_outputs:
-        cmd.extend(["-map", ao])
-
-    cmd.extend(["-c:v", "libx264", "-c:a", "aac", "-y", output_path])
-    logger.info(f"Executing: {' '.join(cmd)}")
-    subprocess.run(cmd, check=True, capture_output=True, text=True)
-
 def secs_to_tc(seconds: float) -> str:
     h = int(seconds // 3600)
     m = int((seconds % 3600) // 60)
@@ -89,7 +57,6 @@ def generate_kdenlive_project(
     overlaps: List[Tuple[float, float]],
     repetitions: List[Tuple[float, float]],
     fps: float = 25.0,
-    is_rendered: bool = False,
     video_offsets: List[float] = None,
     ass_paths: List[str] = None,
     asr_words: List[List[Dict]] = None,

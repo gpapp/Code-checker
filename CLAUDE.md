@@ -60,8 +60,8 @@ The system operates as a linear, state-passing pipeline, orchestrated by `video_
 | File/Module | Primary Responsibility | Key Dependencies / Changes |
 | :--- | :--- | :--- |
 | **`video_processor.py`** | **Orchestrator:** Manages the entire workflow: audio extraction $\rightarrow$ ASR $\rightarrow$ VAD/Overlap Detection $\rightarrow$ Interval Merging $\rightarrow$ Exporter execution. | Depends on all other modules. |
-| **`cohere_asr.py`** | **Primary ASR:** Handles API interaction with the Cohere API. Must be checked first in the pipeline. | Cohere SDK. |
-| **`nemo_processing.py`** | **Speech Analysis Core:** Now acts as a unified utility hub. It contains `process_filler_detection_asr` which is the mandatory fallback ASR engine using CrisperWhisper. | `librosa`, NeMo/WhisperX. |
+| **`transcription_processor.py`** | **Main ASR:** High-fidelity transcription engine using Qwen3-ASR and Forced Aligner for precise word timestamps. | `qwen-asr`, `torch`. |
+| **`filler_processor.py`** | **Speech Analysis Core:** Handles VAD and initial filler detection using CrisperWhisper. | `librosa`, `faster-whisper`, `nemo`. |
 | **`audio_utils.py`** | **Signal Processing:** Handles audio manipulation. Tasks include: audio extraction, normalization, silence/spike detection, and finding acoustic repetitions. | `librosa`, Signal Processing. |
 | **`interval_utils.py`** | **Time Logic:** The mathematical core. Responsible for merging, inverting, and adjusting all detected time boundaries (silences, fillers, overlaps) to create the final "keep" segments. | Interval Algebra. |
 | **`exporter.py`** | **Output Generation:** Creates the final, editable assets. Interfaces with industry standards: generating the **`.kdenlive` project file**, and creating time-synced **`.ass` / `.srt`** subtitle files. | FFmpeg, Kdenlive API/Format. |
@@ -71,8 +71,8 @@ The system operates as a linear, state-passing pipeline, orchestrated by `video_
 1.  **Input $\rightarrow$ Audio Extraction (`audio_utils.py`):** Raw video/audio is separated into normalized mono WAV files.
 2.  **Analysis Loop (Iterative):** For every audio file:
     *   **Silence/Spike Detection (`audio_utils.py`):** Generates initial markers.
-    *   **ASR & Transcription (`nemo_processing.py`):** Transcribes audio using the primary engine (Cohere $\rightarrow$ CrisperWhisper).
-    *   **Filler Detection (`nemo_processing.py`):** Identifies non-speech elements like `[UH]` or `er`.
+    *   **ASR & Transcription (`filler_processor.py` & `transcription_processor.py`):** Transcribes audio using the dual-pass engine (CrisperWhisper $\rightarrow$ Qwen3-ASR).
+    *   **Filler Detection (`filler_processor.py`):** Identifies non-speech elements like `[UH]` or `er`.
 3.  **Global Cleanup & Structuring:**
     *   Global silence intervals are calculated and merged with filler intervals.
     *   The system calculates the final, synchronized segments that should be *kept*.
