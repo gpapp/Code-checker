@@ -48,6 +48,8 @@ def parse_args():
     parser.add_argument("--clean", action="store_true", help="If set, deletes temporary artifact files (*.json, *.markers.json, etc.) from the working directory after processing.")
     parser.add_argument("--refine", action="store_true", help="If set, uses Gemma 4 via Ollama to clean up the transcription (Step 3c).")
     parser.add_argument("--no-asr", action="store_true", help="If set, skips all ASR/Whisper steps (filler detection and transcription).")
+    parser.add_argument("--filler-threshold", type=float, default=0.9, help="Confidence threshold for filler detection (0.0 to 1.0). Default: 0.9")
+    parser.add_argument("--filler-merge-gap", type=float, default=0.05, help="Maximum gap in seconds between fillers to merge them. Default: 0.05")
 
     return parser.parse_args()
 
@@ -169,7 +171,7 @@ def main():
                 with open(cnn_cache, "r", encoding="utf-8") as f:
                     fillers = [tuple(x) for x in json.load(f)]
             else:
-                fillers = filler_lib.detect_fillers(af)
+                fillers = filler_lib.detect_fillers(af, threshold=args.filler_threshold, gap_sec=args.filler_merge_gap)
                 with open(cnn_cache, "w", encoding="utf-8") as f:
                     json.dump(fillers, f, ensure_ascii=False)
             
@@ -228,6 +230,10 @@ def main():
                     r_text, r_words = data["text"], data["words"]
             else:
                 # Use current transcription results as input
+                if af not in transcription_results:
+                    logger.warning(f"Skipping refinement for {os.path.basename(af)}: No ASR data available.")
+                    continue
+                
                 raw_words = transcription_results[af]["words"]
                 full_lang = get_full_language_name(args.language)
                 r_text, r_words = refine_transcription_timed(raw_words, full_lang, cache_path=refined_cache)

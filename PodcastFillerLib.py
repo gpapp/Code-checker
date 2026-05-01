@@ -167,7 +167,7 @@ class PodcastFillerLib:
                 waveform = waveform.T
             return waveform, sr
 
-    def detect_fillers(self, audio_path, threshold=0.7, window_sec=1.0, stride_sec=0.25):
+    def detect_fillers(self, audio_path, threshold=0.7, window_sec=1.0, stride_sec=0.25, gap_sec=0.3):
         """Public API to detect fillers. Returns intervals in seconds [(start, end), ...]."""
         self.model.eval()
         waveform, sr = self._load_audio_tensor(audio_path)
@@ -190,7 +190,7 @@ class PodcastFillerLib:
                     # Return in SECONDS for compatibility with video_processor
                     intervals.append((start / self.sample_rate, (start + win_samples) / self.sample_rate))
         
-        return self._merge_intervals_seconds(intervals)
+        return self._merge_intervals_seconds(intervals, gap_sec=gap_sec)
 
     def _merge_intervals_seconds(self, intervals, gap_sec=0.3):
         if not intervals: return []

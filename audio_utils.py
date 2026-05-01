@@ -5,6 +5,7 @@ import logging
 import numpy as np
 import librosa
 from interval_utils import merge_intervals
+import soundfile as sf
 
 logger = logging.getLogger(__name__)
 
@@ -42,47 +43,70 @@ def extract_audio_streams(file_path: str, working_dir: str, normalize: bool = Tr
     for i in range(num_streams):
         output_path = os.path.join(working_dir, f"{base_name}_a{i}.wav")
         
-        # Check if file already exists and has a valid size (at least 1KB to be a valid WAV)
+        # Check if file already exists and has a valid size
         if os.path.exists(output_path) and os.path.getsize(output_path) > 1000:
             logger.info(f"Using existing audio stream: {output_path}")
             extracted_files.append(output_path)
             continue
 
-        cmd = [
-            "ffmpeg", "-i", file_path, "-map", f"0:a:{i}"
+        # 1. Fast raw extraction to a temporary file (no slow filters here)
+        temp_raw = os.path.join(working_dir, f"{base_name}_temp_a{i}.wav")
+        extract_cmd = [
+            "ffmpeg", "-i", file_path, "-map", f"0:a:{i}",
+            "-ac", "1", "-ar", "16000", "-y", temp_raw
         ]
         
-        # Preprocessing to match Audacity macros before silence detection:
-        # 1. loudnorm: Normalize to -15 LUFS (matches Audacity LoudnessNormalization)
-        # 2. agate: Noise gate at -33dB threshold, 150ms attack/release
-        #    (matches Audacity NoiseGate with level-reduction=-100dB)
-        #    Note: FFmpeg agate doesn't support 'hold', only attack/release/range
-        filter_chain = (
-            "loudnorm=I=-15:TP=-1.5:LRA=11,"
-            "agate=threshold=0.022:attack=150:release=150:range=0.00001"
-        )
-        # agate threshold is linear amplitude: -33dB ≈ 10^(-33/20) ≈ 0.022
-        # range is linear: -100dB ≈ 10^(-100/20) ≈ 0.00001
-        cmd.extend(["-af", filter_chain])
+        logger.info(f"Extracting raw stream {i} from {file_path}...")
+        subprocess.run(extract_cmd, check=True, capture_output=True)
+        
+        try:
+            # 2. Fast in-memory processing with librosa (fulfills speed requirement)
+            logger.info(f"Refining audio with librosa: {output_path}")
+            y, sr = librosa.load(temp_raw, sr=16000)
             
-        cmd.extend([
-            "-ac", "1", "-ar", "16000", "-y", output_path
-        ])
-        logger.info(f"Extracting and processing stream {i} from {file_path} to {output_path}")
-        subprocess.run(cmd, check=True, capture_output=True)
-        extracted_files.append(output_path)
+            if normalize:
+                # Fast Peak Normalization (replaces slow loudnorm)
+                # Target peak level of -1dB (approx 0.89)
+                max_val = np.max(np.abs(y))
+                if max_val > 1e-6:
+                    y = y * (0.89 / max_val)
+                
+                # NOTE: We no longer apply a hard noise gate here because it causes ASR gaps.
+                # Silence detection handles noise thresholds internally.
+            
+            # Save final processed file
+            sf.write(output_path, y, sr, subtype='PCM_16')
+            extracted_files.append(output_path)
+            
+        except Exception as e:
+            logger.error(f"Failed to process stream {i} with librosa: {e}")
+            # Fallback: if librosa fails, move the raw file to output_path
+            if os.path.exists(output_path): os.remove(output_path)
+            os.rename(temp_raw, output_path)
+            extracted_files.append(output_path)
+        finally:
+            if os.path.exists(temp_raw):
+                try: os.remove(temp_raw)
+                except: pass
 
     return extracted_files
 
 def detect_silence_and_spikes(audio_path: str, threshold_db: float, min_silence_len: float, max_spike_len: float):
     """Detects silent intervals and short spikes in an audio file."""
     y, sr = librosa.load(audio_path, sr=16000)
-    peak = 20 * np.log10(np.max(np.abs(y)) + 1e-9)
+    
+    # Apply a localized noise gate in-memory to improve silence detection accuracy
+    # without affecting the ASR/Whisper source file on disk.
+    # -35dB (0.017) is a safe threshold for normalized audio.
+    y_gated = y.copy()
+    y_gated[np.abs(y_gated) < 0.017] = 0
+    
+    peak = 20 * np.log10(np.max(np.abs(y_gated)) + 1e-9)
     top_db = peak - threshold_db
     if top_db < 0: top_db = 0
 
-    non_silent_intervals = librosa.effects.split(y, top_db=top_db) / sr
-    duration = len(y) / sr
+    non_silent_intervals = librosa.effects.split(y_gated, top_db=top_db) / sr
+    duration = len(y_gated) / sr
 
     silence_intervals = []
     last_end = 0.0
