@@ -73,7 +73,7 @@ class PodcastFillerLib:
             self.model.load_state_dict(torch.load(self.model_path, map_location=self.device))
             self.model.eval()
 
-    def train(self, csv_path, clips_dir, hun_csv=None, hun_clips_dir=None, hun_weight=1.0, epochs=5, batch_size=128):
+    def train(self, csv_path, clips_dir, hun_csv=None, hun_clips_dir=None, hun_weight=1.0, epochs=5, batch_size=256):
         """Trains the model on the PodcastFillers dataset and saves weights.
         
         Args:
@@ -83,7 +83,7 @@ class PodcastFillerLib:
             hun_clips_dir: Path to Hungarian clips directory (optional)
             hun_weight: Weight multiplier for Hungarian samples (default 1.0)
             epochs: Number of training epochs
-            batch_size: Batch size for training
+            batch_size: Batch size for training (default 1024 for RTX 3060)
         """
         print(f"Starting training on {self.device}...")
         
@@ -106,6 +106,10 @@ class PodcastFillerLib:
         elif hun_csv or hun_clips_dir:
             print("[WARNING] Hungarian CSV or clips directory provided but not found. Training English-only.")
         
+        # All datasets are preloaded in RAM, no need for multiprocessing workers
+        # Windows multiprocessing can cause deadlocks with large datasets
+        num_workers = 0
+        
         # Combine datasets
         if len(datasets) > 1:
             combined_dataset = CombinedDataset(datasets)
@@ -115,12 +119,12 @@ class PodcastFillerLib:
                 num_samples=len(dataset_weights),
                 replacement=True
             )
-            dataloader = DataLoader(combined_dataset, batch_size=batch_size, sampler=sampler, num_workers=4)
+            dataloader = DataLoader(combined_dataset, batch_size=batch_size, sampler=sampler, num_workers=num_workers)
             print(f"Combined dataset: {len(combined_dataset)} samples with weighted sampling")
         else:
             # English-only training
             dataset = datasets[0]
-            dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=4)
+            dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
             print(f"English-only dataset: {len(dataset)} samples")
         
         criterion = nn.BCELoss()
@@ -246,34 +250,38 @@ class PodcastFillerLib:
 class PodcastFillersDataset(Dataset):
     def __init__(self, csv_file, clips_dir, target_sr=16000):
         self.df = pd.read_csv(csv_file)
-        # The column is 'label_consolidated_vocab' and we want 'Uh' or 'Um'
         self.df['is_filler'] = self.df['label_consolidated_vocab'].apply(lambda x: 1 if x in ['Uh', 'Um'] else 0)
         self.clips_dir = clips_dir
         self.target_sr = target_sr
+        self._preload()
+
+    def _preload(self):
+        """Preload all audio into RAM to eliminate I/O bottleneck."""
+        print(f"  Preloading {len(self.df)} samples into RAM...")
+        self.wavs = []
+        self.labels = []
+        for idx, row in tqdm(self.df.iterrows(), total=len(self.df), desc="  Loading", leave=False):
+            path = os.path.join(self.clips_dir, row['clip_split_subset'], row['clip_name'])
+            try:
+                data, sr = sf.read(path)
+                wav = torch.from_numpy(data).float()
+                if wav.ndim == 1: wav = wav.unsqueeze(0)
+                else: wav = wav.T
+                if sr != self.target_sr:
+                    wav = torchaudio.transforms.Resample(sr, self.target_sr)(wav)
+            except Exception:
+                wav = torch.zeros(1, self.target_sr)
+            if wav.shape[1] > self.target_sr: wav = wav[:, :self.target_sr]
+            else: wav = torch.nn.functional.pad(wav, (0, self.target_sr - wav.shape[1]))
+            self.wavs.append(wav)
+            self.labels.append(torch.tensor(row['is_filler'], dtype=torch.float32))
+        print(f"  Preloaded {len(self.wavs)} samples")
 
     def __len__(self):
         return len(self.df)
 
     def __getitem__(self, idx):
-        row = self.df.iloc[idx]
-        # Dataset structure: clip_wav/{split}/{clip_name}
-        path = os.path.join(self.clips_dir, row['clip_split_subset'], row['clip_name'])
-        try:
-            # Using basic soundfile loading for dataset to be robust
-            data, sr = sf.read(path)
-            wav = torch.from_numpy(data).float()
-            if wav.ndim == 1: wav = wav.unsqueeze(0)
-            else: wav = wav.T
-            
-            if sr != self.target_sr:
-                wav = torchaudio.transforms.Resample(sr, self.target_sr)(wav)
-        except Exception:
-            wav = torch.zeros(1, self.target_sr)
-            
-        if wav.shape[1] > self.target_sr: wav = wav[:, :self.target_sr]
-        else: wav = torch.nn.functional.pad(wav, (0, self.target_sr - wav.shape[1]))
-        
-        return wav, torch.tensor(row['is_filler'], dtype=torch.float32)
+        return self.wavs[idx], self.labels[idx]
 
 
 class HungarianFillersDataset(Dataset):
@@ -284,36 +292,40 @@ class HungarianFillersDataset(Dataset):
     """
     def __init__(self, csv_file, clips_dir, target_sr=16000):
         self.df = pd.read_csv(csv_file)
-        # Map labels: Filler, Uh, Um -> 1 (filler); everything else -> 0 (non-filler)
         self.df['is_filler'] = self.df['consolidated_label'].apply(
             lambda x: 1 if x in ['Filler', 'Uh', 'Um'] else 0
         )
         self.clips_dir = clips_dir
         self.target_sr = target_sr
+        self._preload()
+
+    def _preload(self):
+        """Preload all audio into RAM to eliminate I/O bottleneck."""
+        print(f"  Preloading {len(self.df)} samples into RAM...")
+        self.wavs = []
+        self.labels = []
+        for idx, row in tqdm(self.df.iterrows(), total=len(self.df), desc="  Loading", leave=False):
+            path = os.path.join(self.clips_dir, row['clip_name'])
+            try:
+                data, sr = sf.read(path)
+                wav = torch.from_numpy(data).float()
+                if wav.ndim == 1: wav = wav.unsqueeze(0)
+                else: wav = wav.T
+                if sr != self.target_sr:
+                    wav = torchaudio.transforms.Resample(sr, self.target_sr)(wav)
+            except Exception:
+                wav = torch.zeros(1, self.target_sr)
+            if wav.shape[1] > self.target_sr: wav = wav[:, :self.target_sr]
+            else: wav = torch.nn.functional.pad(wav, (0, self.target_sr - wav.shape[1]))
+            self.wavs.append(wav)
+            self.labels.append(torch.tensor(row['is_filler'], dtype=torch.float32))
+        print(f"  Preloaded {len(self.wavs)} samples")
 
     def __len__(self):
         return len(self.df)
 
     def __getitem__(self, idx):
-        row = self.df.iloc[idx]
-        # Flat structure: all clips directly in clips_dir
-        path = os.path.join(self.clips_dir, row['clip_name'])
-        try:
-            # Using basic soundfile loading for dataset to be robust
-            data, sr = sf.read(path)
-            wav = torch.from_numpy(data).float()
-            if wav.ndim == 1: wav = wav.unsqueeze(0)
-            else: wav = wav.T
-            
-            if sr != self.target_sr:
-                wav = torchaudio.transforms.Resample(sr, self.target_sr)(wav)
-        except Exception:
-            wav = torch.zeros(1, self.target_sr)
-            
-        if wav.shape[1] > self.target_sr: wav = wav[:, :self.target_sr]
-        else: wav = torch.nn.functional.pad(wav, (0, self.target_sr - wav.shape[1]))
-        
-        return wav, torch.tensor(row['is_filler'], dtype=torch.float32)
+        return self.wavs[idx], self.labels[idx]
 
 
 class CombinedDataset(Dataset):

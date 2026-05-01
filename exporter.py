@@ -450,16 +450,66 @@ def format_srt_time(seconds: float) -> str:
     ms = int(round((seconds % 1) * 1000))
     return f"{h:02d}:{m:02d}:{s:02d},{ms:03d}"
 
+def group_words_into_segments(words: List[Dict], max_words: int = 5, max_gap: float = 1.0) -> List[Dict]:
+    """Groups individual words into readable segments (sentences or small chunks)."""
+    if not words:
+        return []
+    
+    segments = []
+    current_group = []
+    
+    for w in words:
+        word_text = w['word'].strip()
+        
+        # Determine if we should start a new segment
+        should_start_new = False
+        if not current_group:
+            should_start_new = False
+        else:
+            # Too many words?
+            if len(current_group) >= max_words:
+                should_start_new = True
+            # Too long a gap?
+            elif w['start'] - current_group[-1]['end'] > max_gap:
+                should_start_new = True
+            # Previous word ended a sentence?
+            prev_word = current_group[-1]['word'].strip()
+            if prev_word.endswith(('.', '?', '!', '...', ':')):
+                should_start_new = True
+        
+        if should_start_new:
+            # Finalize current segment
+            segments.append({
+                'start': current_group[0]['start'],
+                'end': current_group[-1]['end'],
+                'word': ' '.join(gw['word'].strip() for gw in current_group)
+            })
+            current_group = [w]
+        else:
+            current_group.append(w)
+            
+    # Final segment
+    if current_group:
+        segments.append({
+            'start': current_group[0]['start'],
+            'end': current_group[-1]['end'],
+            'word': ' '.join(gw['word'].strip() for gw in current_group)
+        })
+        
+    return segments
+
 def generate_ass_file(words: List[Dict], output_path: str):
     header = "[Script Info]\nScriptType: v4.00+\nPlayResX: 384\nPlayResY: 288\nScaledBorderAndShadow: yes\n\n[V4+ Styles]\nFormat: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\nStyle: Default,Arial,16,&H00FFFFFF,&H000000FF,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,2,2,2,10,10,10,1\n\n[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n"
+    segments = group_words_into_segments(words)
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(header)
-        for w in words:
-            f.write(f"Dialogue: 0,{format_ass_time(w['start'])},{format_ass_time(w['end'])},Default,,0,0,0,,{w['word']}\n")
+        for seg in segments:
+            f.write(f"Dialogue: 0,{format_ass_time(seg['start'])},{format_ass_time(seg['end'])},Default,,0,0,0,,{seg['word']}\n")
 
 def generate_srt_file(words: List[Dict], output_path: str):
+    segments = group_words_into_segments(words)
     with open(output_path, "w", encoding="utf-8") as f:
-        for i, w in enumerate(words, start=1):
+        for i, seg in enumerate(segments, start=1):
             f.write(f"{i}\n")
-            f.write(f"{format_srt_time(w['start'])} --> {format_srt_time(w['end'])}\n")
-            f.write(f"{w['word']}\n\n")
+            f.write(f"{format_srt_time(seg['start'])} --> {format_srt_time(seg['end'])}\n")
+            f.write(f"{seg['word']}\n\n")

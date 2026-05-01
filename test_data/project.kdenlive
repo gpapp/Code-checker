@@ -10,7 +10,7 @@
   <property name="audio_index">0</property>
   <property name="video_index">-1</property>
   <property name="astream">0</property>
-  <property name="kdenlive:control_uuid">{3b903aae-f953-4de6-bd22-8d190d6773da}</property>
+  <property name="kdenlive:control_uuid">{161d3e51-7196-4fb3-8bf1-9fcecb5673b8}</property>
   <property name="kdenlive:proxy">-</property>
   <property name="kdenlive:originalurl">2026-04-04--t08-13-10am--5e73b6ace3b63000158e6774--statler.mp3</property>
   <property name="kdenlive:id">1</property>
@@ -24,51 +24,69 @@ hr { height: 1px; border-width: 0; }
 li.unchecked::marker { content: "\2610"; }
 li.checked::marker { content: "\2612"; }
 &lt;/style&gt;&lt;/head&gt;&lt;body style=" font-family:'Segoe UI'; font-size:9pt; font-weight:400; font-style:normal;"&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#0.00:0.78"&gt; I&lt;/a&gt; &lt;a href="1#0.78:1.30"&gt; think&lt;/a&gt; &lt;a href="1#1.30:1.72"&gt; it's&lt;/a&gt; &lt;a href="1#1.72:2.02"&gt; a&lt;/a&gt; &lt;a href="1#2.02:2.02"&gt; little&lt;/a&gt; &lt;a href="1#2.02:2.02"&gt; bit&lt;/a&gt; &lt;a href="1#2.02:2.02"&gt; of&lt;/a&gt; &lt;a href="1#2.02:2.04"&gt; a&lt;/a&gt; &lt;a href="1#2.04:2.04"&gt; challenge&lt;/a&gt; &lt;a href="1#2.04:2.06"&gt; to&lt;/a&gt; &lt;a href="1#2.06:2.06"&gt; make&lt;/a&gt; &lt;a href="1#2.06:2.32"&gt; sure&lt;/a&gt; &lt;a href="1#2.32:2.32"&gt; that&lt;/a&gt; &lt;a href="1#2.32:2.42"&gt; you&lt;/a&gt; &lt;a href="1#2.42:2.42"&gt; don't&lt;/a&gt; &lt;a href="1#2.42:2.42"&gt; have&lt;/a&gt; &lt;a href="1#2.42:2.42"&gt; to&lt;/a&gt; &lt;a href="1#2.42:2.42"&gt; work&lt;/a&gt; &lt;a href="1#2.42:3.12"&gt; too&lt;/a&gt; &lt;a href="1#3.12:3.12"&gt; hard&lt;/a&gt; &lt;a href="1#3.12:3.24"&gt; to&lt;/a&gt; &lt;a href="1#3.24:4.38"&gt; get&lt;/a&gt; &lt;a href="1#4.38:7.42"&gt; a&lt;/a&gt; &lt;a href="1#7.42:7.56"&gt; new&lt;/a&gt; &lt;a href="1#7.56:7.80"&gt; one.&lt;/a&gt; &lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#7.80:9.46"&gt;No speech&lt;/a&gt;&lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#9.46:10.10"&gt; But,&lt;/a&gt; &lt;a href="1#10.96:12.26"&gt; compared&lt;/a&gt; &lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#12.26:13.29"&gt;No speech&lt;/a&gt;&lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#13.29:13.73"&gt; to&lt;/a&gt; &lt;a href="1#13.73:13.93"&gt; not&lt;/a&gt; &lt;a href="1#13.93:14.47"&gt; being&lt;/a&gt; &lt;a href="1#14.47:14.71"&gt; active&lt;/a&gt; &lt;a href="1#14.71:15.21"&gt; in&lt;/a&gt; &lt;a href="1#15.21:15.33"&gt; it,&lt;/a&gt; &lt;a href="1#15.47:15.93"&gt; all&lt;/a&gt; &lt;a href="1#15.93:16.21"&gt; the&lt;/a&gt; &lt;a href="1#16.21:16.45"&gt; sensors&lt;/a&gt; &lt;a href="1#16.45:16.93"&gt; and&lt;/a&gt; &lt;a href="1#16.93:17.43"&gt; microphones&lt;/a&gt; &lt;a href="1#17.43:17.85"&gt; and&lt;/a&gt; &lt;a href="1#17.85:18.53"&gt; things&lt;/a&gt; &lt;a href="1#18.53:18.65"&gt; like&lt;/a&gt; &lt;a href="1#18.65:18.77"&gt; that,&lt;/a&gt; &lt;a href="1#18.77:19.51"&gt; it's&lt;/a&gt; &lt;a href="1#19.51:19.63"&gt; pretty&lt;/a&gt; &lt;a href="1#19.63:19.85"&gt; hard&lt;/a&gt; &lt;a href="1#19.85:20.91"&gt; to&lt;/a&gt; &lt;a href="1#20.91:21.33"&gt; indicate&lt;/a&gt; &lt;a href="1#21.33:21.49"&gt; a&lt;/a&gt; &lt;a href="1#21.49:21.49"&gt; microphone.&lt;/a&gt; &lt;a href="1#21.49:21.69"&gt; I&lt;/a&gt; &lt;a href="1#21.69:22.83"&gt; think&lt;/a&gt; &lt;a href="1#23.69:25.03"&gt; it's&lt;/a&gt; &lt;a href="1#25.03:25.03"&gt; pretty&lt;/a&gt; &lt;a href="1#25.03:25.11"&gt; hard&lt;/a&gt; &lt;a href="1#25.11:25.11"&gt; to&lt;/a&gt; &lt;a href="1#25.11:25.11"&gt; indicate&lt;/a&gt; &lt;a href="1#25.11:25.13"&gt; a&lt;/a&gt; &lt;a href="1#25.13:30.51"&gt; microphone.&lt;/a&gt; &lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#30.51:71.36"&gt;No speech&lt;/a&gt;&lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#71.36:71.94"&gt; RAM&lt;/a&gt; &lt;a href="1#71.94:72.54"&gt; COPALIPS&lt;/a&gt; &lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#72.54:130.98"&gt;No speech&lt;/a&gt;&lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#130.98:132.38"&gt; RAMCOPALIPS&lt;/a&gt; &lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#132.38:191.81"&gt;No speech&lt;/a&gt;&lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#191.81:193.21"&gt; RAMCOPALIPS&lt;/a&gt; &lt;a href="1#193.23:194.15"&gt; RAMCOPALIPS&lt;/a&gt; &lt;a href="1#194.15:195.23"&gt; RAMCOPALIPS&lt;/a&gt; &lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#195.23:201.54"&gt;No speech&lt;/a&gt;&lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#201.54:202.94"&gt; RAMCOPALIPS&lt;/a&gt; &lt;a href="1#202.94:205.58"&gt; RAMCOPALIPS&lt;/a&gt; &lt;a href="1#205.58:206.18"&gt; RAMCOPALIPS&lt;/a&gt; &lt;a href="1#206.18:208.12"&gt; RAMCOPALIPS&lt;/a&gt; &lt;a href="1#208.18:209.02"&gt; RAMCOPALIPS&lt;/a&gt; &lt;a href="1#209.02:209.30"&gt; RAMCOPALIPS&lt;/a&gt; &lt;a href="1#209.30:209.34"&gt; RAMCOPALIPS&lt;/a&gt; &lt;a href="1#209.34:209.46"&gt; RAMCOPALIPS&lt;/a&gt; &lt;a href="1#209.46:209.98"&gt; RAMCOPALIPS&lt;/a&gt; &lt;a href="1#209.98:210.68"&gt; RAMCOPALIPS&lt;/a&gt; &lt;a href="1#210.96:211.16"&gt; RAMCOPALIPS&lt;/a&gt; &lt;a href="1#211.16:212.40"&gt; RAMCOPALIPS&lt;/a&gt; &lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#212.40:213.42"&gt;No speech&lt;/a&gt;&lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#213.42:214.24"&gt; RAMCOPALIPS&lt;/a&gt; &lt;a href="1#214.24:215.04"&gt; RAMCOPALIPS&lt;/a&gt; &lt;a href="1#215.04:215.22"&gt; RAMCOPALIPS&lt;/a&gt; &lt;a href="1#215.22:215.54"&gt; RAMCOPALIPS&lt;/a&gt; &lt;a href="1#215.54:215.82"&gt; RAMCOPALIPS&lt;/a&gt; &lt;a href="1#215.82:216.76"&gt; RAMCOPALIPS&lt;/a&gt; &lt;a href="1#216.76:218.06"&gt; RAMCOPALIPS&lt;/a&gt; &lt;a href="1#218.06:219.18"&gt; RAMCOPALIPS&lt;/a&gt; &lt;a href="1#219.18:219.56"&gt; RAMCOPALIPS&lt;/a&gt; &lt;a href="1#219.56:220.64"&gt; RAMCOPALIPS&lt;/a&gt; &lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#220.64:229.97"&gt;No speech&lt;/a&gt;&lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#229.97:231.37"&gt; RAMCOPALIPS&lt;/a&gt; &lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#231.37:232.48"&gt;No speech&lt;/a&gt;&lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#232.48:233.68"&gt; ennél&lt;/a&gt; &lt;a href="1#233.68:234.18"&gt; a&lt;/a&gt; &lt;a href="1#235.11:236.47"&gt; kezdeti&lt;/a&gt; &lt;a href="1#236.47:236.71"&gt; Linux&lt;/a&gt; &lt;a href="1#236.71:237.23"&gt; -aim&lt;/a&gt; &lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#237.23:238.25"&gt;No speech&lt;/a&gt;&lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#238.25:239.63"&gt; szerintem&lt;/a&gt; &lt;a href="1#239.63:239.89"&gt; ennél&lt;/a&gt; &lt;a href="1#239.89:240.33"&gt; kisebb&lt;/a&gt; &lt;a href="1#240.33:240.57"&gt; helyen&lt;/a&gt; &lt;a href="1#240.57:241.11"&gt; elférte.&lt;/a&gt; &lt;a href="1#241.29:242.15"&gt; És&lt;/a&gt; &lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#242.15:250.19"&gt;No speech&lt;/a&gt;&lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#250.19:250.81"&gt; képes&lt;/a&gt; &lt;a href="1#250.81:251.01"&gt; volt&lt;/a&gt; &lt;a href="1#251.01:251.55"&gt; megoldani&lt;/a&gt; &lt;a href="1#251.55:251.77"&gt; azt,&lt;/a&gt; &lt;a href="1#251.83:251.95"&gt; hogy&lt;/a&gt; &lt;a href="1#251.95:252.01"&gt; a&lt;/a&gt; &lt;a href="1#252.01:252.57"&gt; Ryzen&lt;/a&gt; &lt;a href="1#252.57:253.27"&gt; processzoron&lt;/a&gt; &lt;a href="1#253.27:254.13"&gt; levő&lt;/a&gt; &lt;a href="1#254.13:254.65"&gt; 32&lt;/a&gt; &lt;a href="1#254.65:255.33"&gt; megabyte&lt;/a&gt; &lt;a href="1#255.33:255.65"&gt; -os&lt;/a&gt; &lt;a href="1#255.65:257.23"&gt; L3K&lt;/a&gt; &lt;a href="1#257.23:257.39"&gt; -sen&lt;/a&gt; &lt;a href="1#257.39:258.13"&gt; futtassa&lt;/a&gt; &lt;a href="1#258.13:258.41"&gt; az&lt;/a&gt; &lt;a href="1#258.41:259.07"&gt; operációs&lt;/a&gt; &lt;a href="1#259.07:259.67"&gt; rendszerét,&lt;/a&gt; &lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#259.67:261.00"&gt;No speech&lt;/a&gt;&lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#261.00:261.48"&gt; ami&lt;/a&gt; &lt;a href="1#262.06:263.16"&gt; némileg&lt;/a&gt; &lt;a href="1#263.16:263.28"&gt; ki&lt;/a&gt; &lt;a href="1#263.28:263.46"&gt; volt&lt;/a&gt; &lt;a href="1#263.46:264.40"&gt; belezve,&lt;/a&gt; &lt;a href="1#264.82:265.30"&gt; de&lt;/a&gt; &lt;a href="1#265.30:265.72"&gt; képzeld&lt;/a&gt; &lt;a href="1#265.72:265.80"&gt; el,&lt;/a&gt; &lt;a href="1#265.84:265.94"&gt; hogy&lt;/a&gt; &lt;a href="1#265.94:266.24"&gt; mennyire&lt;/a&gt; &lt;a href="1#266.24:266.70"&gt; gyorsan&lt;/a&gt; &lt;a href="1#266.70:267.10"&gt; lehetne&lt;/a&gt; &lt;a href="1#267.10:267.66"&gt; például&lt;/a&gt; &lt;a href="1#267.66:268.20"&gt; ezen&lt;/a&gt; &lt;a href="1#268.20:269.20"&gt; a&lt;/a&gt; &lt;a href="1#269.20:269.62"&gt; 32&lt;/a&gt; &lt;a href="1#269.62:270.34"&gt; megával&lt;/a&gt; &lt;a href="1#270.34:271.00"&gt; dúmozni.&lt;/a&gt; &lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#271.00:272.49"&gt;No speech&lt;/a&gt;&lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#272.49:273.37"&gt; Mert&lt;/a&gt; &lt;a href="1#273.37:273.47"&gt; hogy&lt;/a&gt; &lt;a href="1#273.47:273.77"&gt; az&lt;/a&gt; &lt;a href="1#273.77:274.17"&gt; bőven&lt;/a&gt; &lt;a href="1#274.17:274.67"&gt; belefér.&lt;/a&gt; &lt;a href="1#275.21:275.31"&gt; én&lt;/a&gt; &lt;a href="1#275.31:275.51"&gt; 8&lt;/a&gt; &lt;a href="1#275.51:275.97"&gt; megával&lt;/a&gt; &lt;a href="1#275.97:276.53"&gt; futtattam&lt;/a&gt; &lt;a href="1#276.53:276.75"&gt; annak&lt;/a&gt; &lt;a href="1#276.75:277.07"&gt; idején.&lt;/a&gt; &lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#277.07:296.05"&gt;No speech&lt;/a&gt;&lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#296.05:296.42"&gt; Tehát&lt;/a&gt; &lt;a href="1#296.42:297.16"&gt; igazából&lt;/a&gt; &lt;a href="1#297.16:297.32"&gt; most&lt;/a&gt; &lt;a href="1#297.32:298.74"&gt; ezzel&lt;/a&gt; &lt;a href="1#298.74:298.90"&gt; már&lt;/a&gt; &lt;a href="1#298.90:299.46"&gt; majdnem&lt;/a&gt; &lt;a href="1#299.46:299.76"&gt; át&lt;/a&gt; &lt;a href="1#299.76:299.78"&gt; is&lt;/a&gt; &lt;a href="1#299.78:300.24"&gt; kötöttünk&lt;/a&gt; &lt;a href="1#300.24:300.34"&gt; a&lt;/a&gt; &lt;a href="1#300.34:300.86"&gt; következő&lt;/a&gt; &lt;a href="1#300.86:301.28"&gt; hírünkre,&lt;/a&gt; &lt;a href="1#301.32:301.42"&gt; mert&lt;/a&gt; &lt;a href="1#301.42:301.80"&gt; hogy&lt;/a&gt; &lt;a href="1#301.80:302.68"&gt; most&lt;/a&gt; &lt;a href="1#302.68:302.84"&gt; nem&lt;/a&gt; &lt;a href="1#302.84:303.38"&gt; hoztam&lt;/a&gt; &lt;a href="1#303.38:303.98"&gt; működő&lt;/a&gt; &lt;a href="1#303.98:304.28"&gt; dúmot.&lt;/a&gt; &lt;a href="1#304.74:305.48"&gt; Csak&lt;/a&gt; &lt;a href="1#305.48:306.78"&gt; ezt&lt;/a&gt; &lt;a href="1#306.78:307.14"&gt; hoztam&lt;/a&gt; &lt;a href="1#307.14:307.30"&gt; el,&lt;/a&gt; &lt;a href="1#307.34:307.48"&gt; hogy&lt;/a&gt; &lt;a href="1#307.48:308.52"&gt; igazából&lt;/a&gt; &lt;a href="1#308.52:308.68"&gt; már&lt;/a&gt; &lt;a href="1#308.68:308.92"&gt; RAM&lt;/a&gt; &lt;a href="1#308.92:309.38"&gt; nélkül&lt;/a&gt; &lt;a href="1#309.38:309.48"&gt; is&lt;/a&gt; &lt;a href="1#309.48:309.68"&gt; lehet&lt;/a&gt; &lt;a href="1#309.68:310.48"&gt; számítógépet&lt;/a&gt; &lt;a href="1#310.48:311.06"&gt; indítani.&lt;/a&gt; &lt;a href="1#311.38:312.12"&gt; A&lt;/a&gt; &lt;a href="1#312.92:313.54"&gt; következő&lt;/a&gt; &lt;a href="1#313.54:313.84"&gt; az,&lt;/a&gt; &lt;a href="1#313.90:314.36"&gt; hogy&lt;/a&gt; &lt;a href="1#314.36:315.00"&gt; nyilván&lt;/a&gt; &lt;a href="1#315.00:315.24"&gt; akkor&lt;/a&gt; &lt;a href="1#315.24:315.60"&gt; kell&lt;/a&gt; &lt;a href="1#315.60:315.78"&gt; a&lt;/a&gt; &lt;a href="1#315.78:316.52"&gt; dúmnak&lt;/a&gt; &lt;a href="1#316.52:317.22"&gt; valami&lt;/a&gt; &lt;a href="1#317.22:317.86"&gt; olyan&lt;/a&gt; &lt;a href="1#317.86:318.20"&gt; hely,&lt;/a&gt; &lt;a href="1#318.28:318.92"&gt; ahonnan&lt;/a&gt; &lt;a href="1#319.76:320.50"&gt; bárhol&lt;/a&gt; &lt;a href="1#320.50:321.56"&gt; le&lt;/a&gt; &lt;a href="1#321.78:321.98"&gt; tud&lt;/a&gt; &lt;a href="1#321.98:322.56"&gt; tölteni,&lt;/a&gt; &lt;a href="1#322.56:322.72"&gt; le&lt;/a&gt; &lt;a href="1#322.72:323.04"&gt; tudod&lt;/a&gt; &lt;a href="1#323.04:323.66"&gt; tölteni,&lt;/a&gt; &lt;a href="1#323.66:323.92"&gt; és&lt;/a&gt; &lt;a href="1#323.92:324.58"&gt; meg&lt;/a&gt; &lt;a href="1#324.58:324.96"&gt; tudod&lt;/a&gt; &lt;a href="1#324.96:325.46"&gt; nézni,&lt;/a&gt; &lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#325.46:327.74"&gt;No speech&lt;/a&gt;&lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#327.74:328.08"&gt; És&lt;/a&gt; &lt;a href="1#328.08:329.12"&gt; visszatudod&lt;/a&gt; &lt;a href="1#329.12:330.22"&gt; akkor&lt;/a&gt; &lt;a href="1#330.22:330.44"&gt; is,&lt;/a&gt; &lt;a href="1#330.48:330.64"&gt; hogyha&lt;/a&gt; &lt;a href="1#330.64:330.98"&gt; mondjuk&lt;/a&gt; &lt;a href="1#330.98:331.36"&gt; nincsen&lt;/a&gt; &lt;a href="1#331.36:332.54"&gt; semmi&lt;/a&gt; &lt;a href="1#332.54:332.68"&gt; más,&lt;/a&gt; &lt;a href="1#332.74:332.90"&gt; hogy&lt;/a&gt; &lt;a href="1#332.90:333.02"&gt; csak&lt;/a&gt; &lt;a href="1#333.02:333.22"&gt; egy&lt;/a&gt; &lt;a href="1#333.22:333.92"&gt; puszta&lt;/a&gt; &lt;a href="1#333.92:334.26"&gt; network&lt;/a&gt; &lt;a href="1#334.26:334.82"&gt; kábeled&lt;/a&gt; &lt;a href="1#334.82:336.04"&gt; szerezni&lt;/a&gt; &lt;a href="1#336.04:336.30"&gt; a&lt;/a&gt; &lt;a href="1#336.30:337.26"&gt; saját&lt;/a&gt; &lt;a href="1#337.26:337.82"&gt; dúmadat.&lt;/a&gt; &lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#337.82:339.60"&gt;No speech&lt;/a&gt;&lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#339.60:339.94"&gt; És&lt;/a&gt; &lt;a href="1#339.94:340.14"&gt; egy&lt;/a&gt; &lt;a href="1#340.14:340.48"&gt; másik&lt;/a&gt; &lt;a href="1#340.48:341.14"&gt; szentőrült&lt;/a&gt; &lt;a href="1#341.14:341.66"&gt; az&lt;/a&gt; &lt;a href="1#341.66:342.88"&gt; azzal&lt;/a&gt; &lt;a href="1#343.00:343.68"&gt; foglalkozott,&lt;/a&gt; &lt;a href="1#343.80:344.08"&gt; hogy&lt;/a&gt; &lt;a href="1#344.08:344.80"&gt; a&lt;/a&gt; &lt;a href="1#344.80:345.16"&gt; DNS&lt;/a&gt; &lt;a href="1#345.16:345.56"&gt; DNS&lt;/a&gt; &lt;a href="1#345.56:345.96"&gt; -ről&lt;/a&gt; &lt;a href="1#345.96:346.50"&gt; hallottál&lt;/a&gt; &lt;a href="1#346.50:346.62"&gt; már,&lt;/a&gt; &lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#346.62:351.32"&gt;No speech&lt;/a&gt;&lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#351.32:351.66"&gt; Egy&lt;/a&gt; &lt;a href="1#351.66:352.18"&gt; másik&lt;/a&gt; &lt;a href="1#352.18:352.44"&gt; DNS&lt;/a&gt; &lt;a href="1#352.44:352.80"&gt; -re&lt;/a&gt; &lt;a href="1#352.80:353.40"&gt; gondoltam&lt;/a&gt; &lt;a href="1#353.40:353.62"&gt; ebben&lt;/a&gt; &lt;a href="1#353.62:353.76"&gt; a&lt;/a&gt; &lt;a href="1#353.76:354.32"&gt; pillanatban,&lt;/a&gt; &lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#354.32:356.31"&gt;No speech&lt;/a&gt;&lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#356.31:356.65"&gt; az&lt;/a&gt; &lt;a href="1#356.65:356.99"&gt; igen,&lt;/a&gt; &lt;a href="1#357.05:357.21"&gt; az&lt;/a&gt; &lt;a href="1#357.21:358.19"&gt; de&lt;/a&gt; &lt;a href="1#358.96:359.54"&gt; magyarul&lt;/a&gt; &lt;a href="1#359.54:360.78"&gt; elfogadható&lt;/a&gt; &lt;a href="1#360.78:360.84"&gt; a&lt;/a&gt; &lt;a href="1#360.84:361.28"&gt; válasz,&lt;/a&gt; &lt;a href="1#361.28:361.36"&gt; de&lt;/a&gt; &lt;a href="1#361.36:361.56"&gt; ez&lt;/a&gt; &lt;a href="1#361.56:362.36"&gt; a&lt;/a&gt; &lt;a href="1#362.45:363.81"&gt; Domain&lt;/a&gt; &lt;a href="1#363.81:363.97"&gt; Name&lt;/a&gt; &lt;a href="1#363.97:364.21"&gt; System,&lt;/a&gt; &lt;a href="1#364.55:364.83"&gt; ami&lt;/a&gt; &lt;a href="1#364.83:365.09"&gt; az&lt;/a&gt; &lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#365.09:367.17"&gt;No speech&lt;/a&gt;&lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#367.17:367.95"&gt; internetes&lt;/a&gt; &lt;a href="1#367.95:368.73"&gt; névfeloldási&lt;/a&gt; &lt;a href="1#368.73:369.87"&gt; rendszerről&lt;/a&gt; &lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#369.87:371.66"&gt;No speech&lt;/a&gt;&lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#371.66:372.44"&gt; rendszernek&lt;/a&gt; &lt;a href="1#372.44:372.62"&gt; a&lt;/a&gt; &lt;a href="1#372.62:373.58"&gt; neve.&lt;/a&gt; &lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#373.58:374.80"&gt;No speech&lt;/a&gt;&lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#374.80:375.58"&gt; Valaki&lt;/a&gt; &lt;a href="1#375.58:375.86"&gt; egy&lt;/a&gt; &lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#375.86:377.52"&gt;No speech&lt;/a&gt;&lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#377.52:378.38"&gt; ...&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#0.00:0.39"&gt; Megnevíthatóak,&lt;/a&gt; &lt;a href="1#0.39:0.78"&gt; de&lt;/a&gt; &lt;a href="1#0.78:1.17"&gt; általában&lt;/a&gt; &lt;a href="1#1.17:1.56"&gt; nem&lt;/a&gt; &lt;a href="1#1.56:1.95"&gt; is&lt;/a&gt; &lt;a href="1#1.95:2.34"&gt; éri&lt;/a&gt; &lt;a href="1#2.34:2.73"&gt; meg,&lt;/a&gt; &lt;a href="1#2.73:3.12"&gt; mert&lt;/a&gt; &lt;a href="1#3.12:3.51"&gt; annyi&lt;/a&gt; &lt;a href="1#3.51:3.90"&gt; munkaórát&lt;/a&gt; &lt;a href="1#3.90:4.29"&gt; kellene&lt;/a&gt; &lt;a href="1#4.29:4.68"&gt; beleölni,&lt;/a&gt; &lt;a href="1#4.68:5.07"&gt; hogy&lt;/a&gt; &lt;a href="1#5.07:5.46"&gt; annál&lt;/a&gt; &lt;a href="1#5.46:5.85"&gt; olcsóbb&lt;/a&gt; &lt;a href="1#5.85:6.24"&gt; megcsinálni,&lt;/a&gt; &lt;a href="1#6.24:6.63"&gt; vagy&lt;/a&gt; &lt;a href="1#6.63:7.02"&gt; megvenni&lt;/a&gt; &lt;a href="1#7.02:7.41"&gt; egy&lt;/a&gt; &lt;a href="1#7.41:7.80"&gt; újat.&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#7.80:9.56"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#9.56:10.23"&gt; Na,&lt;/a&gt; &lt;a href="1#10.23:10.89"&gt; de&lt;/a&gt; &lt;a href="1#10.89:11.55"&gt; azért,&lt;/a&gt; &lt;a href="1#11.55:12.22"&gt; ahhoz.&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#12.22:13.25"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#13.25:13.63"&gt; képest,&lt;/a&gt; &lt;a href="1#13.63:14.01"&gt; hogy&lt;/a&gt; &lt;a href="1#14.01:14.39"&gt; még&lt;/a&gt; &lt;a href="1#14.39:14.77"&gt; nem&lt;/a&gt; &lt;a href="1#14.77:15.15"&gt; is&lt;/a&gt; &lt;a href="1#15.15:15.54"&gt; aktívak&lt;/a&gt; &lt;a href="1#15.54:15.92"&gt; benne&lt;/a&gt; &lt;a href="1#15.92:16.30"&gt; az&lt;/a&gt; &lt;a href="1#16.30:16.68"&gt; összes&lt;/a&gt; &lt;a href="1#16.68:17.06"&gt; szenzor,&lt;/a&gt; &lt;a href="1#17.06:17.44"&gt; meg&lt;/a&gt; &lt;a href="1#17.44:17.82"&gt; mikrofon,&lt;/a&gt; &lt;a href="1#17.82:18.20"&gt; meg&lt;/a&gt; &lt;a href="1#18.20:18.58"&gt; ilyesmi&lt;/a&gt; &lt;a href="1#18.58:18.96"&gt; –&lt;/a&gt; &lt;a href="1#18.96:19.34"&gt; ugye&lt;/a&gt; &lt;a href="1#19.34:19.73"&gt; –,&lt;/a&gt; &lt;a href="1#19.73:20.11"&gt; mikrofont&lt;/a&gt; &lt;a href="1#20.11:20.49"&gt; azt&lt;/a&gt; &lt;a href="1#20.49:20.87"&gt; elég&lt;/a&gt; &lt;a href="1#20.87:21.25"&gt; nehéz&lt;/a&gt; &lt;a href="1#21.25:21.63"&gt; megindokolni.&lt;/a&gt; &lt;a href="1#21.63:22.27"&gt; Ahhoz&lt;/a&gt; &lt;a href="1#22.27:22.91"&gt; képest&lt;/a&gt; &lt;a href="1#22.91:23.55"&gt; az,&lt;/a&gt; &lt;a href="1#23.55:24.19"&gt; hogy&lt;/a&gt; &lt;a href="1#24.19:24.83"&gt; ennek&lt;/a&gt; &lt;a href="1#24.83:25.47"&gt; van&lt;/a&gt; &lt;a href="1#25.47:26.11"&gt; egy&lt;/a&gt; &lt;a href="1#26.11:26.75"&gt; viszonylag&lt;/a&gt; &lt;a href="1#26.75:27.39"&gt; jól&lt;/a&gt; &lt;a href="1#27.39:28.02"&gt; behatárolható&lt;/a&gt; &lt;a href="1#28.02:28.66"&gt; életciklusa,&lt;/a&gt; &lt;a href="1#28.66:29.30"&gt; ami&lt;/a&gt; &lt;a href="1#29.30:29.94"&gt; után&lt;/a&gt; &lt;a href="1#29.94:30.58"&gt; maximum&lt;/a&gt; &lt;a href="1#30.58:31.22"&gt; kockaként&lt;/a&gt; &lt;a href="1#31.22:31.86"&gt; használható&lt;/a&gt; &lt;a href="1#31.86:32.50"&gt; fel&lt;/a&gt; &lt;a href="1#32.50:33.14"&gt; a&lt;/a&gt; &lt;a href="1#33.14:33.78"&gt; kocka.&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#33.78:34.94"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#34.94:35.84"&gt; Az&lt;/a&gt; &lt;a href="1#35.84:36.73"&gt; már&lt;/a&gt; &lt;a href="1#36.73:37.62"&gt; drága,&lt;/a&gt; &lt;a href="1#37.62:38.52"&gt; nem?&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#38.52:44.04"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#44.04:44.63"&gt; Így,&lt;/a&gt; &lt;a href="1#44.63:45.22"&gt; így.&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#45.22:47.89"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#47.89:48.81"&gt; Ugyanakkor&lt;/a&gt; &lt;a href="1#48.81:49.73"&gt; most&lt;/a&gt; &lt;a href="1#49.73:50.65"&gt; már,&lt;/a&gt; &lt;a href="1#50.65:51.56"&gt; ha&lt;/a&gt; &lt;a href="1#51.56:52.48"&gt; a&lt;/a&gt; &lt;a href="1#52.48:53.40"&gt; játékokra&lt;/a&gt; &lt;a href="1#53.40:54.32"&gt; átértünk,&lt;/a&gt; &lt;a href="1#54.32:55.24"&gt; nehéz.&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#55.24:60.20"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#60.20:60.91"&gt; mostanában&lt;/a&gt; &lt;a href="1#60.91:61.62"&gt; játszani&lt;/a&gt; &lt;a href="1#61.62:62.33"&gt; számítógépeken,&lt;/a&gt; &lt;a href="1#62.33:63.04"&gt; hiszen&lt;/a&gt; &lt;a href="1#63.04:63.75"&gt; annyira&lt;/a&gt; &lt;a href="1#63.75:64.46"&gt; megdrágult&lt;/a&gt; &lt;a href="1#64.46:65.17"&gt; minden&lt;/a&gt; &lt;a href="1#65.17:65.88"&gt; komponens,&lt;/a&gt; &lt;a href="1#65.88:66.59"&gt; ugye?&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#66.59:71.50"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#71.50:71.86"&gt; A&lt;/a&gt; &lt;a href="1#71.86:72.22"&gt; RAM&lt;/a&gt; &lt;a href="1#72.22:72.58"&gt; kopalips.&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#72.58:76.17"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#76.17:76.81"&gt; Emiatt.&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#76.81:83.11"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#83.11:84.88"&gt; Hogy&lt;/a&gt; &lt;a href="1#84.88:86.65"&gt; ha,&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#86.65:88.70"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#88.70:89.28"&gt; PC-t&lt;/a&gt; &lt;a href="1#89.28:89.86"&gt; akarnád&lt;/a&gt; &lt;a href="1#89.86:90.45"&gt; venni?&lt;/a&gt; &lt;a href="1#90.45:91.03"&gt; A&lt;/a&gt; &lt;a href="1#91.03:91.61"&gt; legolcsóbb&lt;/a&gt; &lt;a href="1#91.61:92.19"&gt; a&lt;/a&gt; &lt;a href="1#92.19:92.78"&gt; alaplapot&lt;/a&gt; &lt;a href="1#92.78:93.36"&gt; megvenni,&lt;/a&gt; &lt;a href="1#93.36:93.94"&gt; ésbele&lt;/a&gt; &lt;a href="1#93.94:94.52"&gt; egy&lt;/a&gt; &lt;a href="1#94.52:95.11"&gt; processzort&lt;/a&gt; &lt;a href="1#95.11:95.69"&gt; vetni,&lt;/a&gt; &lt;a href="1#95.69:96.27"&gt; de&lt;/a&gt; &lt;a href="1#96.27:96.85"&gt; azért&lt;/a&gt; &lt;a href="1#96.85:97.43"&gt; még&lt;/a&gt; &lt;a href="1#97.43:98.02"&gt; nem&lt;/a&gt; &lt;a href="1#98.02:98.60"&gt; biztos,&lt;/a&gt; &lt;a href="1#98.60:99.18"&gt; hogy&lt;/a&gt; &lt;a href="1#99.18:99.76"&gt; RAM-ot&lt;/a&gt; &lt;a href="1#99.76:100.35"&gt; bele&lt;/a&gt; &lt;a href="1#100.35:100.93"&gt; tudsz&lt;/a&gt; &lt;a href="1#100.93:101.51"&gt; rajteni.&lt;/a&gt; &lt;a href="1#102.43:103.06"&gt; Kivált&lt;/a&gt; &lt;a href="1#103.06:103.68"&gt; képet&lt;/a&gt; &lt;a href="1#103.68:104.31"&gt; vetett&lt;/a&gt; &lt;a href="1#104.31:104.93"&gt; fel,&lt;/a&gt; &lt;a href="1#104.93:105.56"&gt; mert&lt;/a&gt; &lt;a href="1#105.56:106.18"&gt; egy&lt;/a&gt; &lt;a href="1#106.18:106.81"&gt; szentőrült&lt;/a&gt; &lt;a href="1#106.81:107.43"&gt; megvizsgálta,&lt;/a&gt; &lt;a href="1#107.43:108.06"&gt; hogy&lt;/a&gt; &lt;a href="1#108.06:108.68"&gt; hogyan&lt;/a&gt; &lt;a href="1#108.68:109.31"&gt; tud&lt;/a&gt; &lt;a href="1#109.31:109.93"&gt; működni&lt;/a&gt; &lt;a href="1#109.93:110.56"&gt; egy&lt;/a&gt; &lt;a href="1#110.56:111.18"&gt; számítógép&lt;/a&gt; &lt;a href="1#111.18:111.81"&gt; RAM&lt;/a&gt; &lt;a href="1#111.81:112.43"&gt; modulok&lt;/a&gt; &lt;a href="1#112.43:113.06"&gt; nélkül.&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#113.06:115.57"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#115.57:115.80"&gt; Ez&lt;/a&gt; &lt;a href="1#115.80:116.03"&gt; ugye&lt;/a&gt; &lt;a href="1#116.03:116.26"&gt; a&lt;/a&gt; &lt;a href="1#116.26:116.49"&gt; legolcsóbb.&lt;/a&gt; &lt;a href="1#116.51:116.96"&gt; A&lt;/a&gt; &lt;a href="1#116.96:117.42"&gt; legolcsóbb&lt;/a&gt; &lt;a href="1#117.42:117.87"&gt; build,&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#117.87:119.02"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#119.02:119.65"&gt; hogy&lt;/a&gt; &lt;a href="1#119.65:120.28"&gt; nem&lt;/a&gt; &lt;a href="1#120.28:120.91"&gt; kell&lt;/a&gt; &lt;a href="1#120.91:121.54"&gt; belevenni&lt;/a&gt; &lt;a href="1#121.54:122.17"&gt; a&lt;/a&gt; &lt;a href="1#122.17:122.81"&gt; legdrágább&lt;/a&gt; &lt;a href="1#122.81:123.44"&gt; alkatrészből;&lt;/a&gt; &lt;a href="1#123.44:124.07"&gt; elégbele&lt;/a&gt; &lt;a href="1#124.07:124.70"&gt; memória,&lt;/a&gt; &lt;a href="1#124.70:125.33"&gt; vagy&lt;/a&gt; &lt;a href="1#125.33:125.96"&gt; elégbele&lt;/a&gt; &lt;a href="1#125.96:126.59"&gt; processzór,&lt;/a&gt; &lt;a href="1#126.59:127.22"&gt; vagy&lt;/a&gt; &lt;a href="1#127.22:127.85"&gt; elégbele&lt;/a&gt; &lt;a href="1#127.85:128.48"&gt; bármilyen&lt;/a&gt; &lt;a href="1#128.48:129.11"&gt; disk&lt;/a&gt; &lt;a href="1#129.11:129.75"&gt; drive-hoz,&lt;/a&gt; &lt;a href="1#129.75:130.38"&gt; és&lt;/a&gt; &lt;a href="1#130.38:131.01"&gt; hip-hop&lt;/a&gt; &lt;a href="1#131.01:131.64"&gt; már&lt;/a&gt; &lt;a href="1#131.64:132.27"&gt; működik&lt;/a&gt; &lt;a href="1#132.27:132.90"&gt; is.&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#132.90:134.68"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#134.68:135.40"&gt; Egy&lt;/a&gt; &lt;a href="1#135.40:136.12"&gt; kicsit&lt;/a&gt; &lt;a href="1#136.12:136.84"&gt; kellett&lt;/a&gt; &lt;a href="1#136.84:137.56"&gt; belelenyúlnia&lt;/a&gt; &lt;a href="1#137.56:138.28"&gt; az&lt;/a&gt; &lt;a href="1#138.28:139.00"&gt; alaplap&lt;/a&gt; &lt;a href="1#139.00:139.72"&gt; BIOS-zába,&lt;/a&gt; &lt;a href="1#139.72:140.44"&gt; hogy&lt;/a&gt; &lt;a href="1#140.44:141.16"&gt; ne&lt;/a&gt; &lt;a href="1#141.16:141.88"&gt; utasítsa&lt;/a&gt; &lt;a href="1#141.88:142.60"&gt; vissza&lt;/a&gt; &lt;a href="1#142.60:143.32"&gt; az&lt;/a&gt; &lt;a href="1#143.32:144.03"&gt; indulást;&lt;/a&gt; &lt;a href="1#144.03:144.75"&gt; de&lt;/a&gt; &lt;a href="1#144.75:145.47"&gt; onnantól&lt;/a&gt; &lt;a href="1#145.47:146.19"&gt; már&lt;/a&gt; &lt;a href="1#146.19:146.91"&gt; tudta&lt;/a&gt; &lt;a href="1#146.91:147.63"&gt; oldani,&lt;/a&gt; &lt;a href="1#147.63:148.35"&gt; például&lt;/a&gt; &lt;a href="1#148.35:149.07"&gt; hogy&lt;/a&gt; &lt;a href="1#149.07:149.79"&gt; a&lt;/a&gt; &lt;a href="1#149.79:150.51"&gt; harddisk&lt;/a&gt; &lt;a href="1#150.51:151.23"&gt; legyen&lt;/a&gt; &lt;a href="1#151.23:151.95"&gt; a&lt;/a&gt; &lt;a href="1#151.95:152.67"&gt; virtuális&lt;/a&gt; &lt;a href="1#152.67:153.39"&gt; memóriája.&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#153.39:158.84"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#158.84:159.31"&gt; És&lt;/a&gt; &lt;a href="1#159.31:159.78"&gt; sajnálatból&lt;/a&gt; &lt;a href="1#159.78:160.24"&gt; azt&lt;/a&gt; &lt;a href="1#160.24:160.71"&gt; találta,&lt;/a&gt; &lt;a href="1#160.71:161.18"&gt; hogy&lt;/a&gt; &lt;a href="1#161.18:161.65"&gt; nem&lt;/a&gt; &lt;a href="1#161.65:162.12"&gt; megfelelő&lt;/a&gt; &lt;a href="1#162.12:162.59"&gt; arra,&lt;/a&gt; &lt;a href="1#162.59:163.05"&gt; hogy&lt;/a&gt; &lt;a href="1#163.05:163.52"&gt; egy&lt;/a&gt; &lt;a href="1#163.52:163.99"&gt; processzort&lt;/a&gt; &lt;a href="1#163.99:164.46"&gt; sebességgel&lt;/a&gt; &lt;a href="1#164.46:164.93"&gt; kiszolgáljon;&lt;/a&gt; &lt;a href="1#164.93:165.39"&gt; de&lt;/a&gt; &lt;a href="1#165.39:165.86"&gt; semmi&lt;/a&gt; &lt;a href="1#165.86:166.33"&gt; baj,&lt;/a&gt; &lt;a href="1#166.33:166.80"&gt; mert&lt;/a&gt; &lt;a href="1#166.80:167.27"&gt; az&lt;/a&gt; &lt;a href="1#167.27:167.74"&gt; SSD&lt;/a&gt; &lt;a href="1#167.74:168.20"&gt; már&lt;/a&gt; &lt;a href="1#168.20:168.67"&gt; lényegesen&lt;/a&gt; &lt;a href="1#168.67:169.14"&gt; gyorsabb.&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#169.14:171.68"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#171.68:172.35"&gt; Még&lt;/a&gt; &lt;a href="1#172.35:173.01"&gt; mindig&lt;/a&gt; &lt;a href="1#173.01:173.68"&gt; úgy&lt;/a&gt; &lt;a href="1#173.68:174.35"&gt; tűnik,&lt;/a&gt; &lt;a href="1#174.35:175.01"&gt; hogy&lt;/a&gt; &lt;a href="1#175.01:175.68"&gt; a&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#175.68:176.92"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#176.92:178.14"&gt; RAM&lt;/a&gt; &lt;a href="1#178.14:179.37"&gt; egy&lt;/a&gt; &lt;a href="1#179.37:180.59"&gt; szűk&lt;/a&gt; &lt;a href="1#180.59:181.82"&gt; keresztmetszet,&lt;/a&gt; &lt;a href="1#181.82:183.04"&gt; és&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#183.04:184.74"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#184.74:185.56"&gt; Hát,&lt;/a&gt; &lt;a href="1#185.56:186.38"&gt; muszáj&lt;/a&gt; &lt;a href="1#186.38:187.20"&gt; volt&lt;/a&gt; &lt;a href="1#187.20:188.02"&gt; a...&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#188.02:193.03"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#193.03:193.87"&gt; Legutolsó&lt;/a&gt; &lt;a href="1#193.87:194.71"&gt; mencsvárába&lt;/a&gt; &lt;a href="1#194.71:195.55"&gt; kapaszkodjon,&lt;/a&gt; &lt;a href="1#195.55:196.39"&gt; és&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#196.39:197.77"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#197.77:198.77"&gt; Képzelje&lt;/a&gt; &lt;a href="1#198.77:199.78"&gt; el&lt;/a&gt; &lt;a href="1#199.78:200.78"&gt; a&lt;/a&gt; &lt;a href="1#200.78:201.78"&gt; processzorát:&lt;/a&gt; &lt;a href="1#201.78:202.79"&gt; a&lt;/a&gt; &lt;a href="1#202.79:203.79"&gt; processzorban&lt;/a&gt; &lt;a href="1#203.79:204.80"&gt; lévő&lt;/a&gt; &lt;a href="1#204.80:205.80"&gt; 32&lt;/a&gt; &lt;a href="1#205.80:206.80"&gt; megabájต์&lt;/a&gt; &lt;a href="1#206.80:207.81"&gt; memórián&lt;/a&gt; &lt;a href="1#207.81:208.81"&gt; futtatja,&lt;/a&gt; &lt;a href="1#208.81:209.81"&gt; illetve&lt;/a&gt; &lt;a href="1#209.81:210.82"&gt; próbálta&lt;/a&gt; &lt;a href="1#210.82:211.82"&gt; a&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#211.82:212.84"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#212.84:213.49"&gt; környezetét&lt;/a&gt; &lt;a href="1#213.49:214.15"&gt; futtatni,&lt;/a&gt; &lt;a href="1#214.15:214.80"&gt; ami&lt;/a&gt; &lt;a href="1#214.80:215.45"&gt; egyébként&lt;/a&gt; &lt;a href="1#215.45:216.10"&gt; belegondolva&lt;/a&gt; &lt;a href="1#216.10:216.75"&gt; nem&lt;/a&gt; &lt;a href="1#216.75:217.41"&gt; lehetetlen&lt;/a&gt; &lt;a href="1#217.41:218.06"&gt; dolog.&lt;/a&gt; &lt;a href="1#218.20:218.58"&gt; Aztért&lt;/a&gt; &lt;a href="1#218.58:218.96"&gt; 32&lt;/a&gt; &lt;a href="1#218.96:219.34"&gt; megabájtban&lt;/a&gt; &lt;a href="1#219.34:219.72"&gt; elég&lt;/a&gt; &lt;a href="1#219.72:220.10"&gt; sok&lt;/a&gt; &lt;a href="1#220.10:220.48"&gt; minden&lt;/a&gt; &lt;a href="1#220.48:220.86"&gt; belefér.&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#220.86:226.63"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#226.63:226.87"&gt; Bizony,&lt;/a&gt; &lt;a href="1#226.87:227.10"&gt; bizony,&lt;/a&gt; &lt;a href="1#227.10:227.34"&gt; tehát&lt;/a&gt; &lt;a href="1#227.34:227.57"&gt; azt&lt;/a&gt; &lt;a href="1#227.57:227.81"&gt; nem&lt;/a&gt; &lt;a href="1#227.81:228.04"&gt; teljesen&lt;/a&gt; &lt;a href="1#228.04:228.28"&gt; értem,&lt;/a&gt; &lt;a href="1#228.28:228.51"&gt; hogy&lt;/a&gt; &lt;a href="1#228.51:228.75"&gt; miért&lt;/a&gt; &lt;a href="1#228.75:228.98"&gt; nem&lt;/a&gt; &lt;a href="1#228.98:229.22"&gt; tudott&lt;/a&gt; &lt;a href="1#229.22:229.45"&gt; egy&lt;/a&gt; &lt;a href="1#229.45:229.69"&gt; teljes&lt;/a&gt; &lt;a href="1#229.69:229.92"&gt; Linux-ot&lt;/a&gt; &lt;a href="1#229.92:230.16"&gt; belepapítani,&lt;/a&gt; &lt;a href="1#230.16:230.39"&gt; és&lt;/a&gt; &lt;a href="1#230.39:230.63"&gt; miért&lt;/a&gt; &lt;a href="1#230.63:230.86"&gt; nem&lt;/a&gt; &lt;a href="1#230.86:231.10"&gt; tudott&lt;/a&gt; &lt;a href="1#231.10:231.33"&gt; elakollani&lt;/a&gt; &lt;a href="1#231.33:231.57"&gt; ebbe.&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#231.57:232.78"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#232.78:233.91"&gt; Ennél&lt;/a&gt; &lt;a href="1#233.91:235.03"&gt; egy&lt;/a&gt; &lt;a href="1#235.03:236.16"&gt; kezdeti&lt;/a&gt; &lt;a href="1#236.16:237.29"&gt; Linux-aim&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#237.29:238.31"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#238.31:238.87"&gt; szerintem&lt;/a&gt; &lt;a href="1#238.87:239.43"&gt; ennél&lt;/a&gt; &lt;a href="1#239.43:239.99"&gt; kisebb&lt;/a&gt; &lt;a href="1#239.99:240.55"&gt; helyen&lt;/a&gt; &lt;a href="1#240.55:241.11"&gt; elférte.&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#241.11:249.57"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#249.57:250.10"&gt; És&lt;/a&gt; &lt;a href="1#250.10:250.63"&gt; hát&lt;/a&gt; &lt;a href="1#250.63:251.16"&gt; képes&lt;/a&gt; &lt;a href="1#251.16:251.70"&gt; volt&lt;/a&gt; &lt;a href="1#251.70:252.23"&gt; megoldani&lt;/a&gt; &lt;a href="1#252.23:252.76"&gt; azt,&lt;/a&gt; &lt;a href="1#252.76:253.29"&gt; hogy&lt;/a&gt; &lt;a href="1#253.29:253.82"&gt; a&lt;/a&gt; &lt;a href="1#253.82:254.35"&gt; Ryzen&lt;/a&gt; &lt;a href="1#254.35:254.89"&gt; processzoron&lt;/a&gt; &lt;a href="1#254.89:255.42"&gt; lévő&lt;/a&gt; &lt;a href="1#255.42:255.95"&gt; 32&lt;/a&gt; &lt;a href="1#255.95:256.48"&gt; megabájtos&lt;/a&gt; &lt;a href="1#256.48:257.01"&gt; L3&lt;/a&gt; &lt;a href="1#257.01:257.54"&gt; cache-én&lt;/a&gt; &lt;a href="1#257.54:258.08"&gt; futtassa&lt;/a&gt; &lt;a href="1#258.08:258.61"&gt; az&lt;/a&gt; &lt;a href="1#258.61:259.14"&gt; operációs&lt;/a&gt; &lt;a href="1#259.14:259.67"&gt; rendszerét,&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#259.67:261.04"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#261.04:261.59"&gt; ami&lt;/a&gt; &lt;a href="1#261.59:262.15"&gt; ugye&lt;/a&gt; &lt;a href="1#262.15:262.70"&gt; némileg&lt;/a&gt; &lt;a href="1#262.70:263.26"&gt; ki&lt;/a&gt; &lt;a href="1#263.26:263.81"&gt; voltbelezve,&lt;/a&gt; &lt;a href="1#263.81:264.37"&gt; de&lt;/a&gt; &lt;a href="1#264.37:264.92"&gt; képzelje&lt;/a&gt; &lt;a href="1#264.92:265.48"&gt; el,&lt;/a&gt; &lt;a href="1#265.48:266.03"&gt; hogy&lt;/a&gt; &lt;a href="1#266.03:266.58"&gt; mennyire&lt;/a&gt; &lt;a href="1#266.58:267.14"&gt; gyorsan&lt;/a&gt; &lt;a href="1#267.14:267.69"&gt; lehetne&lt;/a&gt; &lt;a href="1#267.69:268.25"&gt; például&lt;/a&gt; &lt;a href="1#268.25:268.80"&gt; ezen&lt;/a&gt; &lt;a href="1#268.80:269.36"&gt; a&lt;/a&gt; &lt;a href="1#269.36:269.91"&gt; 32&lt;/a&gt; &lt;a href="1#269.91:270.47"&gt; megával&lt;/a&gt; &lt;a href="1#270.47:271.02"&gt; dúmozni.&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#271.02:273.37"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#273.37:273.63"&gt; Mert&lt;/a&gt; &lt;a href="1#273.63:273.89"&gt; hogy&lt;/a&gt; &lt;a href="1#273.89:274.15"&gt; az&lt;/a&gt; &lt;a href="1#274.15:274.41"&gt; bőven&lt;/a&gt; &lt;a href="1#274.41:274.67"&gt; belefér.&lt;/a&gt; &lt;a href="1#274.79:275.12"&gt; Hát&lt;/a&gt; &lt;a href="1#275.12:275.44"&gt; én&lt;/a&gt; &lt;a href="1#275.44:275.77"&gt; 8&lt;/a&gt; &lt;a href="1#275.77:276.09"&gt; megával&lt;/a&gt; &lt;a href="1#276.09:276.42"&gt; futtattam&lt;/a&gt; &lt;a href="1#276.42:276.74"&gt; annak&lt;/a&gt; &lt;a href="1#276.74:277.07"&gt; idején.&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#277.07:295.74"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#295.74:296.22"&gt; Tehát&lt;/a&gt; &lt;a href="1#296.22:296.70"&gt; igazából&lt;/a&gt; &lt;a href="1#296.70:297.18"&gt; most&lt;/a&gt; &lt;a href="1#297.18:297.66"&gt; ezzel&lt;/a&gt; &lt;a href="1#297.66:298.13"&gt; már&lt;/a&gt; &lt;a href="1#298.13:298.61"&gt; majdnem&lt;/a&gt; &lt;a href="1#298.61:299.09"&gt; át&lt;/a&gt; &lt;a href="1#299.09:299.57"&gt; is&lt;/a&gt; &lt;a href="1#299.57:300.05"&gt; kötöttünk&lt;/a&gt; &lt;a href="1#300.05:300.53"&gt; a&lt;/a&gt; &lt;a href="1#300.53:301.01"&gt; következő&lt;/a&gt; &lt;a href="1#301.01:301.49"&gt; hírünkre,&lt;/a&gt; &lt;a href="1#301.49:301.96"&gt; mert&lt;/a&gt; &lt;a href="1#301.96:302.44"&gt; hogy&lt;/a&gt; &lt;a href="1#302.44:302.92"&gt; most&lt;/a&gt; &lt;a href="1#302.92:303.40"&gt; nem&lt;/a&gt; &lt;a href="1#303.40:303.88"&gt; hoztam&lt;/a&gt; &lt;a href="1#303.88:304.36"&gt; működő&lt;/a&gt; &lt;a href="1#304.36:304.84"&gt; Doomot,&lt;/a&gt; &lt;a href="1#304.84:305.31"&gt; csak&lt;/a&gt; &lt;a href="1#305.31:305.79"&gt; ezt&lt;/a&gt; &lt;a href="1#305.79:306.27"&gt; hoztam&lt;/a&gt; &lt;a href="1#306.27:306.75"&gt; el,&lt;/a&gt; &lt;a href="1#306.75:307.23"&gt; hogy&lt;/a&gt; &lt;a href="1#307.23:307.71"&gt; igazából&lt;/a&gt; &lt;a href="1#307.71:308.19"&gt; még&lt;/a&gt; &lt;a href="1#308.19:308.67"&gt; RAM&lt;/a&gt; &lt;a href="1#308.67:309.14"&gt; nélkül&lt;/a&gt; &lt;a href="1#309.14:309.62"&gt; is&lt;/a&gt; &lt;a href="1#309.62:310.10"&gt; lehet&lt;/a&gt; &lt;a href="1#310.10:310.58"&gt; számítógépet&lt;/a&gt; &lt;a href="1#310.58:311.06"&gt; indítani.&lt;/a&gt; &lt;a href="1#311.44:312.09"&gt; A&lt;/a&gt; &lt;a href="1#312.09:312.74"&gt; következő&lt;/a&gt; &lt;a href="1#312.74:313.39"&gt; az,&lt;/a&gt; &lt;a href="1#313.39:314.04"&gt; hogy&lt;/a&gt; &lt;a href="1#314.04:314.69"&gt; nyilván&lt;/a&gt; &lt;a href="1#314.69:315.33"&gt; akkor&lt;/a&gt; &lt;a href="1#315.33:315.98"&gt; kell&lt;/a&gt; &lt;a href="1#315.98:316.63"&gt; a&lt;/a&gt; &lt;a href="1#316.63:317.28"&gt; Doomnak&lt;/a&gt; &lt;a href="1#317.28:317.93"&gt; valami&lt;/a&gt; &lt;a href="1#317.93:318.58"&gt; olyan&lt;/a&gt; &lt;a href="1#318.58:319.23"&gt; hely,&lt;/a&gt; &lt;a href="1#319.23:319.88"&gt; ahonnan&lt;/a&gt; &lt;a href="1#319.88:320.53"&gt; bárhol&lt;/a&gt; &lt;a href="1#320.53:321.18"&gt; le&lt;/a&gt; &lt;a href="1#321.18:321.83"&gt; tud&lt;/a&gt; &lt;a href="1#321.83:322.47"&gt; tölteni,&lt;/a&gt; &lt;a href="1#322.47:323.12"&gt; amit&lt;/a&gt; &lt;a href="1#323.12:323.77"&gt; meg&lt;/a&gt; &lt;a href="1#323.77:324.42"&gt; tudod&lt;/a&gt; &lt;a href="1#324.42:325.07"&gt; nézni,&lt;/a&gt; &lt;a href="1#325.07:325.72"&gt; ugye?&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#325.72:327.74"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#327.74:328.30"&gt; És&lt;/a&gt; &lt;a href="1#328.30:328.86"&gt; visszatudód&lt;/a&gt; &lt;a href="1#328.86:329.42"&gt; akkor&lt;/a&gt; &lt;a href="1#329.42:329.98"&gt; is,&lt;/a&gt; &lt;a href="1#329.98:330.53"&gt; ha&lt;/a&gt; &lt;a href="1#330.53:331.09"&gt; mondjuk&lt;/a&gt; &lt;a href="1#331.09:331.65"&gt; nincs&lt;/a&gt; &lt;a href="1#331.65:332.21"&gt; semmi&lt;/a&gt; &lt;a href="1#332.21:332.77"&gt; más,&lt;/a&gt; &lt;a href="1#332.77:333.33"&gt; csak&lt;/a&gt; &lt;a href="1#333.33:333.89"&gt; egy&lt;/a&gt; &lt;a href="1#333.89:334.45"&gt; puszta&lt;/a&gt; &lt;a href="1#334.45:335.01"&gt; network&lt;/a&gt; &lt;a href="1#335.01:335.56"&gt; kábelet&lt;/a&gt; &lt;a href="1#335.56:336.12"&gt; szerezni&lt;/a&gt; &lt;a href="1#336.12:336.68"&gt; a&lt;/a&gt; &lt;a href="1#336.68:337.24"&gt; saját&lt;/a&gt; &lt;a href="1#337.24:337.80"&gt; Doom-moddat.&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#337.80:339.32"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#339.32:339.86"&gt; És&lt;/a&gt; &lt;a href="1#339.86:340.39"&gt; egy&lt;/a&gt; &lt;a href="1#340.39:340.93"&gt; másik&lt;/a&gt; &lt;a href="1#340.93:341.46"&gt; szerölt&lt;/a&gt; &lt;a href="1#341.46:342.00"&gt; azzal&lt;/a&gt; &lt;a href="1#342.00:342.53"&gt; foglalkozott,&lt;/a&gt; &lt;a href="1#342.53:343.07"&gt; hogy&lt;/a&gt; &lt;a href="1#343.07:343.61"&gt; a&lt;/a&gt; &lt;a href="1#343.61:344.14"&gt; DNS&lt;/a&gt; &lt;a href="1#344.14:344.68"&gt; –&lt;/a&gt; &lt;a href="1#344.68:345.21"&gt; DNS-ről&lt;/a&gt; &lt;a href="1#345.21:345.75"&gt; hallottál&lt;/a&gt; &lt;a href="1#345.75:346.28"&gt; már,&lt;/a&gt; &lt;a href="1#346.28:346.82"&gt; ugye?&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#346.82:351.02"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#351.02:351.57"&gt; Egy&lt;/a&gt; &lt;a href="1#351.57:352.12"&gt; másik&lt;/a&gt; &lt;a href="1#352.12:352.67"&gt; DNS-re&lt;/a&gt; &lt;a href="1#352.67:353.22"&gt; gondoltam&lt;/a&gt; &lt;a href="1#353.22:353.77"&gt; ebben&lt;/a&gt; &lt;a href="1#353.77:354.32"&gt; a&lt;/a&gt; &lt;a href="1#354.32:354.87"&gt; pillanatban,&lt;/a&gt; &lt;a href="1#354.87:355.42"&gt; az...&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#355.42:356.67"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="1#356.67:357.70"&gt; Igen,&lt;/a&gt; &lt;a href="1#357.70:358.73"&gt; de&lt;/a&gt; &lt;a href="1#358.73:359.75"&gt; magyarul&lt;/a&gt; &lt;a href="1#359.75:360.78"&gt; elfogadható.&lt;/a&gt; &lt;a href="1#361.12:362.08"&gt; De&lt;/a&gt; &lt;a href="1#362.08:363.04"&gt; ez&lt;/a&gt; &lt;a href="1#363.04:364.00"&gt; a&lt;/a&gt; &lt;a href="1#364.00:364.95"&gt; Domain&lt;/a&gt; &lt;a href="1#364.95:365.91"&gt; Name&lt;/a&gt; &lt;a href="1#365.91:366.87"&gt; System,&lt;/a&gt; &lt;a href="1#366.87:367.83"&gt; ami&lt;/a&gt; &lt;a href="1#367.83:368.79"&gt; az&lt;/a&gt; &lt;a href="1#368.79:369.75"&gt; internetes&lt;/a&gt; &lt;a href="1#369.75:370.70"&gt; névfeloldási&lt;/a&gt; &lt;a href="1#370.70:371.66"&gt; rendszernek&lt;/a&gt; &lt;a href="1#371.66:372.62"&gt; a&lt;/a&gt; &lt;a href="1#372.62:373.58"&gt; neve.&lt;/a&gt; &lt;/p&gt;
 &lt;/body&gt;&lt;/html&gt;</property>
  </chain>
  <chain id="chain1_tl" out="00:06:18.456">
@@ -80,7 +98,7 @@ li.checked::marker { content: "\2612"; }
   <property name="audio_index">0</property>
   <property name="video_index">-1</property>
   <property name="astream">0</property>
-  <property name="kdenlive:control_uuid">{3b903aae-f953-4de6-bd22-8d190d6773da}</property>
+  <property name="kdenlive:control_uuid">{161d3e51-7196-4fb3-8bf1-9fcecb5673b8}</property>
   <property name="kdenlive:proxy">-</property>
   <property name="kdenlive:originalurl">2026-04-04--t08-13-10am--5e73b6ace3b63000158e6774--statler.mp3</property>
   <property name="kdenlive:id">1</property>
@@ -99,7 +117,7 @@ li.checked::marker { content: "\2612"; }
   <property name="audio_index">0</property>
   <property name="video_index">-1</property>
   <property name="astream">0</property>
-  <property name="kdenlive:control_uuid">{22d3b360-3bc0-4e12-9dfa-1837b321dddf}</property>
+  <property name="kdenlive:control_uuid">{7913d47c-983d-490c-b5a7-7b52baddfafb}</property>
   <property name="kdenlive:proxy">-</property>
   <property name="kdenlive:originalurl">2026-04-04--t08-13-10am--615e0811aa193a007ec6f9b7--gaganetz_gmail_com.mp3</property>
   <property name="kdenlive:id">2</property>
@@ -114,29 +132,29 @@ li.unchecked::marker { content: "\2610"; }
 li.checked::marker { content: "\2612"; }
 &lt;/style&gt;&lt;/head&gt;&lt;body style=" font-family:'Segoe UI'; font-size:9pt; font-weight:400; font-style:normal;"&gt;
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#0.00:67.22"&gt;No speech&lt;/a&gt;&lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#67.22:67.70"&gt; RAM&lt;/a&gt; &lt;a href="2#67.70:67.90"&gt; -OKA,&lt;/a&gt; &lt;a href="2#67.92:68.16"&gt; RAM&lt;/a&gt; &lt;a href="2#68.16:68.64"&gt; -OKA&lt;/a&gt; &lt;a href="2#68.64:68.88"&gt; -LI,&lt;/a&gt; &lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#68.88:70.09"&gt;No speech&lt;/a&gt;&lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#70.09:70.85"&gt; a&lt;/a&gt; &lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#70.85:154.78"&gt;No speech&lt;/a&gt;&lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#154.78:155.30"&gt; virtuális&lt;/a&gt; &lt;a href="2#155.30:155.76"&gt; memúria&lt;/a&gt; &lt;a href="2#155.76:156.10"&gt; mindig&lt;/a&gt; &lt;a href="2#156.10:156.22"&gt; is&lt;/a&gt; &lt;a href="2#156.22:156.40"&gt; jól&lt;/a&gt; &lt;a href="2#156.40:156.96"&gt; működött,&lt;/a&gt; &lt;a href="2#156.98:157.26"&gt; sose&lt;/a&gt; &lt;a href="2#157.26:157.48"&gt; volt&lt;/a&gt; &lt;a href="2#157.48:157.94"&gt; lassú,&lt;/a&gt; &lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#157.94:174.01"&gt;No speech&lt;/a&gt;&lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#174.01:175.45"&gt; lehetett&lt;/a&gt; &lt;a href="2#175.45:175.71"&gt; jól&lt;/a&gt; &lt;a href="2#175.71:176.53"&gt; volna&lt;/a&gt; &lt;a href="2#176.53:177.61"&gt; gyorsabb,&lt;/a&gt; &lt;a href="2#177.65:177.87"&gt; igen,&lt;/a&gt; &lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#177.87:203.02"&gt;No speech&lt;/a&gt;&lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#203.02:204.16"&gt; lévő&lt;/a&gt; &lt;a href="2#204.16:204.34"&gt; cache,&lt;/a&gt; &lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#204.34:220.71"&gt;No speech&lt;/a&gt;&lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#220.71:221.81"&gt; 640&lt;/a&gt; &lt;a href="2#221.81:222.51"&gt; kilobyte&lt;/a&gt; &lt;a href="2#222.51:222.67"&gt; -ba,&lt;/a&gt; &lt;a href="2#222.75:223.03"&gt; minden&lt;/a&gt; &lt;a href="2#223.03:223.45"&gt; belefér,&lt;/a&gt; &lt;a href="2#223.49:223.65"&gt; ezt&lt;/a&gt; &lt;a href="2#223.65:224.51"&gt; hallottuk&lt;/a&gt; &lt;a href="2#224.51:225.15"&gt; Geerts&lt;/a&gt; &lt;a href="2#225.15:225.41"&gt; -től,&lt;/a&gt; &lt;a href="2#225.43:225.87"&gt; saját&lt;/a&gt; &lt;a href="2#225.87:226.61"&gt; magától,&lt;/a&gt; &lt;a href="2#226.61:227.51"&gt; mert&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#67.22:68.40"&gt; RAM-okkal&lt;/a&gt; &lt;a href="2#68.40:69.59"&gt; ipában,&lt;/a&gt; &lt;a href="2#69.59:70.77"&gt; hát&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#70.77:154.70"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#154.70:155.03"&gt; A&lt;/a&gt; &lt;a href="2#155.03:155.35"&gt; virtuális&lt;/a&gt; &lt;a href="2#155.35:155.68"&gt; memória&lt;/a&gt; &lt;a href="2#155.68:156.00"&gt; mindig&lt;/a&gt; &lt;a href="2#156.00:156.33"&gt; is&lt;/a&gt; &lt;a href="2#156.33:156.66"&gt; jól&lt;/a&gt; &lt;a href="2#156.66:156.98"&gt; működött,&lt;/a&gt; &lt;a href="2#156.98:157.31"&gt; sosem&lt;/a&gt; &lt;a href="2#157.31:157.63"&gt; volt&lt;/a&gt; &lt;a href="2#157.63:157.96"&gt; lassú.&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#157.96:174.01"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#174.01:174.78"&gt; Lehetett&lt;/a&gt; &lt;a href="2#174.78:175.55"&gt; jó&lt;/a&gt; &lt;a href="2#175.55:176.33"&gt; volna&lt;/a&gt; &lt;a href="2#176.33:177.10"&gt; gyorsabb,&lt;/a&gt; &lt;a href="2#177.10:177.87"&gt; igen.&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#177.87:203.80"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#203.80:204.46"&gt; Lévőkest&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#204.46:220.53"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#220.53:221.23"&gt; 640&lt;/a&gt; &lt;a href="2#221.23:221.93"&gt; kilobajtban&lt;/a&gt; &lt;a href="2#221.93:222.62"&gt; mindenbe&lt;/a&gt; &lt;a href="2#222.62:223.32"&gt; lefér,&lt;/a&gt; &lt;a href="2#223.32:224.02"&gt; ezt&lt;/a&gt; &lt;a href="2#224.02:224.72"&gt; hallottuk&lt;/a&gt; &lt;a href="2#224.72:225.42"&gt; Geerts-től,&lt;/a&gt; &lt;a href="2#225.42:226.11"&gt; saját&lt;/a&gt; &lt;a href="2#226.11:226.81"&gt; magától,&lt;/a&gt; &lt;a href="2#226.81:227.51"&gt; mert&lt;/a&gt; &lt;/p&gt;
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#227.51:240.28"&gt;No speech&lt;/a&gt;&lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#240.28:240.48"&gt; arra&lt;/a&gt; &lt;a href="2#240.48:240.68"&gt; úgy&lt;/a&gt; &lt;a href="2#240.68:240.94"&gt; volt,&lt;/a&gt; &lt;a href="2#241.10:242.32"&gt; Microsoft&lt;/a&gt; &lt;a href="2#242.32:243.06"&gt; termék,&lt;/a&gt; &lt;a href="2#243.06:243.24"&gt; ami&lt;/a&gt; &lt;a href="2#243.24:243.72"&gt; elfuthott&lt;/a&gt; &lt;a href="2#243.72:244.32"&gt; kisebben,&lt;/a&gt; &lt;a href="2#244.60:245.50"&gt; MS&lt;/a&gt; &lt;a href="2#245.50:245.80"&gt; -DOS&lt;/a&gt; &lt;a href="2#245.80:245.96"&gt; 6&lt;/a&gt; &lt;a href="2#245.96:246.80"&gt; .22,&lt;/a&gt; &lt;a href="2#247.38:250.48"&gt; ennyi,&lt;/a&gt; &lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#250.48:275.84"&gt;No speech&lt;/a&gt;&lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#275.84:276.74"&gt; simán,&lt;/a&gt; &lt;a href="2#276.88:277.74"&gt; simán,&lt;/a&gt; &lt;a href="2#278.28:278.60"&gt; nem,&lt;/a&gt; &lt;a href="2#278.62:278.76"&gt; nem,&lt;/a&gt; &lt;a href="2#278.96:279.02"&gt; hogy&lt;/a&gt; &lt;a href="2#279.02:279.32"&gt; 8&lt;/a&gt; &lt;a href="2#279.32:279.90"&gt; megával,&lt;/a&gt; &lt;a href="2#280.48:280.58"&gt; az&lt;/a&gt; &lt;a href="2#280.58:281.16"&gt; 32&lt;/a&gt; &lt;a href="2#281.16:281.96"&gt; mega,&lt;/a&gt; &lt;a href="2#282.02:282.38"&gt; az&lt;/a&gt; &lt;a href="2#282.38:283.34"&gt; gyakorlatilag&lt;/a&gt; &lt;a href="2#283.34:283.66"&gt; elég&lt;/a&gt; &lt;a href="2#283.66:284.14"&gt; magának&lt;/a&gt; &lt;a href="2#284.14:284.24"&gt; a&lt;/a&gt; &lt;a href="2#284.24:284.44"&gt; Doom&lt;/a&gt; &lt;a href="2#284.44:284.66"&gt; -nak,&lt;/a&gt; &lt;a href="2#284.74:284.92"&gt; meg&lt;/a&gt; &lt;a href="2#284.92:285.04"&gt; a&lt;/a&gt; &lt;a href="2#285.04:285.66"&gt; futásnak,&lt;/a&gt; &lt;a href="2#285.78:286.70"&gt; tehát&lt;/a&gt; &lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#286.70:287.85"&gt;No speech&lt;/a&gt;&lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#287.85:287.97"&gt; a&lt;/a&gt; &lt;a href="2#287.97:288.13"&gt; Doom&lt;/a&gt; &lt;a href="2#288.13:288.67"&gt; egzének,&lt;/a&gt; &lt;a href="2#288.79:289.17"&gt; az&lt;/a&gt; &lt;a href="2#289.17:289.51"&gt; MS&lt;/a&gt; &lt;a href="2#289.51:289.81"&gt; -DOS&lt;/a&gt; &lt;a href="2#289.81:290.31"&gt; egzének,&lt;/a&gt; &lt;a href="2#290.41:290.61"&gt; meg&lt;/a&gt; &lt;a href="2#290.61:291.05"&gt; a&lt;/a&gt; &lt;a href="2#291.05:293.15"&gt; magának&lt;/a&gt; &lt;a href="2#293.15:293.35"&gt; a&lt;/a&gt; &lt;a href="2#293.67:295.33"&gt; gyorsításnak.&lt;/a&gt; &lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#295.33:305.00"&gt;No speech&lt;/a&gt;&lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#305.00:305.42"&gt; Na,&lt;/a&gt; &lt;a href="2#305.50:305.76"&gt; nem,&lt;/a&gt; &lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#305.76:347.36"&gt;No speech&lt;/a&gt;&lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#347.36:347.44"&gt; igen,&lt;/a&gt; &lt;a href="2#347.52:347.64"&gt; de&lt;/a&gt; &lt;a href="2#347.64:347.90"&gt; azok,&lt;/a&gt; &lt;a href="2#347.90:347.98"&gt; hogy&lt;/a&gt; &lt;a href="2#347.98:349.66"&gt; ribonuklein&lt;/a&gt; &lt;a href="2#349.66:349.88"&gt; sav,&lt;/a&gt; &lt;a href="2#350.06:350.92"&gt; ja,&lt;/a&gt; &lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#350.92:354.50"&gt;No speech&lt;/a&gt;&lt;/p&gt;
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#354.50:354.66"&gt; hogy&lt;/a&gt; &lt;a href="2#354.66:354.82"&gt; azt&lt;/a&gt; &lt;a href="2#354.82:355.26"&gt; angolul&lt;/a&gt; &lt;a href="2#355.26:355.54"&gt; DNA&lt;/a&gt; &lt;a href="2#355.54:355.92"&gt; -nak&lt;/a&gt; &lt;a href="2#355.92:356.48"&gt; mondják.&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#240.28:240.83"&gt; Arrá&lt;/a&gt; &lt;a href="2#240.83:241.38"&gt; úgy&lt;/a&gt; &lt;a href="2#241.38:241.93"&gt; volt,&lt;/a&gt; &lt;a href="2#241.93:242.47"&gt; egy&lt;/a&gt; &lt;a href="2#242.47:243.02"&gt; Microsoft&lt;/a&gt; &lt;a href="2#243.02:243.57"&gt; termék,&lt;/a&gt; &lt;a href="2#243.57:244.12"&gt; ami&lt;/a&gt; &lt;a href="2#244.12:244.67"&gt; elfutott&lt;/a&gt; &lt;a href="2#244.67:245.22"&gt; kisebben,&lt;/a&gt; &lt;a href="2#245.22:245.76"&gt; az&lt;/a&gt; &lt;a href="2#245.76:246.31"&gt; MS-DOS&lt;/a&gt; &lt;a href="2#246.31:246.86"&gt; 6.22.&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#246.86:272.53"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#272.53:273.05"&gt; Ennyi.&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#273.05:275.32"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#275.32:275.77"&gt; Hát,&lt;/a&gt; &lt;a href="2#275.77:276.22"&gt; simán,&lt;/a&gt; &lt;a href="2#276.22:276.67"&gt; simán,&lt;/a&gt; &lt;a href="2#276.67:277.12"&gt; hát&lt;/a&gt; &lt;a href="2#277.12:277.57"&gt; nem&lt;/a&gt; &lt;a href="2#277.57:278.02"&gt; úgy,&lt;/a&gt; &lt;a href="2#278.02:278.47"&gt; hogy&lt;/a&gt; &lt;a href="2#278.47:278.92"&gt; 8&lt;/a&gt; &lt;a href="2#278.92:279.37"&gt; megával,&lt;/a&gt; &lt;a href="2#279.37:279.82"&gt; hanem&lt;/a&gt; &lt;a href="2#279.82:280.27"&gt; az&lt;/a&gt; &lt;a href="2#280.27:280.71"&gt; 32&lt;/a&gt; &lt;a href="2#280.71:281.16"&gt; mega&lt;/a&gt; &lt;a href="2#281.16:281.61"&gt; –&lt;/a&gt; &lt;a href="2#281.61:282.06"&gt; az&lt;/a&gt; &lt;a href="2#282.06:282.51"&gt; gyakorlatilag&lt;/a&gt; &lt;a href="2#282.51:282.96"&gt; elég&lt;/a&gt; &lt;a href="2#282.96:283.41"&gt; magának&lt;/a&gt; &lt;a href="2#283.41:283.86"&gt; a&lt;/a&gt; &lt;a href="2#283.86:284.31"&gt; DOOM-nak,&lt;/a&gt; &lt;a href="2#284.31:284.76"&gt; még&lt;/a&gt; &lt;a href="2#284.76:285.21"&gt; a&lt;/a&gt; &lt;a href="2#285.21:285.66"&gt; futásnak.&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#285.66:287.59"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#287.59:288.45"&gt; Tehát&lt;/a&gt; &lt;a href="2#288.45:289.31"&gt; a&lt;/a&gt; &lt;a href="2#289.31:290.17"&gt; DOOM-nak,&lt;/a&gt; &lt;a href="2#290.17:291.03"&gt; az&lt;/a&gt; &lt;a href="2#291.03:291.89"&gt; MS-DOS-nak,&lt;/a&gt; &lt;a href="2#291.89:292.75"&gt; még&lt;/a&gt; &lt;a href="2#292.75:293.61"&gt; magának&lt;/a&gt; &lt;a href="2#293.61:294.47"&gt; a&lt;/a&gt; &lt;a href="2#294.47:295.33"&gt; gyorsításnak.&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#295.33:304.88"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#304.88:305.32"&gt; Na,&lt;/a&gt; &lt;a href="2#305.32:305.76"&gt; nem?&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#305.76:346.80"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#346.80:347.24"&gt; Hát&lt;/a&gt; &lt;a href="2#347.24:347.68"&gt; igen,&lt;/a&gt; &lt;a href="2#347.68:348.12"&gt; de&lt;/a&gt; &lt;a href="2#348.12:348.56"&gt; azok,&lt;/a&gt; &lt;a href="2#348.56:349.00"&gt; hogy&lt;/a&gt; &lt;a href="2#349.00:349.44"&gt; ribonuklein&lt;/a&gt; &lt;a href="2#349.44:349.88"&gt; sav.&lt;/a&gt; &lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#349.88:353.96"&gt;No speech&lt;/a&gt;&lt;/p&gt;
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;&lt;a href="2#353.96:354.33"&gt; Ja,&lt;/a&gt; &lt;a href="2#354.33:354.69"&gt; hogy&lt;/a&gt; &lt;a href="2#354.69:355.06"&gt; azt&lt;/a&gt; &lt;a href="2#355.06:355.43"&gt; angol&lt;/a&gt; &lt;a href="2#355.43:355.79"&gt; DNA-nek&lt;/a&gt; &lt;a href="2#355.79:356.16"&gt; mondják.&lt;/a&gt; &lt;/p&gt;
 &lt;/body&gt;&lt;/html&gt;</property>
  </chain>
  <chain id="chain2_tl" out="00:06:18.456">
@@ -148,7 +166,7 @@ li.checked::marker { content: "\2612"; }
   <property name="audio_index">0</property>
   <property name="video_index">-1</property>
   <property name="astream">0</property>
-  <property name="kdenlive:control_uuid">{22d3b360-3bc0-4e12-9dfa-1837b321dddf}</property>
+  <property name="kdenlive:control_uuid">{7913d47c-983d-490c-b5a7-7b52baddfafb}</property>
   <property name="kdenlive:proxy">-</property>
   <property name="kdenlive:originalurl">2026-04-04--t08-13-10am--615e0811aa193a007ec6f9b7--gaganetz_gmail_com.mp3</property>
   <property name="kdenlive:id">2</property>
@@ -165,14 +183,14 @@ li.checked::marker { content: "\2612"; }
   <entry in="00:00:00.000" out="00:06:18.456" producer="chain2">
    <property name="kdenlive:id">2</property>
   </entry>
-  <entry in="00:00:00.000" out="00:04:56.922" producer="tractor2" />
-  <property name="kdenlive:docproperties.activetimeline">{c9aefbb3-8a43-4b10-b80b-f807adffbd8c}</property>
+  <entry in="00:00:00.000" out="00:00:00.934" producer="tractor2" />
+  <property name="kdenlive:docproperties.activetimeline">{b79b628e-470e-4b94-b60c-933fda0d52a0}</property>
   <property name="kdenlive:docproperties.audioChannels">2</property>
   <property name="kdenlive:docproperties.version">1.1</property>
   <property name="kdenlive:docproperties.decimalPoint">.</property>
   <property name="xml_retain">1</property>
  </playlist>
- <producer id="black_track" in="00:00:00.000" out="00:04:56.922">
+ <producer id="black_track" in="00:00:00.000" out="00:00:00.934">
   <property name="length">2147483647</property>
   <property name="eof">continue</property>
   <property name="resource">black</property>
@@ -181,620 +199,15 @@ li.checked::marker { content: "\2612"; }
  </producer>
  <playlist id="playlist0">
   <property name="kdenlive:audio_track">1</property>
-  <entry producer="chain1_tl" in="00:00:00.000" out="00:00:04.800">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:00:05.040" out="00:00:07.920">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <blank length="00:00:00.600" />
-  <entry producer="chain1_tl" in="00:00:10.000" out="00:00:10.080">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:00:10.400" out="00:00:11.880">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:00:13.040" out="00:00:20.800">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:00:20.880" out="00:00:22.360">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:00:23.520" out="00:00:24.480">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:00:24.480" out="00:00:28.640">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:00:28.960" out="00:00:30.280">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:00:30.480" out="00:00:31.560">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:00:31.760" out="00:00:34.480">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:00:35.280" out="00:00:36.520">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:00:37.520" out="00:00:38.640">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <blank length="00:00:00.600" />
-  <entry producer="chain1_tl" in="00:00:43.440" out="00:00:44.200">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-   <filter id="filter_0_0">
-    <property name="mlt_service">volume</property>
-    <property name="kdenlive_id">volume</property>
-    <property name="level">0=1.0;0=0.0;3=0.0;4=1.0;18=1.0</property>
-   </filter>
-  </entry>
-  <entry producer="chain1_tl" in="00:00:44.760" out="00:00:45.280">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <blank length="00:00:00.600" />
-  <entry producer="chain1_tl" in="00:00:48.240" out="00:00:49.960">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:00:50.680" out="00:00:52.280">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:00:52.320" out="00:00:53.360">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:00:53.640" out="00:00:54.320">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <blank length="00:00:00.600" />
-  <entry producer="chain1_tl" in="00:00:59.920" out="00:01:03.280">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:01:03.720" out="00:01:06.800">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <blank length="00:00:00.600" />
-  <blank length="00:00:00.600" />
-  <blank length="00:00:00.080" />
-  <entry producer="chain1_tl" in="00:01:11.800" out="00:01:12.880">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <blank length="00:00:00.600" />
-  <entry producer="chain1_tl" in="00:01:16.320" out="00:01:16.880">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <blank length="00:00:00.600" />
-  <entry producer="chain1_tl" in="00:01:23.120" out="00:01:23.520">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-   <filter id="filter_0_1">
-    <property name="mlt_service">volume</property>
-    <property name="kdenlive_id">volume</property>
-    <property name="level">0=1.0;0=0.0;3=0.0;4=1.0;9=1.0</property>
-   </filter>
-  </entry>
-  <entry producer="chain1_tl" in="00:01:23.600" out="00:01:25.840">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:01:26.960" out="00:01:27.760">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:01:28.000" out="00:01:29.640">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:01:30.720" out="00:01:32.080">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:01:32.240" out="00:01:33.040">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:01:33.160" out="00:01:34.280">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:01:34.320" out="00:01:38.360">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:01:38.760" out="00:01:42.240">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-   <filter id="filter_0_2">
-    <property name="mlt_service">volume</property>
-    <property name="kdenlive_id">volume</property>
-    <property name="level">0=1.0;65=1.0;66=0.0;71=0.0;72=1.0;86=1.0</property>
-   </filter>
-  </entry>
-  <entry producer="chain1_tl" in="00:01:42.800" out="00:01:46.280">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:01:46.800" out="00:01:49.600">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:01:50.040" out="00:01:50.640">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:01:50.640" out="00:01:51.840">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-   <filter id="filter_0_3">
-    <property name="mlt_service">volume</property>
-    <property name="kdenlive_id">volume</property>
-    <property name="level">0=1.0;20=1.0;21=0.0;25=0.0;26=1.0;29=1.0</property>
-   </filter>
-  </entry>
-  <entry producer="chain1_tl" in="00:01:51.880" out="00:01:53.120">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <blank length="00:00:00.600" />
-  <entry producer="chain1_tl" in="00:01:55.840" out="00:01:57.440">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:01:58.600" out="00:01:59.840">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:01:59.960" out="00:02:01.720">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:02:02.440" out="00:02:07.520">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:02:07.640" out="00:02:08.640">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:02:08.720" out="00:02:10.600">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:02:10.760" out="00:02:11.520">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:02:11.760" out="00:02:13.560">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:02:13.840" out="00:02:14.560">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-   <filter id="filter_0_4">
-    <property name="mlt_service">volume</property>
-    <property name="kdenlive_id">volume</property>
-    <property name="level">0=1.0;0=0.0;2=0.0;3=1.0;17=1.0</property>
-   </filter>
-  </entry>
-  <entry producer="chain1_tl" in="00:02:15.280" out="00:02:18.560">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:02:18.600" out="00:02:19.680">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:02:19.800" out="00:02:20.640">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:02:21.000" out="00:02:23.080">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:02:23.440" out="00:02:24.520">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:02:24.880" out="00:02:26.040">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:02:26.280" out="00:02:27.520">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:02:27.600" out="00:02:29.760">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:02:29.840" out="00:02:32.000">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:02:32.080" out="00:02:33.520">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <blank length="00:00:00.600" />
-  <blank length="00:00:02.040" />
-  <blank length="00:00:00.440" />
-  <blank length="00:00:00.360" />
-  <blank length="00:00:00.680" />
-  <entry producer="chain1_tl" in="00:02:39.200" out="00:02:46.000">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:02:46.080" out="00:02:49.200">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <blank length="00:00:00.600" />
-  <entry producer="chain1_tl" in="00:02:51.960" out="00:02:54.320">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:02:54.480" out="00:02:56.240">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:02:56.240" out="00:02:57.000">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:02:57.200" out="00:02:58.880">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:02:59.560" out="00:03:02.560">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <blank length="00:00:00.600" />
-  <entry producer="chain1_tl" in="00:03:05.040" out="00:03:05.760">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:03:06.000" out="00:03:06.440">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:03:06.480" out="00:03:07.640">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:03:07.760" out="00:03:08.200">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <blank length="00:00:00.600" />
-  <entry producer="chain1_tl" in="00:03:10.960" out="00:03:12.360">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:03:12.720" out="00:03:15.600">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <blank length="00:00:00.600" />
-  <entry producer="chain1_tl" in="00:03:17.720" out="00:03:19.720">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:03:20.440" out="00:03:21.880">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:03:22.160" out="00:03:23.520">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:03:23.760" out="00:03:24.840">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-   <filter id="filter_0_5">
-    <property name="mlt_service">volume</property>
-    <property name="kdenlive_id">volume</property>
-    <property name="level">0=1.0;16=1.0;17=0.0;21=0.0;22=1.0;26=1.0</property>
-   </filter>
-  </entry>
-  <entry producer="chain1_tl" in="00:03:24.880" out="00:03:26.560">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:03:26.600" out="00:03:27.440">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:03:27.720" out="00:03:28.800">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:03:28.840" out="00:03:30.000">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:03:30.280" out="00:03:31.560">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:03:31.760" out="00:03:32.800">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:03:33.960" out="00:03:38.440">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:03:38.480" out="00:03:41.000">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <blank length="00:00:00.280" />
-  <blank length="00:00:05.560" />
-  <entry producer="chain1_tl" in="00:03:47.120" out="00:03:52.000">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:03:52.080" out="00:03:52.960">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:03:53.360" out="00:03:54.440">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:03:55.480" out="00:03:58.120">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:03:59.200" out="00:04:01.360">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <blank length="00:00:00.720" />
-  <blank length="00:00:02.920" />
-  <blank length="00:00:00.080" />
-  <entry producer="chain1_tl" in="00:04:05.440" out="00:04:05.840">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <blank length="00:00:02.400" />
-  <blank length="00:00:00.760" />
-  <entry producer="chain1_tl" in="00:04:09.920" out="00:04:10.000">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:04:10.200" out="00:04:10.480">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:04:10.520" out="00:04:16.560">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:04:16.640" out="00:04:20.400">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:04:21.120" out="00:04:21.480">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:04:22.080" out="00:04:25.040">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:04:25.240" out="00:04:28.880">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:04:29.120" out="00:04:31.080">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <blank length="00:00:00.600" />
-  <blank length="00:00:00.760" />
-  <entry producer="chain1_tl" in="00:04:33.200" out="00:04:34.800">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:04:35.840" out="00:04:37.200">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <blank length="00:00:00.240" />
-  <blank length="00:00:00.440" />
-  <blank length="00:00:01.760" />
-  <blank length="00:00:01.280" />
-  <entry producer="chain1_tl" in="00:04:41.760" out="00:04:42.160">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <blank length="00:00:04.240" />
-  <entry producer="chain1_tl" in="00:04:46.840" out="00:04:47.160">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <blank length="00:00:00.400" />
-  <blank length="00:00:03.520" />
-  <blank length="00:00:00.560" />
-  <blank length="00:00:02.160" />
-  <blank length="00:00:01.280" />
-  <entry producer="chain1_tl" in="00:04:56.240" out="00:04:56.680">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-   <filter id="filter_0_6">
-    <property name="mlt_service">volume</property>
-    <property name="kdenlive_id">volume</property>
-    <property name="level">0=1.0;0=0.0;4=0.0;5=1.0;10=1.0</property>
-   </filter>
-  </entry>
-  <entry producer="chain1_tl" in="00:04:56.720" out="00:04:57.680">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:04:57.680" out="00:05:02.400">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:05:02.640" out="00:05:04.920">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:05:05.200" out="00:05:07.920">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:05:08.080" out="00:05:11.840">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:05:12.880" out="00:05:16.560">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:05:16.600" out="00:05:19.480">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:05:19.560" out="00:05:21.320">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:05:21.720" out="00:05:24.400">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:05:24.400" out="00:05:25.520">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:05:25.720" out="00:05:25.920">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
   <blank length="00:00:00.480" />
-  <blank length="00:00:00.920" />
-  <entry producer="chain1_tl" in="00:05:27.960" out="00:05:28.560">
+  <entry producer="chain1_tl" in="00:05:54.240" out="00:05:54.480">
    <property name="kdenlive:id">1</property>
    <property name="audio_index">0</property>
   </entry>
-  <entry producer="chain1_tl" in="00:05:28.560" out="00:05:29.720">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:05:30.000" out="00:05:32.040">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:05:32.240" out="00:05:33.560">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:05:33.560" out="00:05:35.440">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:05:35.600" out="00:05:36.880">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:05:36.960" out="00:05:38.480">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:05:39.840" out="00:05:41.520">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:05:41.520" out="00:05:42.400">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:05:42.760" out="00:05:44.600">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:05:44.760" out="00:05:46.640">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:05:46.840" out="00:05:47.040">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <blank length="00:00:00.120" />
-  <blank length="00:00:03.320" />
-  <entry producer="chain1_tl" in="00:05:51.520" out="00:05:57.960">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:05:58.920" out="00:06:02.920">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:06:03.240" out="00:06:05.800">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:06:06.120" out="00:06:07.440">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:06:07.520" out="00:06:09.120">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:06:09.240" out="00:06:10.440">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:06:10.600" out="00:06:11.600">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:06:12.000" out="00:06:13.200">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:06:13.360" out="00:06:14.360">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain1_tl" in="00:06:15.160" out="00:06:15.840">
-   <property name="kdenlive:id">1</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <blank length="00:00:00.600" />
   <entry producer="chain1_tl" in="00:06:18.280" out="00:06:18.440">
    <property name="kdenlive:id">1</property>
    <property name="audio_index">0</property>
-   <filter id="filter_0_7">
+   <filter id="filter_0_0">
     <property name="mlt_service">volume</property>
     <property name="kdenlive_id">volume</property>
     <property name="level">0=1.0;0=0.0;3=0.0;4=1.0;3=1.0</property>
@@ -827,327 +240,19 @@ li.checked::marker { content: "\2612"; }
  </tractor>
  <playlist id="playlist2">
   <property name="kdenlive:audio_track">1</property>
-  <blank length="00:00:04.800" />
-  <blank length="00:00:03.480" />
-  <blank length="00:00:00.080" />
-  <blank length="00:00:01.480" />
-  <blank length="00:00:07.760" />
-  <blank length="00:00:01.480" />
-  <blank length="00:00:00.960" />
-  <blank length="00:00:04.160" />
-  <blank length="00:00:01.320" />
-  <blank length="00:00:01.080" />
-  <blank length="00:00:02.720" />
-  <blank length="00:00:01.240" />
-  <blank length="00:00:01.720" />
-  <blank length="00:00:00.760" />
-  <blank length="00:00:01.120" />
-  <blank length="00:00:01.720" />
-  <blank length="00:00:01.600" />
-  <blank length="00:00:01.040" />
-  <blank length="00:00:01.280" />
-  <blank length="00:00:03.360" />
-  <blank length="00:00:03.680" />
-  <entry producer="chain2_tl" in="00:01:08.160" out="00:01:08.760">
+  <entry producer="chain2_tl" in="00:04:06.000" out="00:04:06.480">
    <property name="kdenlive:id">2</property>
    <property name="audio_index">0</property>
   </entry>
-  <entry producer="chain2_tl" in="00:01:08.880" out="00:01:08.960">
+  <entry producer="chain2_tl" in="00:05:54.240" out="00:05:54.480">
    <property name="kdenlive:id">2</property>
    <property name="audio_index">0</property>
    <filter id="filter_2_0">
     <property name="mlt_service">volume</property>
     <property name="kdenlive_id">volume</property>
-    <property name="level">0=1.0;0=0.0;1=0.0;2=1.0;1=1.0</property>
+    <property name="level">0=1.0;0=0.0;0=0.0;1=1.0;5=1.0</property>
    </filter>
   </entry>
-  <blank length="00:00:01.680" />
-  <blank length="00:00:01.160" />
-  <blank length="00:00:00.400" />
-  <blank length="00:00:02.240" />
-  <blank length="00:00:00.800" />
-  <blank length="00:00:01.640" />
-  <blank length="00:00:01.360" />
-  <blank length="00:00:00.800" />
-  <blank length="00:00:01.120" />
-  <blank length="00:00:04.040" />
-  <blank length="00:00:03.480" />
-  <blank length="00:00:03.480" />
-  <blank length="00:00:02.800" />
-  <blank length="00:00:00.600" />
-  <blank length="00:00:01.200" />
-  <blank length="00:00:01.840" />
-  <blank length="00:00:01.600" />
-  <blank length="00:00:01.240" />
-  <blank length="00:00:01.760" />
-  <blank length="00:00:05.080" />
-  <blank length="00:00:01.000" />
-  <blank length="00:00:01.880" />
-  <blank length="00:00:00.760" />
-  <blank length="00:00:01.800" />
-  <blank length="00:00:00.720" />
-  <blank length="00:00:03.280" />
-  <blank length="00:00:01.080" />
-  <blank length="00:00:00.840" />
-  <blank length="00:00:02.080" />
-  <blank length="00:00:01.080" />
-  <blank length="00:00:01.160" />
-  <blank length="00:00:01.240" />
-  <blank length="00:00:02.160" />
-  <blank length="00:00:02.160" />
-  <blank length="00:00:02.040" />
-  <entry producer="chain2_tl" in="00:02:34.840" out="00:02:36.880">
-   <property name="kdenlive:id">2</property>
-   <property name="audio_index">0</property>
-   <filter id="filter_2_1">
-    <property name="mlt_service">volume</property>
-    <property name="kdenlive_id">volume</property>
-    <property name="level">0=1.0;31=1.0;32=0.0;33=0.0;34=1.0;50=1.0</property>
-   </filter>
-  </entry>
-  <entry producer="chain2_tl" in="00:02:36.880" out="00:02:37.320">
-   <property name="kdenlive:id">2</property>
-   <property name="audio_index">0</property>
-   <filter id="filter_2_2">
-    <property name="mlt_service">volume</property>
-    <property name="kdenlive_id">volume</property>
-    <property name="level">0=1.0;0=0.0;2=0.0;3=1.0;10=1.0</property>
-   </filter>
-  </entry>
-  <entry producer="chain2_tl" in="00:02:37.520" out="00:02:37.880">
-   <property name="kdenlive:id">2</property>
-   <property name="audio_index">0</property>
-   <filter id="filter_2_3">
-    <property name="mlt_service">volume</property>
-    <property name="kdenlive_id">volume</property>
-    <property name="level">0=1.0;0=0.0;1=0.0;2=1.0;8=1.0</property>
-   </filter>
-  </entry>
-  <entry producer="chain2_tl" in="00:02:38.000" out="00:02:38.080">
-   <property name="kdenlive:id">2</property>
-   <property name="audio_index">0</property>
-   <filter id="filter_2_4">
-    <property name="mlt_service">volume</property>
-    <property name="kdenlive_id">volume</property>
-    <property name="level">0=1.0;0=0.0;2=0.0;3=1.0;1=1.0</property>
-   </filter>
-  </entry>
-  <blank length="00:00:00.600" />
-  <blank length="00:00:06.800" />
-  <blank length="00:00:03.720" />
-  <blank length="00:00:02.360" />
-  <blank length="00:00:00.640" />
-  <entry producer="chain2_tl" in="00:02:55.120" out="00:02:56.240">
-   <property name="kdenlive:id">2</property>
-   <property name="audio_index">0</property>
-   <filter id="filter_2_5">
-    <property name="mlt_service">volume</property>
-    <property name="kdenlive_id">volume</property>
-    <property name="level">0=1.0;6=1.0;7=0.0;10=0.0;11=1.0;27=1.0</property>
-   </filter>
-  </entry>
-  <entry producer="chain2_tl" in="00:02:56.240" out="00:02:57.000">
-   <property name="kdenlive:id">2</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain2_tl" in="00:02:57.200" out="00:02:58.080">
-   <property name="kdenlive:id">2</property>
-   <property name="audio_index">0</property>
-   <filter id="filter_2_6">
-    <property name="mlt_service">volume</property>
-    <property name="kdenlive_id">volume</property>
-    <property name="level">0=1.0;0=0.0;3=0.0;4=1.0;21=1.0</property>
-   </filter>
-  </entry>
-  <blank length="00:00:00.800" />
-  <blank length="00:00:03.600" />
-  <blank length="00:00:00.720" />
-  <blank length="00:00:00.440" />
-  <blank length="00:00:01.160" />
-  <blank length="00:00:01.040" />
-  <blank length="00:00:01.400" />
-  <blank length="00:00:03.480" />
-  <blank length="00:00:02.000" />
-  <blank length="00:00:01.440" />
-  <blank length="00:00:01.360" />
-  <blank length="00:00:00.120" />
-  <entry producer="chain2_tl" in="00:03:23.880" out="00:03:24.520">
-   <property name="kdenlive:id">2</property>
-   <property name="audio_index">0</property>
-   <filter id="filter_2_7">
-    <property name="mlt_service">volume</property>
-    <property name="kdenlive_id">volume</property>
-    <property name="level">0=1.0;9=1.0;10=0.0;15=0.0;16=1.0;15=1.0</property>
-   </filter>
-  </entry>
-  <blank length="00:00:00.320" />
-  <blank length="00:00:01.680" />
-  <blank length="00:00:00.840" />
-  <blank length="00:00:01.080" />
-  <blank length="00:00:01.160" />
-  <blank length="00:00:01.280" />
-  <blank length="00:00:01.040" />
-  <blank length="00:00:04.480" />
-  <blank length="00:00:02.800" />
-  <entry producer="chain2_tl" in="00:03:41.400" out="00:03:46.640">
-   <property name="kdenlive:id">2</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <blank length="00:00:00.320" />
-  <blank length="00:00:04.880" />
-  <entry producer="chain2_tl" in="00:03:52.080" out="00:03:52.400">
-   <property name="kdenlive:id">2</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <blank length="00:00:00.560" />
-  <blank length="00:00:01.080" />
-  <blank length="00:00:02.640" />
-  <blank length="00:00:01.000" />
-  <entry producer="chain2_tl" in="00:04:00.200" out="00:04:02.080">
-   <property name="kdenlive:id">2</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain2_tl" in="00:04:02.120" out="00:04:05.040">
-   <property name="kdenlive:id">2</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain2_tl" in="00:04:05.360" out="00:04:08.240">
-   <property name="kdenlive:id">2</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain2_tl" in="00:04:08.400" out="00:04:08.560">
-   <property name="kdenlive:id">2</property>
-   <property name="audio_index">0</property>
-   <filter id="filter_2_8">
-    <property name="mlt_service">volume</property>
-    <property name="kdenlive_id">volume</property>
-    <property name="level">0=1.0;0=0.0;3=0.0;4=1.0;3=1.0</property>
-   </filter>
-  </entry>
-  <blank length="00:00:00.600" />
-  <blank length="00:00:00.080" />
-  <blank length="00:00:00.280" />
-  <blank length="00:00:06.040" />
-  <blank length="00:00:03.760" />
-  <blank length="00:00:00.360" />
-  <blank length="00:00:02.960" />
-  <blank length="00:00:03.640" />
-  <entry producer="chain2_tl" in="00:04:29.120" out="00:04:29.840">
-   <property name="kdenlive:id">2</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <blank length="00:00:01.840" />
-  <entry producer="chain2_tl" in="00:04:32.280" out="00:04:32.680">
-   <property name="kdenlive:id">2</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <blank length="00:00:00.360" />
-  <blank length="00:00:01.600" />
-  <entry producer="chain2_tl" in="00:04:35.840" out="00:04:37.440">
-   <property name="kdenlive:id">2</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain2_tl" in="00:04:37.440" out="00:04:37.880">
-   <property name="kdenlive:id">2</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain2_tl" in="00:04:38.280" out="00:04:40.040">
-   <property name="kdenlive:id">2</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain2_tl" in="00:04:40.480" out="00:04:46.400">
-   <property name="kdenlive:id">2</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain2_tl" in="00:04:46.840" out="00:04:47.560">
-   <property name="kdenlive:id">2</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain2_tl" in="00:04:47.760" out="00:04:51.280">
-   <property name="kdenlive:id">2</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain2_tl" in="00:04:51.360" out="00:04:51.920">
-   <property name="kdenlive:id">2</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain2_tl" in="00:04:52.000" out="00:04:54.160">
-   <property name="kdenlive:id">2</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <entry producer="chain2_tl" in="00:04:54.640" out="00:04:55.440">
-   <property name="kdenlive:id">2</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <blank length="00:00:00.480" />
-  <blank length="00:00:00.440" />
-  <blank length="00:00:00.960" />
-  <blank length="00:00:04.720" />
-  <blank length="00:00:02.280" />
-  <entry producer="chain2_tl" in="00:05:05.200" out="00:05:05.960">
-   <property name="kdenlive:id">2</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <blank length="00:00:01.960" />
-  <blank length="00:00:03.760" />
-  <blank length="00:00:03.680" />
-  <blank length="00:00:02.880" />
-  <blank length="00:00:01.760" />
-  <blank length="00:00:02.680" />
-  <blank length="00:00:01.120" />
-  <blank length="00:00:00.680" />
-  <entry producer="chain2_tl" in="00:05:26.680" out="00:05:27.080">
-   <property name="kdenlive:id">2</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <blank length="00:00:00.520" />
-  <blank length="00:00:00.600" />
-  <blank length="00:00:01.160" />
-  <blank length="00:00:02.040" />
-  <blank length="00:00:01.320" />
-  <blank length="00:00:01.880" />
-  <blank length="00:00:01.280" />
-  <blank length="00:00:01.520" />
-  <blank length="00:00:00.440" />
-  <entry producer="chain2_tl" in="00:05:40.280" out="00:05:40.480">
-   <property name="kdenlive:id">2</property>
-   <property name="audio_index">0</property>
-   <filter id="filter_2_9">
-    <property name="mlt_service">volume</property>
-    <property name="kdenlive_id">volume</property>
-    <property name="level">0=1.0;0=0.0;5=0.0;6=1.0;4=1.0</property>
-   </filter>
-  </entry>
-  <blank length="00:00:01.040" />
-  <blank length="00:00:00.880" />
-  <blank length="00:00:01.840" />
-  <blank length="00:00:01.880" />
-  <blank length="00:00:00.320" />
-  <entry producer="chain2_tl" in="00:05:47.360" out="00:05:50.080">
-   <property name="kdenlive:id">2</property>
-   <property name="audio_index">0</property>
-  </entry>
-  <blank length="00:00:00.600" />
-  <blank length="00:00:01.360" />
-  <entry producer="chain2_tl" in="00:05:52.880" out="00:05:57.040">
-   <property name="kdenlive:id">2</property>
-   <property name="audio_index">0</property>
-   <filter id="filter_2_10">
-    <property name="mlt_service">volume</property>
-    <property name="kdenlive_id">volume</property>
-    <property name="level">0=1.0;29=1.0;30=0.0;34=0.0;35=1.0;103=1.0</property>
-   </filter>
-  </entry>
-  <blank length="00:00:00.920" />
-  <blank length="00:00:04.000" />
-  <blank length="00:00:02.560" />
-  <blank length="00:00:01.320" />
-  <blank length="00:00:01.600" />
-  <blank length="00:00:01.200" />
-  <blank length="00:00:01.000" />
-  <blank length="00:00:01.200" />
-  <blank length="00:00:01.000" />
-  <blank length="00:00:01.280" />
   <blank length="00:00:00.120" />
   <entry producer="chain2_tl" in="00:06:18.400" out="00:06:18.440">
    <property name="kdenlive:id">2</property>
@@ -1178,9 +283,9 @@ li.checked::marker { content: "\2612"; }
    <property name="disable">0</property>
   </filter>
  </tractor>
- <tractor id="tractor2" in="00:00:00.000" out="00:04:56.922">
+ <tractor id="tractor2" in="00:00:00.000" out="00:00:00.934">
   <property name="kdenlive:clipname">Sequence 1</property>
-  <property name="kdenlive:uuid">{c9aefbb3-8a43-4b10-b80b-f807adffbd8c}</property>
+  <property name="kdenlive:uuid">{b79b628e-470e-4b94-b60c-933fda0d52a0}</property>
   <property name="kdenlive:clip_type">0</property>
   <property name="kdenlive:producer_type">17</property>
   <property name="kdenlive:sequenceproperties.hasAudio">0</property>
@@ -1207,8 +312,8 @@ li.checked::marker { content: "\2612"; }
    <property name="always_active">1</property>
   </transition>
  </tractor>
- <tractor id="tractor3" in="00:00:00.000" out="00:04:56.922">
+ <tractor id="tractor3" in="00:00:00.000" out="00:00:00.934">
   <property name="kdenlive:projectTractor">1</property>
-  <track producer="tractor2" in="00:00:00.000" out="00:04:56.922" />
+  <track producer="tractor2" in="00:00:00.000" out="00:00:00.934" />
  </tractor>
 </mlt>

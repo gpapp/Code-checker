@@ -23,7 +23,7 @@ from audio_utils import (
     get_video_fps,
     has_video_stream
 )
-from filler_processor import run_vad, process_filler_detection_asr, find_fillers, find_overlaps
+from filler_processor import run_vad, find_overlaps
 from interval_utils import merge_intervals, calculate_keep_segments, adjust_timestamps, compress_global_silence
 from exporter import generate_kdenlive_project, generate_ass_file, generate_srt_file
 from transcription_processor import process_transcription, get_full_language_name
@@ -42,12 +42,12 @@ def parse_args():
     parser.add_argument("--spike-duration", type=float, default=0.2, help="Maximum duration in seconds for a spike to be silenced (default: 0.2)")
     parser.add_argument("--overlap-duration", type=float, default=5.0, help="Minimum duration in seconds for overlapping talk to be marked (default: 5.0)")
     parser.add_argument("--language", default="hu", help="Language code (e.g. 'hu', 'en'). Default is 'hu' for Hungarian.")
-    parser.add_argument("--filler-words", default="[UH],[UM],[EH],[AH],-hm,-mhm,öö,őő,öhm,hmm,izé,hát,szóval,ugye,amúgy", help="Comma-separated filler words to cut (default: includes common Hungarian fillers)")
     parser.add_argument("--output-prefix", default="processed_", help="Prefix for output video files")
     parser.add_argument("--video-offsets", default="", help="Comma-separated list of +/- second offsets for video tracks (e.g. 0.5,-0.2,0)")
     parser.add_argument("--restart", action="store_true", help="If set, deletes temporary artifact files (*.json, *.markers.json, etc.) from the working directory before processing.")
     parser.add_argument("--clean", action="store_true", help="If set, deletes temporary artifact files (*.json, *.markers.json, etc.) from the working directory after processing.")
     parser.add_argument("--refine", action="store_true", help="If set, uses Gemma 4 via Ollama to clean up the transcription (Step 3c).")
+    parser.add_argument("--no-asr", action="store_true", help="If set, skips all ASR/Whisper steps (filler detection and transcription).")
 
     return parser.parse_args()
 
@@ -94,7 +94,10 @@ def main():
     working_dir = get_working_dir(final_inputs, args.working_dir)
 
     if args.restart:
-        run_cleanup(working_dir, args)
+        run_cleanup(working_dir, args, include_outputs=True)
+        # Ensure directory exists after cleanup
+        if not os.path.exists(working_dir):
+            os.makedirs(working_dir)
     
     # Parse video offsets
     offsets = [0.0] * len(final_inputs)
@@ -172,75 +175,44 @@ def main():
             
             cutting_segments.extend(fillers)
 
-    # 1b. Pass 1b: Whisper model for semantic filler detection (Medium)
-    logger.info("Step 3a/7: Running Pass 1b: Whisper Filler Detection...")
-    # Using large-v3 as in test_crisper.py for best Hungarian accuracy
-    whisper_filler_model = "large-v3" 
-    for af in tqdm(all_audio_files, desc="Pass 1b: Whisper Filler Detection"):
-        # Check for Whisper results cache
-        whisper_cache = af + ".filler_whisper.json"
-        if os.path.exists(whisper_cache) and os.path.getsize(whisper_cache) > 0:
-            with open(whisper_cache, "r", encoding="utf-8") as f:
-                data = json.load(f)
-                w_text, w_words = data["text"], data["words"]
-        else:
-            w_text, w_words = process_filler_detection_asr(af, whisper_filler_model, language=args.language)
-            with open(whisper_cache, "w", encoding="utf-8") as f:
-                json.dump({"text": w_text, "words": w_words}, f, ensure_ascii=False)
-        
-        # Identify fillers from Whisper words
-        filler_list = args.filler_words.split(",")
-        w_fillers = find_fillers(w_words, filler_list)
-        logger.info(f"  Filler Detection: {len(w_fillers)} filler(s) found in {os.path.basename(af)}: "
-                    f"{[(round(s,2), round(e,2)) for s, e in w_fillers]}")
-        cutting_segments.extend(w_fillers)
-
-        # Build a lookup set of filler (start, end) timestamps so we can strip them
-        # from the transcription word list — the subtitle/Kdenlive output should show
-        # only clean speech, not the filler tokens that are going to be cut anyway.
-        filler_times = {(round(s, 3), round(e, 3)) for s, e in w_fillers}
-        clean_words = [
-            w for w in w_words
-            if (round(w["start"], 3), round(w["end"], 3)) not in filler_times
-        ]
-        clean_text = " ".join(w["word"] for w in clean_words).strip()
-
-        # Reuse the cleaned Whisper transcription as Pass 2 result — avoids running Whisper twice
-        transcription_results[af] = {"text": clean_text, "words": clean_words}
+    # Pass 1b: Whisper Filler Detection has been removed. Filler detection now relies solely on Step 1 (CNN).
     
     # Whisper model stays loaded; Pass 2 below handles files not covered above (edge case)
     # unload_crisper_model() — deliberately NOT called here; shared model reused in process_transcription
 
     # 2. Pass 2: Final Transcription — skipped for files already transcribed by Pass 1b
-    logger.info("Step 3b/7: Running Pass 2: Final Transcription (faster-whisper large-v3)...")
-    for af in tqdm(all_audio_files, desc="Pass 2: Transcription"):
-        transcription_cache = af + ".asr.json"
-
-        # Load from disk cache first
-        if os.path.exists(transcription_cache) and os.path.getsize(transcription_cache) > 0:
-            with open(transcription_cache, "r", encoding="utf-8") as f:
-                data = json.load(f)
-                transcription_results[af] = {"text": data["text"], "words": data["words"]}
-            continue
-
-        # Reuse Pass 1b result if available (same Whisper run)
-        if af in transcription_results:
-            with open(transcription_cache, "w", encoding="utf-8") as f:
-                json.dump(transcription_results[af], f, ensure_ascii=False)
-            logger.info(f"  (Pass 2 skipped for {os.path.basename(af)}: reusing Pass 1b result)")
-            continue
-
-        # Fallback: run Whisper large-v3 explicitly for this file
-        c_text, c_words = process_transcription(
-            af, transcription_model,
-            silence_intervals=stream_markers[af]["silence"],
-            language=args.language,
-            cache_path=transcription_cache
-        )
-        transcription_results[af] = {"text": c_text, "words": c_words}
-
-    # Free memory after Pass 2
-    unload_transcription_model()
+    if not args.no_asr:
+        logger.info("Step 3b/7: Running Pass 2: Final Transcription (faster-whisper large-v3)...")
+        for af in tqdm(all_audio_files, desc="Pass 2: Transcription"):
+            transcription_cache = af + ".asr.json"
+    
+            # Load from disk cache first
+            if os.path.exists(transcription_cache) and os.path.getsize(transcription_cache) > 0:
+                with open(transcription_cache, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    transcription_results[af] = {"text": data["text"], "words": data["words"]}
+                continue
+    
+            # Reuse Pass 1b result if available (same Whisper run)
+            if af in transcription_results:
+                with open(transcription_cache, "w", encoding="utf-8") as f:
+                    json.dump(transcription_results[af], f, ensure_ascii=False)
+                logger.info(f"  (Pass 2 skipped for {os.path.basename(af)}: reusing Pass 1b result)")
+                continue
+    
+            # Fallback: run Whisper large-v3 explicitly for this file
+            c_text, c_words = process_transcription(
+                af, transcription_model,
+                silence_intervals=stream_markers[af]["silence"],
+                language=args.language,
+                cache_path=transcription_cache
+            )
+            transcription_results[af] = {"text": c_text, "words": c_words}
+    
+        # Free memory after Pass 2
+        unload_transcription_model()
+    else:
+        logger.info("Step 3b/7: Skipping Pass 2 (Final Transcription) due to --no-asr.")
 
     # 3. Pass 3: Gemma Cleanup (Step 3c)
     if args.refine:
@@ -399,12 +371,12 @@ def main():
         stream_markers_global=stream_markers,
         video_to_audio_map=video_to_audio_map
     )
-    # Run cleanup routine if the flag is set
+    # Run cleanup routine if the flag is set (don't delete outputs at the end)
     if args.clean:
-        run_cleanup(working_dir, args)
+        run_cleanup(working_dir, args, include_outputs=False)
 
-def run_cleanup(working_dir: str, args):
-    """Deletes all temporary artifact files from the working directory."""
+def run_cleanup(working_dir: str, args, include_outputs: bool = False):
+    """Deletes temporary artifact files from the working directory."""
     logger.info("Running cleanup routine: Deleting temporary artifact files.")
 
     # Define patterns for temporary files based on observed extensions
@@ -417,6 +389,7 @@ def run_cleanup(working_dir: str, args):
         "*.markers.json",
         "*.vad.json",
         "*.reps.json",
+        "*.wav",
     ]
 
     cleaned_count = 0
@@ -428,7 +401,7 @@ def run_cleanup(working_dir: str, args):
             except OSError as e:
                 logger.warning(f"Failed to remove {file}: {e}")
                 
-    if getattr(args, 'restart', False):
+    if include_outputs:
         output_base_dir = os.path.dirname(working_dir)
         output_patterns = [
             "*.srt",
@@ -446,6 +419,14 @@ def run_cleanup(working_dir: str, args):
                     logger.warning(f"Failed to remove output file {file}: {e}")
 
     logger.info(f"Cleanup finished. Removed {cleaned_count} files/artifacts.")
+    
+    # Remove working directory if empty
+    try:
+        if os.path.exists(working_dir) and not os.listdir(working_dir):
+            os.rmdir(working_dir)
+            logger.info(f"Removed empty working directory: {working_dir}")
+    except OSError as e:
+        logger.warning(f"Failed to remove working directory {working_dir}: {e}")
 
 
 if __name__ == "__main__":

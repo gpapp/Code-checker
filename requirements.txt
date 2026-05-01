@@ -12,3 +12,4 @@ accelerate
 python-dotenv
 pandas
 soundfile
+openai
