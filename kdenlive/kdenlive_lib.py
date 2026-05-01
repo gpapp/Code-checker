@@ -179,6 +179,15 @@ class KdenliveProject:
         if extra_properties:
             for k, v in extra_properties.items():
                 ET.SubElement(entry, "property", name=k).text = str(v)
+        return entry
+
+    def addFilterToEntry(self, entry, service_name, properties):
+        filt = ET.SubElement(entry, "filter", id=self._get_next_filter_id())
+        ET.SubElement(filt, "property", name="mlt_service").text = service_name
+        ET.SubElement(filt, "property", name="kdenlive_id").text = service_name
+        for k, v in properties.items():
+            ET.SubElement(filt, "property", name=k).text = str(v)
+        return filt
 
     def addBlankToTrack(self, track_name, blank_frames):
         """Add a blank element to a track's playlist."""

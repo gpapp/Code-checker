@@ -71,7 +71,8 @@ def generate_kdenlive_project(
     ass_paths: List[str] = None,
     asr_words: List[List[Dict]] = None,
     stream_markers_global: Dict = None,
-    video_to_audio_map: Dict = None
+    video_to_audio_map: Dict = None,
+    audio_info_map: Dict = None
 ):
     if not video_offsets:
         video_offsets = [0.0] * len(video_files)
@@ -96,7 +97,7 @@ def generate_kdenlive_project(
     from interval_utils import merge_intervals, adjust_timestamps
 
     max_dur_frames = sum(int(round(ke * proj.fps)) - int(round(ks * proj.fps)) for ks, ke in keep_segments)
-    max_dur_tc = frames_to_tc(max_dur_frames - 1, fps) if max_dur_frames > 0 else "00:00:00:00"
+    max_dur_tc = frames_to_tc(max_dur_frames - 1, proj.fps) if max_dur_frames > 0 else "00:00:00:00"
 
     # Track assignments based on the template's 4 tracks (A1, A2, V1, V2)
     vid_tracks = ["V1", "V2"]
@@ -104,22 +105,45 @@ def generate_kdenlive_project(
     v_idx = 0
     a_idx = 0
     
-    chain_map = {} # video_path -> chain_id
+    chain_map = {} # (original_file_path, stream_idx) -> chain_id
     
-    # 1. Add Files to Bin (Chains) - use SOURCE files, not temporary WAV
-    for i, fpath in enumerate(video_files):
-        duration_s = get_video_duration(fpath)
-        total_f = int(round(duration_s * fps))
-        is_vid = has_video_stream(fpath)
+    # 1. Add Files to Bin (Chains)
+    # We use ORIGINAL files in the Kdenlive project.
+    # audio_info_map: temp_wav -> {"original": path, "stream_idx": idx}
+
+    # Track which (original_file, stream_idx) pairs we need
+    required_chains = []
+    # Video chains
+    for v in video_files:
+        if has_video_stream(v):
+            required_chains.append((v, -1)) # -1 for video+audio stream 1
+
+    # Audio chains from extracted WAVs
+    for temp_wav, info in (audio_info_map or {}).items():
+        required_chains.append((info["original"], info["stream_idx"]))
+
+    # Deduplicate
+    required_chains = list(set(required_chains))
+
+    for orig_path, s_idx in required_chains:
+        duration_s = get_video_duration(orig_path)
+        total_f = int(round(duration_s * proj.fps))
+        is_vid = has_video_stream(orig_path)
         
-        # Add source file to bin (NOT the temporary WAV)
-        chain_id = proj.addFileToBin(fpath, duration_frames=total_f, clip_type="0" if is_vid else "1")
-        chain_map[fpath] = chain_id
+        chain_id = proj.addFileToBin(orig_path, duration_frames=total_f, clip_type="0" if is_vid else "1")
+        chain_map[(orig_path, s_idx)] = chain_id
         
         # Set extra chain properties
         chain = proj.root.find(f".//chain[@id='{chain_id}']")
-        ET.SubElement(chain, "property", name="audio_index").text = "1" if is_vid else "0"
-        ET.SubElement(chain, "property", name="video_index").text = "0" if is_vid else "-1"
+
+        # If s_idx is -1, it's the primary video/audio stream
+        if s_idx == -1:
+            ET.SubElement(chain, "property", name="audio_index").text = "1" if is_vid else "0"
+            ET.SubElement(chain, "property", name="video_index").text = "0" if is_vid else "-1"
+        else:
+            ET.SubElement(chain, "property", name="audio_index").text = str(s_idx)
+            ET.SubElement(chain, "property", name="video_index").text = "-1"
+
         ET.SubElement(chain, "property", name="astream").text = "0"
         
         # Add audio filters to chain (not track)
@@ -141,83 +165,137 @@ def generate_kdenlive_project(
                 "disable": "0"
             })
         
-        if i < len(asr_words) and asr_words[i]:
-            speech_html = generate_kdenlive_speech_html(i+1, asr_words[i])
-            ET.SubElement(chain, "property", name="kdenlive:speech").text = speech_html
+    # Add speech info if available (mapped to video files usually)
+    for i, v_path in enumerate(video_files):
+        vid_chain_id = chain_map.get((v_path, -1))
+        if vid_chain_id and i < len(asr_words) and asr_words[i]:
+            chain = proj.root.find(f".//chain[@id='{vid_chain_id}']")
+            if chain is not None:
+                speech_html = generate_kdenlive_speech_html(i+1, asr_words[i])
+                ET.SubElement(chain, "property", name="kdenlive:speech").text = speech_html
     
-    # 2. Add Clips to Tracks using keep_segments and handle silences
+    # 2. Add Clips to Tracks using keep_segments
     # For each video file, add timeline items to its assigned tracks
-    for i, video_path in enumerate(video_files):
+    video_track_idx = 0
+    audio_track_idx = 0
+
+    # Sort video files: prioritize those WITH video streams first for V1, V2 mapping
+    video_files_sorted = sorted(video_files, key=lambda x: not has_video_stream(x))
+
+    for i, video_path in enumerate(video_files_sorted):
         is_vid = has_video_stream(video_path)
-        vid_track = None
-        aud_track = None
 
-        if is_vid:
-            vid_track = vid_tracks[i] if i < len(vid_tracks) else vid_tracks[-1]
-            aud_track = aud_tracks[i] if i < len(aud_tracks) else aud_tracks[-1]
-        else:
-            aud_track = aud_tracks[i] if i < len(aud_tracks) else aud_tracks[-1]
+        # Audio track assignment:
+        # If external audio exists, video_to_audio_map will have separate paths for video files
+        # We need to assign each distinct audio source to its own track.
+        audio_sources = video_to_audio_map.get(video_path, [])
+        if not audio_sources and not is_vid:
+            audio_sources = [video_path]
 
-        # Determine which chain to use for audio track
-        # If video_to_audio_map provides separate audio, use that chain
-        audio_path = video_path
-        if video_to_audio_map and video_path in video_to_audio_map and video_to_audio_map[video_path]:
-            audio_path = video_to_audio_map[video_path][0]  # Use first audio file
+        vid_chain_id = chain_map.get((video_path, -1))
 
-        vid_chain_id = chain_map.get(video_path)
-        aud_chain_id = chain_map.get(audio_path, vid_chain_id)
+        # Add video track if exists
+        if is_vid and video_track_idx < len(vid_tracks):
+            v_track_name = vid_tracks[video_track_idx]
+            video_track_idx += 1
 
-        # Get silences for this stream (use audio path for silence detection)
-        stream_markers = stream_markers_global.get(audio_path, {})
-        silences = stream_markers.get("silence", [])
+            timeline_pos = 0
+            for ks, ke in keep_segments:
+                ks_f = int(round(ks * proj.fps))
+                ke_f = int(round(ke * proj.fps))
+                if ke_f > ks_f:
+                    proj.addClipToTrack(v_track_name, vid_chain_id, ks_f, ke_f, timeline_pos)
+                    timeline_pos += (ke_f - ks_f)
 
-        # Build timeline items: list of (type, start_frame, end_frame)
-        timeline_items = []
-        for ks, ke in keep_segments:
-            ks_frame = int(round(ks * proj.fps))
-            ke_frame = int(round(ke * proj.fps))
+        # Add audio tracks
+        for a_source in audio_sources:
+            if audio_track_idx >= len(aud_tracks):
+                break
 
-            # Get silences that fall within [ks, ke]
-            segment_silences = [(int(round(s * proj.fps)), int(round(e * proj.fps)))
-                               for s, e in silences if s < ke and e > ks]
-            segment_silences.sort()
+            a_track_name = aud_tracks[audio_track_idx]
+            audio_track_idx += 1
 
-            current_pos = ks_frame
-            for s_frame, e_frame in segment_silences:
-                if s_frame > current_pos:
-                    timeline_items.append(('clip', current_pos, s_frame))
-                timeline_items.append(('blank', s_frame, e_frame))
-                current_pos = e_frame
+            # Find chain for this audio source
+            if audio_info_map and a_source in audio_info_map:
+                info = audio_info_map[a_source]
+                a_chain_id = chain_map.get((info["original"], info["stream_idx"]))
+            else:
+                a_chain_id = chain_map.get((a_source, -1))
+            if not a_chain_id:
+                continue
 
-            if current_pos < ke_frame:
-                timeline_items.append(('clip', current_pos, ke_frame))
+            # Get silences and spikes for this stream
+            markers = stream_markers_global.get(a_source, {})
+            silences = markers.get("silence", [])
+            spikes = markers.get("spikes", [])
 
-        # Now add to tracks using library methods
-        # Track timeline position for each track
-        track_timeline_pos = {}
-        for track_name in [t for t in [vid_track, aud_track] if t]:
-            track_timeline_pos[track_name] = 0
+            timeline_pos = 0
+            for ks, ke in keep_segments:
+                ks_f = int(round(ks * proj.fps))
+                ke_f = int(round(ke * proj.fps))
+                if ke_f <= ks_f:
+                    continue
 
-        for item_type, item_start_frame, item_end_frame in timeline_items:
-            for track_name in [t for t in [vid_track, aud_track] if t]:
-                if item_type == 'clip':
-                    # Determine which chain to use
-                    if track_name == vid_track and vid_chain_id:
-                        cid = vid_chain_id
-                    elif track_name == aud_track and aud_chain_id:
-                        cid = aud_chain_id
-                    else:
-                        continue
+                # Add continuous clip
+                entry = proj.addClipToTrack(a_track_name, a_chain_id, ks_f, ke_f, timeline_pos)
 
-                    proj.addClipToTrack(track_name, cid, item_start_frame, item_end_frame,
-                                        track_timeline_pos[track_name])
+                # Build volume keyframes for muting
+                # Mute if:
+                # 1. It is a silence on THIS stream
+                # 2. It is a spike on THIS stream
 
-                elif item_type == 'blank':
-                    blank_frames = item_end_frame - item_start_frame
-                    proj.addBlankToTrack(track_name, blank_frames)
+                mute_intervals = merge_intervals(silences + spikes)
+                # Clip-relative intervals
+                clip_mutes = []
+                for ms, me in mute_intervals:
+                    # Intersect with [ks, ke]
+                    is_s = max(ms, ks)
+                    is_e = min(me, ke)
+                    if is_e > is_s:
+                        # Convert to clip-relative frames
+                        rel_s = int(round((is_s - ks) * proj.fps))
+                        rel_e = int(round((is_e - ks) * proj.fps))
+                        clip_mutes.append((rel_s, rel_e))
 
-                # Update timeline position for this track
-                track_timeline_pos[track_name] = item_end_frame
+                if clip_mutes:
+                    # Generate volume keyframes: frame=level;frame=level
+                    # level 0 for mute, 1 for normal
+                    kfs = []
+                    clip_len_f = ke_f - ks_f
+                    # Sort and merge just in case
+                    clip_mutes = merge_intervals([(float(s), float(e)) for s, e in clip_mutes])
+                    clip_mutes = [(int(s), int(e)) for s, e in clip_mutes]
+
+                    if clip_mutes[0][0] > 0:
+                        kfs.append("0=1")
+
+                    for idx, (rs, re) in enumerate(clip_mutes):
+                        # Clamp to clip boundaries
+                        rs = max(0, rs)
+                        re = min(clip_len_f - 1, re)
+                        if re < rs: continue
+
+                        if rs > 0:
+                            # If there was space before this mute, ensure we were 1
+                            if not kfs or not kfs[-1].split('=')[0] == str(rs-1):
+                                kfs.append(f"{rs-1}=1")
+                        kfs.append(f"{rs}=0")
+                        kfs.append(f"{re}=0")
+
+                        # Look ahead to see if we should unmute
+                        if idx + 1 < len(clip_mutes):
+                            next_rs = clip_mutes[idx+1][0]
+                            if next_rs > re + 1:
+                                kfs.append(f"{re+1}=1")
+                        else:
+                            # Last mute
+                            if re < clip_len_f - 1:
+                                kfs.append(f"{re+1}=1")
+
+                    if kfs:
+                        proj.addFilterToEntry(entry, "volume", {"gain": ";".join(kfs)})
+
+                timeline_pos += (ke_f - ks_f)
     
     # 3. Add Track-level Filters (audio tracks A1, A2)
     for track_name in aud_tracks:
@@ -268,8 +346,6 @@ def generate_kdenlive_project(
         
         # Add transitions for audio tracks (blend against track 0)
         for idx, track_name in enumerate(aud_tracks):
-            if idx == 0:
-                continue
             trans = ET.SubElement(seq_tractor, "transition", id=proj._get_next_filter_id().replace("filter", "transition"))
             ET.SubElement(trans, "property", name="a_track").text = "0"
             ET.SubElement(trans, "property", name="b_track").text = str(idx + 1)
@@ -296,8 +372,18 @@ def generate_kdenlive_project(
     
     # 5. Adjust sequence duration properties
     seq_tr = proj.seq_tractor
-    ET.SubElement(seq_tr, "property", name="kdenlive:duration").text = max_dur_tc
-    ET.SubElement(seq_tr, "property", name="kdenlive:maxduration").text = str(max_dur_frames)
+    if seq_tr is not None:
+        duration_prop = seq_tr.find("property[@name='kdenlive:duration']")
+        if duration_prop is not None:
+            duration_prop.text = max_dur_tc
+        else:
+            ET.SubElement(seq_tr, "property", name="kdenlive:duration").text = max_dur_tc
+
+        max_dur_prop = seq_tr.find("property[@name='kdenlive:maxduration']")
+        if max_dur_prop is not None:
+            max_dur_prop.text = str(max_dur_frames)
+        else:
+            ET.SubElement(seq_tr, "property", name="kdenlive:maxduration").text = str(max_dur_frames)
     
     # Update project tractor (tractor4 is the sequence)
     proj.save(output_path)

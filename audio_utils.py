@@ -22,25 +22,25 @@ def has_video_stream(file_path: str) -> bool:
     except Exception:
         return False
 
-def get_audio_streams(video_path: str) -> int:
-    """Returns the number of audio streams in the file."""
+def get_audio_stream_indices(file_path: str) -> list[int]:
+    """Returns the absolute indices of all audio streams in the file."""
     cmd = [
         "ffprobe", "-v", "error", "-select_streams", "a",
-        "-show_entries", "stream=index", "-of", "json", video_path
+        "-show_entries", "stream=index", "-of", "json", file_path
     ]
     result = subprocess.run(cmd, check=True, capture_output=True, text=True)
     data = json.loads(result.stdout)
-    return len(data.get("streams", []))
+    return [s["index"] for s in data.get("streams", [])]
 
-def extract_audio_streams(file_path: str, working_dir: str, normalize: bool = True) -> list[str]:
-    """Extracts all audio streams to WAV files and returns their paths."""
+def extract_audio_streams(file_path: str, working_dir: str, normalize: bool = True) -> list[dict]:
+    """Extracts all audio streams to WAV files and returns their paths and original indices."""
     file_path = os.path.abspath(file_path)
     working_dir = os.path.abspath(working_dir)
-    num_streams = get_audio_streams(file_path)
+    stream_indices = get_audio_stream_indices(file_path)
     base_name = os.path.splitext(os.path.basename(file_path))[0]
-    extracted_files = []
+    extracted_info = []
 
-    for i in range(num_streams):
+    for i, abs_idx in enumerate(stream_indices):
         output_path = os.path.join(working_dir, f"{base_name}_a{i}.wav")
         
         # Check if file already exists and has a valid size
@@ -76,20 +76,20 @@ def extract_audio_streams(file_path: str, working_dir: str, normalize: bool = Tr
             
             # Save final processed file
             sf.write(output_path, y, sr, subtype='PCM_16')
-            extracted_files.append(output_path)
+            extracted_info.append({"wav": output_path, "stream_idx": abs_idx})
             
         except Exception as e:
             logger.error(f"Failed to process stream {i} with librosa: {e}")
             # Fallback: if librosa fails, move the raw file to output_path
             if os.path.exists(output_path): os.remove(output_path)
             os.rename(temp_raw, output_path)
-            extracted_files.append(output_path)
+            extracted_info.append({"wav": output_path, "stream_idx": abs_idx})
         finally:
             if os.path.exists(temp_raw):
                 try: os.remove(temp_raw)
                 except: pass
 
-    return extracted_files
+    return extracted_info
 
 def detect_silence_and_spikes(audio_path: str, threshold_db: float, min_silence_len: float, max_spike_len: float):
     """Detects silent intervals and short spikes in an audio file."""

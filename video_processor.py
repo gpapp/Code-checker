@@ -127,11 +127,18 @@ def main():
         logger.info("Standalone audio detected. On-camera video audio will be ignored for analysis.")
 
     video_to_audio_map = {}
+    # mapping of temp_wav -> {original_file, stream_idx}
+    audio_info_map = {}
+
     for v in tqdm(final_inputs, desc="Extracting"):
         if has_external_audio and has_video_stream(v):
             video_to_audio_map[v] = []
         else:
-            video_to_audio_map[v] = extract_audio_streams(v, working_dir)
+            extracted = extract_audio_streams(v, working_dir)
+            video_to_audio_map[v] = [e["wav"] for e in extracted]
+            for e in extracted:
+                audio_info_map[e["wav"]] = {"original": v, "stream_idx": e["stream_idx"]}
+
     all_audio_files = [f for files in video_to_audio_map.values() for f in files]
 
     logger.info("Step 2/7: Detecting silence and spikes...")
@@ -375,7 +382,8 @@ def main():
         ass_paths=ass_files,
         asr_words=source_asr_words,
         stream_markers_global=stream_markers,
-        video_to_audio_map=video_to_audio_map
+        video_to_audio_map=video_to_audio_map,
+        audio_info_map=audio_info_map
     )
     # Run cleanup routine if the flag is set (don't delete outputs at the end)
     if args.clean:
