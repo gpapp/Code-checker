@@ -146,8 +146,8 @@ def generate_kdenlive_project(
 
         ET.SubElement(chain, "property", name="astream").text = "0"
         
-        # Add audio filters to chain (not track)
-        if not is_vid:
+        # Add audio filters to chain (not track) - apply to any chain being used for audio
+        if s_idx != -1 or not is_vid:
             proj.addFilterToChain(chain_id, "ladspa.1073", {
                 "internal_added": "237",
                 "0": "1", "1": "0.5", "2": "0.1", "3": "0.1",
@@ -165,29 +165,37 @@ def generate_kdenlive_project(
                 "disable": "0"
             })
         
-    # Add speech info if available (mapped to video files usually)
-    for i, v_path in enumerate(video_files):
+    # Pair video files with their offsets and asr_words to maintain correspondence
+    paired_inputs = []
+    for i in range(len(video_files)):
+        paired_inputs.append({
+            "path": video_files[i],
+            "offset": video_offsets[i] if i < len(video_offsets) else 0.0,
+            "asr": asr_words[i] if i < len(asr_words) else []
+        })
+
+    # Sort: prioritize those WITH video streams
+    paired_inputs.sort(key=lambda x: not has_video_stream(x["path"]))
+
+    # Add speech info
+    for i, item in enumerate(paired_inputs):
+        v_path = item["path"]
         vid_chain_id = chain_map.get((v_path, -1))
-        if vid_chain_id and i < len(asr_words) and asr_words[i]:
+        if vid_chain_id and item["asr"]:
             chain = proj.root.find(f".//chain[@id='{vid_chain_id}']")
             if chain is not None:
-                speech_html = generate_kdenlive_speech_html(i+1, asr_words[i])
+                speech_html = generate_kdenlive_speech_html(i+1, item["asr"])
                 ET.SubElement(chain, "property", name="kdenlive:speech").text = speech_html
-    
+
     # 2. Add Clips to Tracks using keep_segments
-    # For each video file, add timeline items to its assigned tracks
     video_track_idx = 0
     audio_track_idx = 0
 
-    # Sort video files: prioritize those WITH video streams first for V1, V2 mapping
-    video_files_sorted = sorted(video_files, key=lambda x: not has_video_stream(x))
-
-    for i, video_path in enumerate(video_files_sorted):
+    for item in paired_inputs:
+        video_path = item["path"]
+        offset = item["offset"]
         is_vid = has_video_stream(video_path)
 
-        # Audio track assignment:
-        # If external audio exists, video_to_audio_map will have separate paths for video files
-        # We need to assign each distinct audio source to its own track.
         audio_sources = video_to_audio_map.get(video_path, [])
         if not audio_sources and not is_vid:
             audio_sources = [video_path]
@@ -201,8 +209,8 @@ def generate_kdenlive_project(
 
             timeline_pos = 0
             for ks, ke in keep_segments:
-                ks_f = int(round(ks * proj.fps))
-                ke_f = int(round(ke * proj.fps))
+                ks_f = int(round((ks + offset) * proj.fps))
+                ke_f = int(round((ke + offset) * proj.fps))
                 if ke_f > ks_f:
                     proj.addClipToTrack(v_track_name, vid_chain_id, ks_f, ke_f, timeline_pos)
                     timeline_pos += (ke_f - ks_f)
@@ -231,8 +239,8 @@ def generate_kdenlive_project(
 
             timeline_pos = 0
             for ks, ke in keep_segments:
-                ks_f = int(round(ks * proj.fps))
-                ke_f = int(round(ke * proj.fps))
+                ks_f = int(round((ks + offset) * proj.fps))
+                ke_f = int(round((ke + offset) * proj.fps))
                 if ke_f <= ks_f:
                     continue
 

@@ -92,3 +92,59 @@ def test_multiple_audio_tracks_assignment(mock_exists, mock_has_vid, mock_dur, w
     # Silence was at 1.0-2.0s. At 25fps, that's frames 25-50.
     assert "25=0" in gain_prop.text
     assert "50=0" in gain_prop.text
+
+    # Check for bin effects (filters on chains)
+    def find_filter(chain, service):
+        for f in chain.findall("filter"):
+            for p in f.findall("property"):
+                if p.get("name") == "mlt_service" and p.text == service:
+                    return f
+        return None
+
+    assert find_filter(a1_chain, "ladspa.1073") is not None
+    assert find_filter(a1_chain, "dynamic_loudness") is not None
+
+@patch("exporter.get_video_duration", return_value=10.0)
+@patch("exporter.has_video_stream")
+@patch("os.path.exists", return_value=True)
+def test_video_offsets(mock_exists, mock_has_vid, mock_dur, working_dir):
+    output_path = os.path.join(working_dir, "test_offsets.kdenlive")
+    video_files = ["video1.mkv", "video2.mkv"]
+    mock_has_vid.return_value = True
+
+    # 0.5s offset for video1, -0.2s for video2
+    video_offsets = [0.5, -0.2]
+    keep_segments = [(1.0, 3.0)] # Global time
+
+    generate_kdenlive_project(
+        video_files=video_files,
+        output_path=output_path,
+        keep_segments=keep_segments,
+        stream_spikes_map={},
+        overlaps=[],
+        repetitions=[],
+        fps=25.0,
+        video_offsets=video_offsets
+    )
+
+    tree = ET.parse(output_path)
+    root = tree.getroot()
+
+    # Check entries for both videos
+    entries = root.findall(".//playlist/entry")
+    # Should find entries for video1 and video2 (and their audio if not ignored)
+    # Our mocks don't ignore audio since no separate audio was provided.
+
+    # Video 1: 1.0+0.5 = 1.5s to 3.0+0.5 = 3.5s. Frames: 37.5 (38) to 87.5 (88).
+    # Video 2: 1.0-0.2 = 0.8s to 3.0-0.2 = 2.8s. Frames: 20 to 70.
+
+    found_in_out = []
+    for ent in entries:
+        prod = ent.get("producer")
+        chain = root.find(f".//chain[@id='{prod}']")
+        if chain is not None:
+            res = chain.find("property[@name='resource']").text
+            found_in_out.append((res, ent.get("in"), ent.get("out")))
+
+    assert any("video1.mkv" in r and i == "00:00:01:13" and o == "00:00:03:12" for r, i, o in found_in_out)
+    assert any("video2.mkv" in r and i == "00:00:00:20" and o == "00:00:02:19" for r, i, o in found_in_out)

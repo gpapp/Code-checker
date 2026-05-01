@@ -131,7 +131,8 @@ def main():
     audio_info_map = {}
 
     for v in tqdm(final_inputs, desc="Extracting"):
-        if has_external_audio and has_video_stream(v):
+        is_audio_ext = os.path.splitext(v)[1].lower() in {".mp3", ".wav", ".m4a", ".flac"}
+        if has_external_audio and has_video_stream(v) and not is_audio_ext:
             video_to_audio_map[v] = []
         else:
             extracted = extract_audio_streams(v, working_dir)
