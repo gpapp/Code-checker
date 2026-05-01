@@ -9,3 +9,4 @@ __pycache__/
 processed_*.mkv
 *.wav
 PodcastFillerDataset/*
+tests/outputs

@@ -54,3 +54,23 @@
   - Generated subtitle files: `*.ass`, `*.srt`
 - **Output**: Places `project.kdenlive` and rendered videos in PARENT directory of input source
 - **Naming Pattern**: Test files follow timestamp-description-uuid--email format (observed in test_data)
+
+## MLT / Kdenlive XML Reference
+
+- **Timecodes**: Use `HH:MM:SS:FF` (e.g., `00:00:01:12`) for frame-accurate timeline elements.
+- **Inclusive Indices**: The `out` point in MLT is **inclusive**. For a clip of 100 frames starting at 0, use `in="00:00:00:00"` and `out="00:00:03:24"` (where 24 is frame 99 at 25fps). Formula: `out = total_frames - 1`.
+- **Chains vs Producers**: Use `<chain>` for physical media files (avformat) and `<producer>` for generated content like `color` (black track).
+- **Tractors**: Every track in Kdenlive is represented by a `<tractor>`. 
+    - Audio tracks MUST have `kdenlive:audio_track=1`.
+    - Inside the track tractor, the `<track>` elements pointing to media playlists should have `hide="video"` (for audio tracks) or `hide="audio"` (for video tracks).
+- **Sequence Properties**: The sequence tractor should define `kdenlive:sequenceproperties.tracks` and `tracksCount` as integer values representing the total number of user tracks (excluding the background black track).
+- **Filters (Non-destructive)**:
+    - `volume`: Use for muting. Keyframes follow `frame=level` format (e.g., `0=1.0;24=0.0`). Note that Kdenlive native track effects are placed on the `<tractor>`, but clip effects are placed on the `<chain>`.
+    - `ladspa.1073`: Standard compressor.
+    - `dynamic_loudness`: Normalizes audio to target LUFS (default `-14`).
+- **Transitions (Crucial for Timeline Stability)**:
+    - Transitions in the main sequence tractor MUST blend/mix tracks against the bottom-most track (Track 0, the `black_track`).
+    - Use `a_track="0"` and `b_track="<track_index>"` for all transitions. Do NOT cascade transitions (e.g., `1->2`, `2->3`).
+    - `qtblend`: Standard video track compositor.
+    - `mix`: Standard audio track mixer.
+- **Project Structure**: Source files go in `<chain>` elements -> organized into `<playlist>` -> combined into track `<tractor>` -> all tracks combined into a sequence `<tractor>` -> wrapped in a project `<tractor>`.

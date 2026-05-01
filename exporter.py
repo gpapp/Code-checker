@@ -1,7 +1,7 @@
 import os
 import subprocess
 import logging
-import lxml.etree as ET
+import xml.etree.ElementTree as ET
 from typing import List, Tuple, Dict
 
 logger = logging.getLogger(__name__)
@@ -72,291 +72,149 @@ def generate_kdenlive_project(
     stream_markers_global: Dict = None,
     video_to_audio_map: Dict = None
 ):
-    if video_offsets is None:
-        video_offsets = []
+    if not video_offsets:
+        video_offsets = [0.0] * len(video_files)
+    if video_to_audio_map is None:
+        video_to_audio_map = {f: [f] for f in video_files}
+    if stream_markers_global is None:
+        stream_markers_global = {}
     if ass_paths is None:
         ass_paths = []
     if asr_words is None:
         asr_words = []
         
+    from kdenlive.kdenlive_lib import KdenliveProject
+    
+    template_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "kdenlive", "empty.kdenlive")
+    if not os.path.exists(template_path):
+        raise FileNotFoundError(f"Template not found at {template_path}")
+        
+    proj = KdenliveProject(template_path)
+    
     import uuid
     from audio_utils import get_video_duration, has_video_stream
-    import xml.etree.ElementTree as ET
+    from interval_utils import merge_intervals, adjust_timestamps
 
     max_dur_frames = sum(int(round(ke * fps)) - int(round(ks * fps)) for ks, ke in keep_segments)
-    max_dur_tc = frames_to_tc(max_dur_frames, fps)
-    if not keep_segments:
-        logger.warning("No keep segments, setting max_dur to 0")
+    max_dur_tc = frames_to_tc(max_dur_frames - 1, fps) if max_dur_frames > 0 else "00:00:00:00"
 
-    from interval_utils import merge_intervals
-
-    seq_uuid = f"{{{uuid.uuid4()}}}"
-
-    # root attribute tells MLT where to resolve relative resource paths from
-    media_root = os.path.dirname(os.path.abspath(video_files[0])) if video_files else os.path.dirname(os.path.abspath(output_path))
-    root = ET.Element("mlt", LC_NUMERIC="C", version="7.28.0", title="Anonymous Submission", producer="main_bin", root=media_root)
-    ET.SubElement(root, "profile", description=f"HD 1080p {fps}fps", frame_rate_num=str(int(fps)), 
-                  frame_rate_den="1", width="1920", height="1080", progressive="1", 
-                  sample_aspect_num="1", sample_aspect_den="1", display_aspect_num="16", 
-                  display_aspect_den="9", colorspace="709")
-
-    # Generators
+    # Track assignments based on the template's 4 tracks (A1, A2, V1, V2)
+    vid_tracks = ["V1", "V2"]
+    aud_tracks = ["A1", "A2"]
+    v_idx = 0
+    a_idx = 0
+    
+    chain_map = {} # video_path -> chain_id
+    
+    # 1. Add Files to Bin (Chains)
     for i, fpath in enumerate(video_files):
-        prod_num = i + 1
         duration_s = get_video_duration(fpath)
+        total_f = int(round(duration_s * fps))
         is_vid = has_video_stream(fpath)
-        file_size = os.path.getsize(fpath)
-        clip_uuid = f"{{{uuid.uuid4()}}}"
-        bname = os.path.basename(fpath)
-
-        for use_tl in [False, True]:
-            chain_id = f"chain{prod_num}_tl" if use_tl else f"chain{prod_num}"
-            t = ET.SubElement(root, "chain", id=chain_id, out=frames_to_tc(int(round(duration_s * fps)), fps))
-            ET.SubElement(t, "property", name="length").text = str(int(round(duration_s * fps)))
-            ET.SubElement(t, "property", name="eof").text = "pause"
-            ET.SubElement(t, "property", name="resource").text = bname if use_tl else fpath
-            ET.SubElement(t, "property", name="mlt_service").text = "avformat-novalidate" if use_tl else "avformat"
-            ET.SubElement(t, "property", name="seekable").text = "1"
-            ET.SubElement(t, "property", name="audio_index").text = "1" if is_vid else "0"
-            ET.SubElement(t, "property", name="video_index").text = "0" if is_vid else "-1"
-            ET.SubElement(t, "property", name="astream").text = "0"
-            ET.SubElement(t, "property", name="kdenlive:control_uuid").text = clip_uuid
-            ET.SubElement(t, "property", name="kdenlive:proxy").text = "-"
-            ET.SubElement(t, "property", name="kdenlive:originalurl").text = bname
-            ET.SubElement(t, "property", name="kdenlive:id").text = str(prod_num)
-            ET.SubElement(t, "property", name="kdenlive:clip_type").text = "0" if is_vid else "1"
-            ET.SubElement(t, "property", name="kdenlive:file_size").text = str(file_size)
-            ET.SubElement(t, "property", name="kdenlive:folderid").text = "-1"
-            if use_tl and not is_vid:
-                ET.SubElement(t, "property", name="set.test_audio").text = "0"
-                ET.SubElement(t, "property", name="set.test_image").text = "1"
-            if not use_tl and i < len(asr_words) and asr_words[i]:
-                speech_html = generate_kdenlive_speech_html(prod_num, asr_words[i])
-                ET.SubElement(t, "property", name="kdenlive:speech").text = speech_html
-
-    # Pre-calculate tracks to generate correct tractor IDs
-    num_video_tracks = sum(1 for f in video_files if has_video_stream(f))
-    # Only count audio tracks for files that actually have audio
-    num_audio_tracks = sum(1 for f in video_files if video_to_audio_map is None or video_to_audio_map.get(f, []))
-    total_track_pairs = num_video_tracks + num_audio_tracks
-    
-    seq_tractor_id = f"tractor{total_track_pairs}"
-    proj_tractor_id = f"tractor{total_track_pairs + 1}"
-
-    # main_bin
-    bin_playlist = ET.SubElement(root, "playlist", id="main_bin")
-    for i in range(len(video_files)):
-        prod_num = i + 1
-        fpath = video_files[i]
-        duration_s = get_video_duration(fpath)
-        ent = ET.SubElement(bin_playlist, "entry", **{
-            "in": "00:00:00.000",
-            "out": secs_to_tc(duration_s),
-            "producer": f"chain{prod_num}"
-        })
-        ET.SubElement(ent, "property", name="kdenlive:id").text = str(prod_num)
         
-    seq_ent = ET.SubElement(bin_playlist, "entry", **{
-        "in": "00:00:00:00",
-        "out": max_dur_tc,
-        "producer": seq_tractor_id
-    })
-    ET.SubElement(bin_playlist, "property", name="kdenlive:docproperties.activetimeline").text = seq_uuid
-    ET.SubElement(bin_playlist, "property", name="kdenlive:docproperties.audioChannels").text = "2"
-    ET.SubElement(bin_playlist, "property", name="kdenlive:docproperties.version").text = "1.1"
-    ET.SubElement(bin_playlist, "property", name="kdenlive:docproperties.decimalPoint").text = "."
-    ET.SubElement(bin_playlist, "property", name="xml_retain").text = "1"
-    
-    # black_track
-    bt = ET.SubElement(root, "producer", id="black_track", **{"in":"00:00:00:00", "out":max_dur_tc})
-    ET.SubElement(bt, "property", name="length").text = "2147483647"
-    ET.SubElement(bt, "property", name="eof").text = "continue"
-    ET.SubElement(bt, "property", name="resource").text = "black"
-    ET.SubElement(bt, "property", name="mlt_service").text = "color"
-    ET.SubElement(bt, "property", name="mlt_image_format").text = "rgba"
+        # Add to bin
+        chain_id = proj.addFileToBin(fpath, duration_frames=total_f, clip_type="0" if is_vid else "1")
+        chain_map[fpath] = chain_id
+        
+        # Set extra chain properties that exporter originally set
+        chain = proj.root.find(f".//chain[@id='{chain_id}']")
+        ET.SubElement(chain, "property", name="audio_index").text = "1" if is_vid else "0"
+        ET.SubElement(chain, "property", name="video_index").text = "0" if is_vid else "-1"
+        ET.SubElement(chain, "property", name="astream").text = "0"
+        
+        if i < len(asr_words) and asr_words[i]:
+            speech_html = generate_kdenlive_speech_html(i+1, asr_words[i])
+            ET.SubElement(chain, "property", name="kdenlive:speech").text = speech_html
 
-    # Playlists and Tractors
-    pl_idx = 0
-    t_idx = 0
-    multitrack_producers = ["black_track"]
-    
-    num_video_tracks = 0
-    num_audio_tracks = 0
-
-    # PASS 1: VIDEO TRACKS
+    # 2. Add Clips to Tracks
     for i, video_path in enumerate(video_files):
-        if not has_video_stream(video_path):
-            continue
-            
-        prod_num = i + 1
-        num_video_tracks += 1
-        offset = video_offsets[i] if i < len(video_offsets) else 0.0
-        
-        main_pl = ET.SubElement(root, "playlist", id=f"playlist{pl_idx}")
-        aux_pl = ET.SubElement(root, "playlist", id=f"playlist{pl_idx+1}")
-        
-        for ks, ke in keep_segments:
-            # Sync calculation: exact same rounding for both Video and Audio
-            in_frame = int(round((ks + offset) * fps))
-            out_frame = int(round((ke + offset) * fps))
-            dur_frames = int(round(ke * fps)) - int(round(ks * fps))
-            
-            if out_frame <= 0:
-                ET.SubElement(main_pl, "blank", length=frames_to_tc(dur_frames, fps))
-                continue
-                
-            if in_frame < 0:
-                blank_frames = -in_frame
-                ET.SubElement(main_pl, "blank", length=frames_to_tc(blank_frames, fps))
-                in_frame = 0
-            
-            ent_dur = out_frame - in_frame
-            if ent_dur <= 0:
-                continue
-
-            ent = ET.SubElement(main_pl, "entry", producer=f"chain{prod_num}_tl", **{
-                "in": frames_to_tc(in_frame, fps),
-                "out": frames_to_tc(out_frame, fps)
-            })
-            ET.SubElement(ent, "property", name="kdenlive:id").text = str(prod_num)
-
-        tr_id = f"tractor{t_idx}"
-        tr = ET.SubElement(root, "tractor", id=tr_id, **{"in":"00:00:00:00"})
-        ET.SubElement(tr, "property", name="kdenlive:trackheight").text = "61"
-        ET.SubElement(tr, "track", hide="audio", producer=f"playlist{pl_idx}")
-        ET.SubElement(tr, "track", hide="audio", producer=f"playlist{pl_idx+1}")
-            
-        multitrack_producers.append(tr_id)
-        pl_idx += 2
-        t_idx += 1
-
-    # PASS 2: AUDIO TRACKS (skip files with no audio mapping)
-    for i, video_path in enumerate(video_files):
-        # Skip video files whose on-camera audio is unused (external audio present)
-        af_list = video_to_audio_map.get(video_path, []) if video_to_audio_map else []
-        if not af_list:
-            continue
-            
-        prod_num = i + 1
+        chain_id = chain_map[video_path]
         is_vid = has_video_stream(video_path)
-        offset = 0.0 # Audio is the reference
         
-        main_pl = ET.SubElement(root, "playlist", id=f"playlist{pl_idx}")
-        aux_pl = ET.SubElement(root, "playlist", id=f"playlist{pl_idx+1}")
-        ET.SubElement(main_pl, "property", name="kdenlive:audio_track").text = "1"
-        ET.SubElement(aux_pl, "property", name="kdenlive:audio_track").text = "1"
+        # Audio
+        af_list = video_to_audio_map.get(video_path, []) if video_to_audio_map else []
+        if af_list and a_idx < len(aud_tracks):
+            track_name = aud_tracks[a_idx]
+            a_idx += 1
             
-        filter_counter = 0
-        af = af_list[0] if af_list else None
-        
-        for ks, ke in keep_segments:
-            in_frame = int(round((ks + offset) * fps))
-            out_frame = int(round((ke + offset) * fps))
-            dur_frames = int(round(ke * fps)) - int(round(ks * fps))
+            af = af_list[0]
+            silences = stream_markers_global[af].get("silence", []) if af and af in stream_markers_global else []
+            spikes = stream_markers_global[af].get("spikes", []) if af and af in stream_markers_global else []
             
-            if out_frame <= 0:
-                ET.SubElement(main_pl, "blank", length=frames_to_tc(dur_frames, fps))
-                continue
+            # Apply volume gate filter to track for spikes
+            adj_spikes = merge_intervals(adjust_timestamps(spikes, keep_segments))
+            if adj_spikes:
+                kf_dict = {}
+                kf_dict[0] = 1.0
+                for ss, se in adj_spikes:
+                    rs = int(round(ss * fps))
+                    re = int(round(se * fps))
+                    if rs > 0 and (rs - 1) not in kf_dict: kf_dict[rs - 1] = 1.0
+                    kf_dict[rs] = 0.0
+                    kf_dict[re] = 0.0
+                    if re < max_dur_frames - 1: kf_dict[re + 1] = 1.0
+                kf_dict[max_dur_frames - 1] = 1.0
+                kf_list = [f"{k}={v}" for k, v in sorted(kf_dict.items())]
+                proj.addFilterToTrack(track_name, "volume", {"level": ";".join(kf_list), "internal_added": "237"})
                 
-            if in_frame < 0:
-                blank_frames = -in_frame
-                ET.SubElement(main_pl, "blank", length=frames_to_tc(blank_frames, fps))
-                in_frame = 0
-            
-            ent_dur = out_frame - in_frame
-            if ent_dur <= 0: continue
-
-            ent = ET.SubElement(main_pl, "entry", producer=f"chain{prod_num}_tl", **{
-                "in": frames_to_tc(in_frame, fps),
-                "out": frames_to_tc(out_frame, fps)
+            # Add Compressor and Loudness normalization
+            proj.addFilterToTrack(track_name, "ladspa.1073", {
+                "internal_added": "237",
+                "0": "1", "1": "0.5", "2": "0.1", "3": "0.1",
+                "wetness": "1", "instances": "2", "disable": "0"
             })
-            ET.SubElement(ent, "property", name="kdenlive:id").text = str(prod_num)
-            ET.SubElement(ent, "property", name="audio_index").text = "1" if is_vid else "0"
             
-            # Non-destructive audio mute for silences and spikes
-            if af and af in stream_markers_global:
-                silences = stream_markers_global[af].get("silence", [])
-                spikes = stream_markers_global[af].get("spikes", [])
-                
-                # Filter to only relevant intervals for this entry
-                entry_s = in_frame / fps
-                entry_e = out_frame / fps
-                rel_silence = [(max(entry_s, s[0]), min(entry_e, s[1])) for s in silences if s[0] < entry_e and s[1] > entry_s]
-                rel_spikes = [(max(entry_s, s[0]), min(entry_e, s[1])) for s in spikes if s[0] < entry_e and s[1] > entry_s]
-                
-                if rel_silence or rel_spikes:
-                    filter_id = f"filter_{pl_idx}_{filter_counter}"
-                    filter_counter += 1
-                    f_node = ET.SubElement(ent, "filter", id=filter_id)
-                    ET.SubElement(f_node, "property", name="mlt_service").text = "volume"
-                    ET.SubElement(f_node, "property", name="kdenlive_id").text = "volume"
+            proj.addFilterToTrack(track_name, "dynamic_loudness", {
+                "internal_added": "237",
+                "target_loudness": "-23",
+                "window": "3",
+                "max_gain": "15",
+                "min_gain": "-15",
+                "max_rate": "3",
+                "discontinuity_reset": "1",
+                "disable": "0"
+            })
+            
+            # For simplicity, add entire timeline as consecutive cuts
+            timeline_start = 0
+            for ks, ke in keep_segments:
+                ks_f = int(round(ks * fps))
+                ke_f = int(round(ke * fps))
+                dur = ke_f - ks_f
+                if dur > 0:
+                    proj.addClipToTrack(track_name, chain_id, in_frame=ks_f, out_frame=ke_f, timeline_start_frame=timeline_start)
+                    # Next clip starts immediately after this one in the timeline, so timeline_start=0 means no gap
+                    timeline_start = 0
                     
-                    kf = ["0=1.0"]
-                    mutes = sorted(rel_silence + rel_spikes)
-                    for ms, me in mutes:
-                        rs = int(round((ms - entry_s) * fps))
-                        re = int(round((me - entry_s) * fps))
-                        if rs > 0: kf.append(f"{rs-1}=1.0")
-                        kf.append(f"{rs}=0.0")
-                        kf.append(f"{re}=0.0")
-                        if re < ent_dur: kf.append(f"{re+1}=1.0")
-                    
-                    kf.append(f"{ent_dur}=1.0")
-                    ET.SubElement(f_node, "property", name="level").text = ";".join(kf)
+        # Video
+        if is_vid and v_idx < len(vid_tracks):
+            track_name = vid_tracks[v_idx]
+            v_idx += 1
+            
+            offset = video_offsets[i] if i < len(video_offsets) else 0.0
+            timeline_start = 0
+            for ks, ke in keep_segments:
+                ks_f = int(round((ks + offset) * fps))
+                ke_f = int(round((ke + offset) * fps))
+                dur = ke_f - ks_f
+                if dur > 0:
+                    proj.addClipToTrack(track_name, chain_id, in_frame=ks_f, out_frame=ke_f, timeline_start_frame=timeline_start)
+                    timeline_start = 0
 
-        multitrack_producers.append(tr_id)
-        pl_idx += 2
-        t_idx += 1
-
-    # Main sequence tractor
-    seq_tr = ET.SubElement(root, "tractor", id=seq_tractor_id, **{"in":"00:00:00:00", "out":max_dur_tc})
-    ET.SubElement(seq_tr, "property", name="kdenlive:clipname").text = "Sequence 1"
-    ET.SubElement(seq_tr, "property", name="kdenlive:uuid").text = seq_uuid
-    ET.SubElement(seq_tr, "property", name="kdenlive:clip_type").text = "0"
-    ET.SubElement(seq_tr, "property", name="kdenlive:producer_type").text = "17"
-    ET.SubElement(seq_tr, "property", name="kdenlive:sequenceproperties.hasAudio").text = "1" if num_audio_tracks > 0 else "0"
-    ET.SubElement(seq_tr, "property", name="kdenlive:sequenceproperties.hasVideo").text = "1" if num_video_tracks > 0 else "0"
-    ET.SubElement(seq_tr, "property", name="kdenlive:sequenceproperties.tracksCount").text = str(num_video_tracks + num_audio_tracks)
-    ET.SubElement(seq_tr, "property", name="kdenlive:sequenceproperties.tracks").text = str(num_video_tracks)
+    # 3. Adjust sequence duration properties
+    seq_tr = proj.seq_tractor
+    ET.SubElement(seq_tr, "property", name="kdenlive:duration").text = max_dur_tc
+    ET.SubElement(seq_tr, "property", name="kdenlive:maxduration").text = str(max_dur_frames)
     
-    for mtp in multitrack_producers:
-        ET.SubElement(seq_tr, "track", producer=mtp)
-        
-    # Write Kdenlive-native subtitle file (project.kdenlive.srt)
-    # Kdenlive expects a companion .srt file named exactly "<project_file>.srt"
-    if ass_paths:
-        combined_srt_path = output_path + ".srt"
-        try:
-            # Read and combine all SRT content
-            combined_words = []
-            for ap in ass_paths:
-                srt_companion = os.path.splitext(ap)[0] + ".srt"
-                if os.path.exists(srt_companion):
-                    import shutil
-                    shutil.copy2(srt_companion, combined_srt_path)
-                    break  # Use first available SRT as the project subtitle
-        except Exception as e:
-            logger.warning(f"Could not create Kdenlive subtitle file: {e}")
+    # Update project tractor (tractor5 in template)
+    proj_tractor = proj.root.find(".//tractor[@id='tractor5']")
+    if proj_tractor is not None:
+        proj_tractor.set("out", max_dur_tc)
+        proj_track = proj_tractor.find("track")
+        if proj_track is not None:
+            proj_track.set("out", max_dur_tc)
 
-    for ti in range(1, len(multitrack_producers)):
-        trans = ET.SubElement(seq_tr, "transition", id=f"transition{ti-1}")
-        ET.SubElement(trans, "property", name="a_track").text = "0"
-        ET.SubElement(trans, "property", name="b_track").text = str(ti)
-        is_audio = (ti > num_video_tracks) # Assumes top tracks are video
-        srv = "mix" if is_audio else "qtblend"
-        ET.SubElement(trans, "property", name="mlt_service").text = srv
-        ET.SubElement(trans, "property", name="kdenlive_id").text = srv
-        ET.SubElement(trans, "property", name="internal_added").text = "237"
-        ET.SubElement(trans, "property", name="always_active").text = "1"
-
-    # Project tractor
-    proj_tr = ET.SubElement(root, "tractor", id=proj_tractor_id, **{"in":"00:00:00:00", "out":max_dur_tc})
-    ET.SubElement(proj_tr, "property", name="kdenlive:projectTractor").text = "1"
-    ET.SubElement(proj_tr, "track", producer=seq_tractor_id, **{"in":"00:00:00:00", "out":max_dur_tc})
-
-    ET.indent(root, space=" ", level=0)
-    tree = ET.ElementTree(root)
-    tree.write(output_path, encoding="utf-8", xml_declaration=True)
+    proj.save(output_path)
 
 def format_ass_time(seconds: float) -> str:
     h = int(seconds // 3600)

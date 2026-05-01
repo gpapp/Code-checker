@@ -13,3 +13,5 @@ python-dotenv
 pandas
 soundfile
 openai
+pytest
+pytest-cov
