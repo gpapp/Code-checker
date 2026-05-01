@@ -143,3 +143,7 @@ The `video_processing_work` directory will contain:
 - Transcribed `.ass` files.
 - A `project.kdenlive` file ready for further editing.
 - Cache files: `*.markers.json`, `*.asr.json`, `*.vad.json`, `*.reps.json`.
+
+## Kdenlive / MLT Reference
+
+For MLT XML formatting rules, see [`kdenlive/README.md`](kdenlive/README.md).
