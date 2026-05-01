@@ -4,8 +4,8 @@ import xml.etree.ElementTree as ET
 from unittest.mock import patch
 from exporter import generate_kdenlive_project, frames_to_tc
 
-@patch("audio_utils.get_video_duration", return_value=10.0)
-@patch("audio_utils.has_video_stream", return_value=True)
+@patch("exporter.get_video_duration", return_value=10.0)
+@patch("exporter.has_video_stream", return_value=True)
 @patch("os.path.getsize", return_value=1024)
 def test_kdenlive_xml_sync(mock_size, mock_has_vid, mock_dur, working_dir):
     output_path = os.path.join(working_dir, "test_kdenlive_xml_sync.kdenlive")

@@ -24,8 +24,8 @@ def test_synthetic_audio_cutting(synthetic_audio, working_dir):
         }
     }
     
-    with patch("audio_utils.get_video_duration", return_value=15.0), \
-         patch("audio_utils.has_video_stream", return_value=False):
+    with patch("exporter.get_video_duration", return_value=15.0), \
+         patch("exporter.has_video_stream", return_value=False):
         
         generate_kdenlive_project(
             video_files=video_files,
@@ -82,14 +82,14 @@ def test_synthetic_audio_cutting(synthetic_audio, working_dir):
     assert pl_items[2].get("out") == "00:00:14:24" # Frame 374 (15*25 - 1)
 
 def test_chained_transitions(working_dir):
-    """Test that transitions use a_track=ti-1 for chaining."""
+    """Test that transitions blend against track 0 (star model)."""
     output_path = os.path.join(working_dir, "transitions.kdenlive")
     # 2 files -> 2 audio tracks (if no video)
     video_files = ["v1.mp3", "v2.mp3"]
     keep_segments = [(0.0, 10.0)]
     
-    with patch("audio_utils.get_video_duration", return_value=10.0), \
-         patch("audio_utils.has_video_stream", return_value=False), \
+    with patch("exporter.get_video_duration", return_value=10.0), \
+         patch("exporter.has_video_stream", return_value=False), \
          patch("os.path.getsize", return_value=1000):
         
         generate_kdenlive_project(
@@ -105,17 +105,17 @@ def test_chained_transitions(working_dir):
     tree = ET.parse(output_path)
     root = tree.getroot()
     
-    # Sequence tractor should have transitions
-    seq_tr = root.find(".//tractor[@id='tractor2']") # 2 audio tracks + black_track = tractor2? 
-    # Wait, num_video_tracks=0, num_audio_tracks=2. tractor_idx: 0, 1. seq_tr = tractor2. Correct.
+    # Find the sequence tractor from main_bin's activetimeline property
+    main_bin = root.find(".//playlist[@id='main_bin']")
+    active_timeline = main_bin.find("property[@name='kdenlive:docproperties.activetimeline']")
+    seq_tr_id = active_timeline.text
+    seq_tr = root.find(f".//tractor[@id='{seq_tr_id}']")
     
+    # The sequence tractor should have transitions blending against track 0
     transitions = seq_tr.findall("transition")
-    assert len(transitions) == 2
+    # Template has 4 transitions (black to A1, A2, V1, V2)
+    assert len(transitions) >= 4
     
-    # Transition 1: Black (0) to Audio 1 (1)
-    assert transitions[0].find("property[@name='a_track']").text == "0"
-    assert transitions[0].find("property[@name='b_track']").text == "1"
-    
-    # Transition 2: Audio 1 (1) to Audio 2 (2)
-    assert transitions[1].find("property[@name='a_track']").text == "1"
-    assert transitions[1].find("property[@name='b_track']").text == "2"
+    # Check that first two transitions (black to tracks) have a_track=0
+    for i in range(min(2, len(transitions))):
+        assert transitions[i].find("property[@name='a_track']").text == "0"

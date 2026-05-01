@@ -29,13 +29,16 @@
 
 ## Testing
 
-- **Command**: `uv run pytest tests/ -q` (21 tests across 7 files)
-- **Tests**: `tests/test_intervals.py`, `tests/test_exporter.py`, `tests/test_audio.py`, `tests/test_kdenlive_lib.py`, `tests/test_synthetic_kdenlive.py`, `tests/test_refinement.py`
+- **Command**: `uv run pytest tests/ -q` (24 tests across 8 files)
+- **Tests**: `tests/test_intervals.py`, `tests/test_exporter.py`, `tests/test_audio.py`, `tests/test_kdenlive_lib.py`, `tests/test_synthetic_kdenlive.py`, `tests/test_refinement.py`, `tests/test_export_output.py`
 - **Mock-based**: No GPU/MKV needed for unit tests; `conftest.py` provides synthetic audio fixtures
+- **New tests**: `test_export_output.py` verifies kdenlive structure (A1/A2 tracks, clip lengths, silence gaps)
 
 ## MLT/Kdenlive XML (for `exporter.py`)
 
 See [`kdenlive/README.md`](kdenlive/README.md) for full reference. Critical rules:
+- **Profile FPS**: Read from `<profile>` element (`frame_rate_num`/`frame_rate_den`), NOT hardcoded 25.0
 - **Timecodes**: `HH:MM:SS:FF` format; `out` points are **inclusive** (`out = total_frames - 1`)
 - **Transitions**: MUST blend against track 0 (`a_track="0"`) using `qtblend` (video) / `mix` (audio); never cascade transitions
 - **Filters**: `volume` keyframes use `frame=level` format; clip effects on `<chain>`, track effects on `<tractor>`
+- **Persistence**: `_reset_timelines()` IS called in `KdenliveProject.__init__()` to clear template bins/tracks; don't reload saved projects (re-opening clears entries)

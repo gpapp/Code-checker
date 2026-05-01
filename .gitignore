@@ -10,3 +10,5 @@ processed_*.mkv
 *.wav
 PodcastFillerDataset/*
 tests/outputs
+test_data/project.kdenlive
+.coverage
