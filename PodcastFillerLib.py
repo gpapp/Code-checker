@@ -73,11 +73,55 @@ class PodcastFillerLib:
             self.model.load_state_dict(torch.load(self.model_path, map_location=self.device))
             self.model.eval()
 
-    def train(self, csv_path, clips_dir, epochs=5, batch_size=128):
-        """Trains the model on the PodcastFillers dataset and saves weights."""
+    def train(self, csv_path, clips_dir, hun_csv=None, hun_clips_dir=None, hun_weight=1.0, epochs=5, batch_size=128):
+        """Trains the model on the PodcastFillers dataset and saves weights.
+        
+        Args:
+            csv_path: Path to English CSV file
+            clips_dir: Path to English clips directory
+            hun_csv: Path to Hungarian CSV file (optional)
+            hun_clips_dir: Path to Hungarian clips directory (optional)
+            hun_weight: Weight multiplier for Hungarian samples (default 1.0)
+            epochs: Number of training epochs
+            batch_size: Batch size for training
+        """
         print(f"Starting training on {self.device}...")
-        dataset = PodcastFillersDataset(csv_path, clips_dir, target_sr=self.sample_rate)
-        dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=4)
+        
+        # Build datasets
+        datasets = []
+        dataset_weights = []
+        
+        # English dataset
+        eng_dataset = PodcastFillersDataset(csv_path, clips_dir, target_sr=self.sample_rate)
+        datasets.append(eng_dataset)
+        dataset_weights.extend([1.0] * len(eng_dataset))  # Weight 1.0 for English samples
+        print(f"English dataset: {len(eng_dataset)} samples")
+        
+        # Hungarian dataset (if provided)
+        if hun_csv and hun_clips_dir and os.path.exists(hun_csv) and os.path.exists(hun_clips_dir):
+            hun_dataset = HungarianFillersDataset(hun_csv, hun_clips_dir, target_sr=self.sample_rate)
+            datasets.append(hun_dataset)
+            dataset_weights.extend([hun_weight] * len(hun_dataset))  # Weight for Hungarian samples
+            print(f"Hungarian dataset: {len(hun_dataset)} samples (weight: {hun_weight})")
+        elif hun_csv or hun_clips_dir:
+            print("[WARNING] Hungarian CSV or clips directory provided but not found. Training English-only.")
+        
+        # Combine datasets
+        if len(datasets) > 1:
+            combined_dataset = CombinedDataset(datasets)
+            # Create weighted sampler for biased sampling
+            sampler = torch.utils.data.WeightedRandomSampler(
+                weights=dataset_weights,
+                num_samples=len(dataset_weights),
+                replacement=True
+            )
+            dataloader = DataLoader(combined_dataset, batch_size=batch_size, sampler=sampler, num_workers=4)
+            print(f"Combined dataset: {len(combined_dataset)} samples with weighted sampling")
+        else:
+            # English-only training
+            dataset = datasets[0]
+            dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=4)
+            print(f"English-only dataset: {len(dataset)} samples")
         
         criterion = nn.BCELoss()
         optimizer = optim.Adam(self.model.parameters(), lr=0.001)
@@ -231,6 +275,81 @@ class PodcastFillersDataset(Dataset):
         
         return wav, torch.tensor(row['is_filler'], dtype=torch.float32)
 
+
+class HungarianFillersDataset(Dataset):
+    """
+    Dataset for Hungarian filler detection with flat CSV+clips structure.
+    Expects CSV with columns: clip_name, consolidated_label
+    And clips_dir containing all .wav files directly (no subdirs).
+    """
+    def __init__(self, csv_file, clips_dir, target_sr=16000):
+        self.df = pd.read_csv(csv_file)
+        # Map labels: Filler, Uh, Um -> 1 (filler); everything else -> 0 (non-filler)
+        self.df['is_filler'] = self.df['consolidated_label'].apply(
+            lambda x: 1 if x in ['Filler', 'Uh', 'Um'] else 0
+        )
+        self.clips_dir = clips_dir
+        self.target_sr = target_sr
+
+    def __len__(self):
+        return len(self.df)
+
+    def __getitem__(self, idx):
+        row = self.df.iloc[idx]
+        # Flat structure: all clips directly in clips_dir
+        path = os.path.join(self.clips_dir, row['clip_name'])
+        try:
+            # Using basic soundfile loading for dataset to be robust
+            data, sr = sf.read(path)
+            wav = torch.from_numpy(data).float()
+            if wav.ndim == 1: wav = wav.unsqueeze(0)
+            else: wav = wav.T
+            
+            if sr != self.target_sr:
+                wav = torchaudio.transforms.Resample(sr, self.target_sr)(wav)
+        except Exception:
+            wav = torch.zeros(1, self.target_sr)
+            
+        if wav.shape[1] > self.target_sr: wav = wav[:, :self.target_sr]
+        else: wav = torch.nn.functional.pad(wav, (0, self.target_sr - wav.shape[1]))
+        
+        return wav, torch.tensor(row['is_filler'], dtype=torch.float32)
+
+
+class CombinedDataset(Dataset):
+    """
+    Combines multiple datasets for joint training.
+    Provides unified interface for mixed dataset training.
+    """
+    def __init__(self, datasets):
+        self.datasets = datasets
+        self.cumulative_sizes = self._get_cumulative_sizes()
+        
+    def _get_cumulative_sizes(self):
+        sizes = [len(dataset) for dataset in self.datasets]
+        cumulative = []
+        total = 0
+        for size in sizes:
+            total += size
+            cumulative.append(total)
+        return cumulative
+        
+    def __len__(self):
+        return sum(len(dataset) for dataset in self.datasets)
+        
+    def __getitem__(self, idx):
+        # Map global index to dataset-local index
+        dataset_idx = 0
+        while dataset_idx < len(self.cumulative_sizes) and idx >= self.cumulative_sizes[dataset_idx]:
+            dataset_idx += 1
+            
+        if dataset_idx == 0:
+            sample_idx = idx
+        else:
+            sample_idx = idx - self.cumulative_sizes[dataset_idx - 1]
+            
+        return self.datasets[dataset_idx][sample_idx]
+
 # ==========================================
 # 4. CLI INTERFACE
 # ==========================================
@@ -239,6 +358,11 @@ if __name__ == "__main__":
     parser.add_argument("--mode", choices=['train', 'process'], required=True)
     parser.add_argument("--csv", type=str)
     parser.add_argument("--clips_dir", type=str)
+    parser.add_argument("--hun_csv", type=str, help="Path to Hungarian CSV file")
+    parser.add_argument("--hun_clips_dir", type=str, help="Path to Hungarian clips directory")
+    parser.add_argument("--hun_weight", type=float, default=1.0, help="Weight multiplier for Hungarian samples")
+    parser.add_argument("--epochs", type=int, default=5, help="Number of training epochs")
+    parser.add_argument("--batch_size", type=int, default=128, help="Batch size for training")
     parser.add_argument("--input", type=str)
     parser.add_argument("--output", default="cleaned.wav")
     parser.add_argument("--model", default="filler_detector.pth")
@@ -248,6 +372,14 @@ if __name__ == "__main__":
     filler_lib = PodcastFillerLib(model_path=args.model)
 
     if args.mode == 'train':
-        filler_lib.train(args.csv, args.clips_dir)
+        filler_lib.train(
+            csv_path=args.csv,
+            clips_dir=args.clips_dir,
+            hun_csv=args.hun_csv,
+            hun_clips_dir=args.hun_clips_dir,
+            hun_weight=args.hun_weight,
+            epochs=args.epochs,
+            batch_size=args.batch_size
+        )
     elif args.mode == 'process':
         filler_lib.process_file(args.input, args.output)

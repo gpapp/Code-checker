@@ -41,8 +41,13 @@ if errorlevel 1 (
 echo [3/3] Checking for PodcastFillerLib model...
 if not exist filler_detector.pth (
     if exist PodcastFillerDataset\PodcastFillers.csv (
-        echo [INFO] filler_detector.pth missing. Starting training on dataset...
-        python PodcastFillerLib.py --mode train --csv PodcastFillerDataset\PodcastFillers.csv --clips_dir PodcastFillerDataset\clip_wav
+        if exist fillers_hun\ZO_Hungarian.csv (
+            echo [INFO] filler_detector.pth missing. Starting training on BOTH English and Hungarian datasets with Hungarian bias...
+            python PodcastFillerLib.py --mode train --csv PodcastFillerDataset\PodcastFillers.csv --clips_dir PodcastFillerDataset\clip_wav --hun_csv fillers_hun\ZO_Hungarian.csv --hun_clips_dir fillers_hun\zo_clips --hun_weight 5.0
+        ) else (
+            echo [INFO] filler_detector.pth missing. Starting training on English dataset only...
+            python PodcastFillerLib.py --mode train --csv PodcastFillerDataset\PodcastFillers.csv --clips_dir PodcastFillerDataset\clip_wav
+        )
     ) else (
         echo [SKIP] Trained model missing AND PodcastFillerDataset not found. 
         echo        Download Fillers from: https://zenodo.org/records/7121457

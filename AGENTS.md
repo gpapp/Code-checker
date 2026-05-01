@@ -1,30 +1,56 @@
 # Agent Instructions for Video Processing Tool
 
-This project automates video editing based on audio features. When working on this codebase, please follow these guidelines:
+## Essential Setup & Execution
 
-## Core Principles
+- **Environment Setup**: Run `setup.bat` FIRST to create venv, install dependencies, and train filler model if needed
+- **Processing**: Use `process.bat <input_path> [options]` to run the tool on files/directories
+- **Virtual Environment**: All Python commands must run within `.venv` (activated by setup/process.bat)
+- **GPU Requirement**: NVIDIA GPU with CUDA 12.6 required for reasonable performance (Pass 2 ASR)
 
-- **Maintain Synchronization**: All cuts MUST happen at the same timestamps across all input videos. Always use `calculate_keep_segments` on the consolidated `cutting_segments` to generate the `keep_segments` used by all streams.
-- **Virtual Cutting (Preferred)**: The tool defaults to generating Kdenlive project files that reference original media with virtual cuts (`in`/`out` points). This is faster and lossless.
-- **Audio Processing**: High-quality filters (acompressor, loudnorm, dynaudnorm) must be applied to Kdenlive virtual tracks using `avfilter.*` MLT services to ensure audio quality matches rendered output.
-- **Timestamp Adjustment**: When generating sidecar files (ASS, Kdenlive project), use `adjust_timestamps` from `interval_utils.py` to map original timestamps to the newly cut timeline.
-- **FFmpeg Filter Order**: In `exporter.py`, ensure volume filters (for muting spikes) are applied *before* the selection filters (`aselect`), because spikes are detected on the original un-cut audio.
-- **Dual-Pass Transcription**: The pipeline uses a high-speed Pass 1 (CrisperWhisper) for boundaries/fillers and a high-fidelity Pass 2 (Qwen3-ASR) for final transcription.
+## Core Principles (VERIFIED)
 
-## Next Tasks
+- **Maintain Synchronization**: All cuts MUST happen at same timestamps across videos. Always use `calculate_keep_segments` on consolidated `cutting_segments` to generate `keep_segments` for all streams
+- **Virtual Cutting**: Tool generates Kdenlive projects with virtual cuts (`in`/`out` points) - faster and lossless
+- **Audio Filter Order**: In `exporter.py`, volume filters (muting spikes) MUST be applied BEFORE selection filters (`aselect`) because spikes detected on original un-cut audio
+- **Timestamp Adjustment**: When generating sidecar files (ASS/Kdenlive), use `adjust_timestamps` from `interval_utils.py` to map original timestamps to cut timeline
 
-- [x] **Grouping**: (Implemented) Video and audio tracks are grouped.
-- [x] **Gemma Cleanup**: (Implemented) Added a timestamp-aware post-processing step using Gemma 4 to polish transcripts.
-- [ ] **Track Naming**: Implement descriptive track names in Kdenlive based on file names or stream metadata.
-- [ ] **Validation Tool**: Create a small script to validate the generated `.kdenlive` XML against MLT schema or common pitfalls (e.g. mismatched track lengths).
-- [ ] **GPU Acceleration for Analysis**: Explore using GPU for `librosa` or `librosa`-like features (e.g. `torch-audio`) to speed up repetition detection.
+## Critical Architecture
 
-## Dependencies
+- **Entry Point**: `video_processor.py` - main CLI logic and batch orchestration
+- **Processing Flow**: 
+  1. `audio_utils.py`: Extract audio, detect silence/spikes/repetitions
+  2. `filler_processor.py`: Pass 1 ASR (CrisperWhisper) for boundaries/fillers
+  3. `transcription_processor.py`: Pass 2 ASR (Qwen3-ASR) for transcription
+  4. `interval_utils.py`: Merge/invert/adjust time intervals
+  5. `exporter.py`: Generate Kdenlive/XML outputs
+- **Cache**: Metadata stored as JSON files in `video_processing_work` directory (parent of input source)
+- **Output**: `project.kdenlive` and rendered videos placed in parent directory of input source
 
-- **Qwen-ASR**: Pass 2 transcription engine. Requires GPU for reasonable performance.
-- **NeMo**: Still used for VAD and filler detection in some configurations.
-- **Librosa**: Used for acoustic similarity and basic silence detection. It loads audio into memory; for very large files, consider block-based processing if memory becomes an issue.
+## Filler Detection System
 
-## Development
+- **Training**: Automatic via `setup.bat` when `filler_detector.pth` missing
+- **Dataset**: Requires `PodcastFillerDataset\` with `PodcastFillers.csv` and `clip_wav\` folder
+- **Hungarian Support**: Additional training on `fillers_hun\ZO_Hungarian.csv` with 5x weight when detected
+- **Model**: Overwrites `filler_detector.pth` (not separate file)
 
-- **Testing**: Use `test_modular_processor.py` (or similar mock-based tests) to verify changes without requiring large MKV files or a GPU.
+## Testing
+
+- **Unit Tests**: Use `test_modular_processor.py` (mock-based) to verify changes without large MKV/GPU
+- **Dependencies**: Managed via `uv`; requirements.txt specifies exact versions
+- **FFmpeg**: Must be in system PATH for audio/video processing
+
+## Key Constraints
+
+- **Librosa Usage**: Loads audio into memory; consider block-based processing for large files
+- **NeMo**: Still used for VAD/filler detection in some configurations
+- **Qwen-ASR**: Pass 2 transcription requires GPU for reasonable performance
+
+## File & Directory Conventions (OBSERVED)
+
+- **Input**: Accepts `.mp3`, `.wav`, `.m4a`, `.mkv`, `.mp4`, `.avi` files
+- **Work Directory**: Creates `video_processing_work` in PARENT directory of input source for:
+  - Extracted/normalized mono WAV files (`*_a0.wav`)
+  - Cache files: `*.markers.json` (silence/spikes), `*.asr.json` (transcription), `*.filler_*.json` (filler detection), `*.reps.json` (repetitions), `*.vad.json` (voice activity)
+  - Generated subtitle files: `*.ass`, `*.srt`
+- **Output**: Places `project.kdenlive` and rendered videos in PARENT directory of input source
+- **Naming Pattern**: Test files follow timestamp-description-uuid--email format (observed in test_data)
