@@ -148,39 +148,29 @@ def generate_kdenlive_project(
         
         # Audio filters only for audio-carrying producers
         if s_idx >= 0 or (s_idx == -1 and not is_vid):
-            # Volume mutes (spikes/silence) - now handled by track-level clipping for silences.
-            # Spikes could still be handled here if re-enabled.
-            # temp_path = path_to_temp.get((orig_path, s_idx))
-            # markers_data = (stream_markers or {}).get(temp_path, {}) if temp_path else {}
-            # silence_intervals = markers_data.get("silence", [])
-            # spikes = markers_data.get("spikes", [])
-            # ...
-
-
-            # 2. Mastering effects (Compression & Normalization)
-            # Pre-amp / Enhancer
-            producer.add_filter(Filter("ladspa.1073", properties={
-                "internal_added": "237",
-                "0": "1", "1": "0.5", "2": "0.1", "3": "0.1",
-                "wetness": "1", "instances": "2", "disable": "0"
+            # 2. Mastering effects (Compand & Dynamic Loudness)
+            # Compressor/Expander
+            producer.add_filter(Filter("avfilter.compand", properties={
+                "av.attacks": "0",
+                "av.decays": "0.8",
+                "av.soft-knee": "0.01",
+                "av.gain": "0",
+                "av.volume": "0",
+                "kdenlive_id": "avfilter.compand"
             }))
             
-            # Compressor to tighten the dynamic range
-            producer.add_filter(Filter("avfilter.acompressor", properties={
-                "av.threshold": "0.125", # approx -18dB
-                "av.ratio": "4",
-                "av.attack": "20",
-                "av.release": "250",
-                "av.makeup": "2",
-                "kdenlive_id": "avfilter.acompressor"
-            }))
-            
-            # Loudness Normalization (EBU R128)
-            producer.add_filter(Filter("avfilter.loudnorm", properties={
-                "av.I": "-23",
-                "av.TP": "-1.5",
-                "av.LRA": "7",
-                "kdenlive_id": "avfilter.loudnorm"
+            # Dynamic Loudness Normalization
+            producer.add_filter(Filter("dynamic_loudness", properties={
+                "target_loudness": "-23",
+                "window": "3",
+                "max_gain": "15",
+                "min_gain": "-15",
+                "max_rate": "3",
+                "discontinuity_reset": "1",
+                "in_loudness": "-100.0",
+                "out_gain": "0.0",
+                "reset_count": "0",
+                "kdenlive_id": "dynamic_loudness"
             }))
 
 
