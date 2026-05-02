@@ -7,21 +7,6 @@ from audio_utils import get_video_duration, has_video_stream, get_video_fps
 
 logger = logging.getLogger(__name__)
 
-def frames_to_tc(frames: int, fps: float = 25.0) -> str:
-    seconds = frames / fps
-    h = int(seconds // 3600)
-    m = int((seconds % 3600) // 60)
-    s = int(seconds % 60)
-    f = int(frames % fps)
-    return f"{h:02d}:{m:02d}:{s:02d}:{f:02d}"
-
-def secs_to_tc(seconds: float) -> str:
-    # Deprecated for timeline usage, use frames_to_tc for project elements
-    h = int(seconds // 3600)
-    m = int((seconds % 3600) // 60)
-    s = int(seconds % 60)
-    ms = int(round((seconds % 1) * 1000))
-    return f"{h:02d}:{m:02d}:{s:02d}.{ms:03d}"
 
 def generate_kdenlive_speech_html(prod_id: int, words: List[Dict]) -> str:
     if not words:
@@ -96,8 +81,8 @@ def generate_kdenlive_project(
     import uuid
     from interval_utils import merge_intervals, adjust_timestamps
 
-    max_dur_frames = sum(int(round(ke * proj.fps)) - int(round(ks * proj.fps)) for ks, ke in keep_segments)
-    max_dur_tc = frames_to_tc(max_dur_frames - 1, proj.fps) if max_dur_frames > 0 else "00:00:00:00"
+    max_dur_frames = sum(proj.seconds_to_frames(ke) - proj.seconds_to_frames(ks) for ks, ke in keep_segments)
+    max_dur_tc = proj.frames_to_tc(max_dur_frames - 1) if max_dur_frames > 0 else "00:00:00:00"
 
     # Track assignments based on the template's 4 tracks (A1, A2, V1, V2)
     vid_tracks = ["V1", "V2"]
@@ -106,7 +91,7 @@ def generate_kdenlive_project(
     a_idx = 0
     
     chain_map = {} # (original_file_path, stream_idx) -> chain_id
-    
+
     # 1. Add Files to Bin (Chains)
     # We use ORIGINAL files in the Kdenlive project.
     # audio_info_map: temp_wav -> {"original": path, "stream_idx": idx}
@@ -127,7 +112,7 @@ def generate_kdenlive_project(
 
     for orig_path, s_idx in required_chains:
         duration_s = get_video_duration(orig_path)
-        total_f = int(round(duration_s * proj.fps))
+        total_f = proj.seconds_to_frames(duration_s)
         is_vid = has_video_stream(orig_path)
         
         chain_id = proj.addFileToBin(orig_path, duration_frames=total_f, clip_type="0" if is_vid else "1")
@@ -209,8 +194,8 @@ def generate_kdenlive_project(
 
             timeline_pos = 0
             for ks, ke in keep_segments:
-                ks_f = int(round((ks + offset) * proj.fps))
-                ke_f = int(round((ke + offset) * proj.fps))
+                ks_f = proj.seconds_to_frames(ks + offset)
+                ke_f = proj.seconds_to_frames(ke + offset)
                 if ke_f > ks_f:
                     proj.addClipToTrack(v_track_name, vid_chain_id, ks_f, ke_f, timeline_pos)
                     timeline_pos += (ke_f - ks_f)
@@ -239,8 +224,8 @@ def generate_kdenlive_project(
 
             timeline_pos = 0
             for ks, ke in keep_segments:
-                ks_f = int(round((ks + offset) * proj.fps))
-                ke_f = int(round((ke + offset) * proj.fps))
+                ks_f = proj.seconds_to_frames(ks + offset)
+                ke_f = proj.seconds_to_frames(ke + offset)
                 if ke_f <= ks_f:
                     continue
 
@@ -354,29 +339,23 @@ def generate_kdenlive_project(
         
         # Add transitions for audio tracks (blend against track 0)
         for idx, track_name in enumerate(aud_tracks):
-            trans = ET.SubElement(seq_tractor, "transition", id=proj._get_next_filter_id().replace("filter", "transition"))
-            ET.SubElement(trans, "property", name="a_track").text = "0"
-            ET.SubElement(trans, "property", name="b_track").text = str(idx + 1)
-            ET.SubElement(trans, "property", name="mlt_service").text = "mix"
-            ET.SubElement(trans, "property", name="kdenlive_id").text = "mix"
-            ET.SubElement(trans, "property", name="internal_added").text = "237"
-            ET.SubElement(trans, "property", name="always_active").text = "1"
-            ET.SubElement(trans, "property", name="accepts_blanks").text = "1"
-            ET.SubElement(trans, "property", name="sum").text = "1"
+            proj.addTransition(0, idx + 1, "mix", {
+                "internal_added": "237",
+                "always_active": "1",
+                "accepts_blanks": "1",
+                "sum": "1"
+            })
         
         # Add transitions for video tracks
         vid_offset = len(aud_tracks) + 1  # +1 for black track (track 0)
         for idx, track_name in enumerate(vid_tracks):
-            trans = ET.SubElement(seq_tractor, "transition", id=proj._get_next_filter_id().replace("filter", "transition"))
-            ET.SubElement(trans, "property", name="a_track").text = "0"
-            ET.SubElement(trans, "property", name="b_track").text = str(vid_offset + idx)
-            ET.SubElement(trans, "property", name="mlt_service").text = "qtblend"
-            ET.SubElement(trans, "property", name="kdenlive_id").text = "qtblend"
-            ET.SubElement(trans, "property", name="internal_added").text = "237"
-            ET.SubElement(trans, "property", name="always_active").text = "1"
-            ET.SubElement(trans, "property", name="compositing").text = "0"
-            ET.SubElement(trans, "property", name="distort").text = "0"
-            ET.SubElement(trans, "property", name="rotate_center").text = "0"
+            proj.addTransition(0, vid_offset + idx, "qtblend", {
+                "internal_added": "237",
+                "always_active": "1",
+                "compositing": "0",
+                "distort": "0",
+                "rotate_center": "0"
+            })
     
     # 5. Adjust sequence duration properties
     seq_tr = proj.seq_tractor

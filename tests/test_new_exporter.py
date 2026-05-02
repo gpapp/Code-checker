@@ -2,7 +2,7 @@ import pytest
 import os
 import xml.etree.ElementTree as ET
 from unittest.mock import patch, MagicMock
-from exporter import generate_kdenlive_project, frames_to_tc
+from exporter import generate_kdenlive_project
 
 @patch("exporter.get_video_duration", return_value=10.0)
 @patch("exporter.has_video_stream")

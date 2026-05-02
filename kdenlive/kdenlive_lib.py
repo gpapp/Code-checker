@@ -41,9 +41,29 @@ class KdenliveProject:
         
         self.chain_counter = 100
         self.filter_counter = 100
+        self.transition_counter = 100
         
+        # Discover current counters to avoid collisions
+        self._discover_counters()
+
         # Clear out any existing user entries from main_bin
         self._reset_timelines()
+
+    def _discover_counters(self):
+        """Scan XML for existing IDs to initialize counters correctly."""
+        for elem in self.root.iter():
+            eid = elem.get("id", "")
+            if not eid: continue
+
+            try:
+                if eid.startswith("chain"):
+                    self.chain_counter = max(self.chain_counter, int(eid.replace("chain", "")))
+                elif eid.startswith("filter"):
+                    self.filter_counter = max(self.filter_counter, int(eid.replace("filter", "")))
+                elif eid.startswith("transition"):
+                    self.transition_counter = max(self.transition_counter, int(eid.replace("transition", "")))
+            except ValueError:
+                pass
         
     def _reset_timelines(self):
         for t_name, pl_id in self.tracks.items():
@@ -60,25 +80,63 @@ class KdenliveProject:
     def _get_next_filter_id(self):
         self.filter_counter += 1
         return "filter{}".format(self.filter_counter)
+
+    def _get_next_transition_id(self):
+        self.transition_counter += 1
+        return "transition{}".format(self.transition_counter)
     
-    def _frames_to_tc(self, frames, fps=None):
+    def frames_to_tc(self, frames, fps=None):
+        """Convert frame count to HH:MM:SS:FF timecode."""
         if fps is None:
             fps = self.fps
-        seconds = frames / fps
-        h = int(seconds // 3600)
-        m = int((seconds % 3600) // 60)
-        s = int(seconds % 60)
-        f = int(frames % fps)
-        return "{:02d}:{:02d}:{:02d}:{:02d}".format(h, m, s, f)
+
+        # MLT uses floor for frames in timecode
+        total_seconds = int(frames // fps)
+        remaining_frames = int(frames % fps)
+
+        h = total_seconds // 3600
+        m = (total_seconds % 3600) // 60
+        s = total_seconds % 60
+
+        return "{:02d}:{:02d}:{:02d}:{:02d}".format(h, m, s, remaining_frames)
+
+    def tc_to_frames(self, tc, fps=None):
+        """Convert HH:MM:SS:FF or HH:MM:SS.ms or simple frame count to integer frames."""
+        if fps is None:
+            fps = self.fps
+
+        if isinstance(tc, (int, float)):
+            return int(round(tc))
+
+        if ':' in tc:
+            parts = tc.split(':')
+            if len(parts) == 4:
+                # HH:MM:SS:FF
+                h, m, s, f = map(int, parts)
+                return int((h * 3600 + m * 60 + s) * fps + f)
+            elif len(parts) == 3:
+                # HH:MM:SS.ms or HH:MM:SS
+                h, m, seconds_str = parts
+                h, m = int(h), int(m)
+                s = float(seconds_str)
+                return int(round((h * 3600 + m * 60 + s) * fps))
+
+        try:
+            return int(tc)
+        except ValueError:
+            return int(round(float(tc) * fps))
+
+    def seconds_to_frames(self, seconds, fps=None):
+        """Convert seconds to frames using MLT's lrint (round to nearest) logic."""
+        if fps is None:
+            fps = self.fps
+        return int(round(seconds * fps))
+
+    def _frames_to_tc(self, frames, fps=None):
+        return self.frames_to_tc(frames, fps)
     
     def _tc_to_frames(self, tc):
-        """Convert HH:MM:SS:FF timecode to frame count."""
-        parts = tc.split(':')
-        if len(parts) != 4:
-            raise ValueError("Invalid timecode format: {}".format(tc))
-        h, m, s, f = map(int, parts)
-        total_seconds = h * 3600 + m * 60 + s
-        return int(total_seconds * self.fps) + f
+        return self.tc_to_frames(tc)
     
     def _get_playlist_duration_frames(self, playlist_id):
         """Calculate current duration of a playlist in frames."""
@@ -199,6 +257,17 @@ class KdenliveProject:
         
         blank_tc = self._frames_to_tc(blank_frames)
         ET.SubElement(pl, "blank", length=blank_tc)
+
+    def addTransition(self, a_track_idx, b_track_idx, service_name, properties):
+        """Add a transition to the sequence tractor."""
+        trans = ET.SubElement(self.seq_tractor, "transition", id=self._get_next_transition_id())
+        ET.SubElement(trans, "property", name="a_track").text = str(a_track_idx)
+        ET.SubElement(trans, "property", name="b_track").text = str(b_track_idx)
+        ET.SubElement(trans, "property", name="mlt_service").text = service_name
+        ET.SubElement(trans, "property", name="kdenlive_id").text = service_name
+        for k, v in properties.items():
+            ET.SubElement(trans, "property", name=k).text = str(v)
+        return trans
 
     def addTimeline(self):
         """No-op for template-based approach - timeline already exists in template."""

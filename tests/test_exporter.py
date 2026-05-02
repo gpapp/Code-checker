@@ -2,7 +2,7 @@ import pytest
 import os
 import xml.etree.ElementTree as ET
 from unittest.mock import patch
-from exporter import generate_kdenlive_project, frames_to_tc
+from exporter import generate_kdenlive_project
 
 @patch("exporter.get_video_duration", return_value=10.0)
 @patch("exporter.has_video_stream", return_value=True)
@@ -43,8 +43,3 @@ def test_kdenlive_xml_sync(mock_size, mock_has_vid, mock_dur, working_dir):
     # Segment 2: 4 to 6s. 6s * 25 = 150. Out is 149.
     assert found_in_out[1] == ("00:00:04:00", "00:00:05:24")
 
-def test_frames_to_tc():
-    assert frames_to_tc(0, 25) == "00:00:00:00"
-    assert frames_to_tc(25, 25) == "00:00:01:00"
-    assert frames_to_tc(150, 25) == "00:00:06:00"
-    assert frames_to_tc(1, 25) == "00:00:00:01"
