@@ -84,3 +84,14 @@ def adjust_timestamps(segments: list[tuple[float, float]], keep_segments: list[t
             if new_end is None: new_end = current_new_time
             adjusted.append((new_start, new_end))
     return adjusted
+
+def intersect_intervals(intervals1: list[tuple[float, float]], intervals2: list[tuple[float, float]]) -> list[tuple[float, float]]:
+    """Returns the intersection of two sets of intervals."""
+    result = []
+    for s1, e1 in sorted(intervals1):
+        for s2, e2 in sorted(intervals2):
+            s = max(s1, s2)
+            e = min(e1, e2)
+            if s < e:
+                result.append((s, e))
+    return result

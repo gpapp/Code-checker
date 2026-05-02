@@ -156,7 +156,7 @@ def main():
             with open(cache_path, "w", encoding="utf-8") as f:
                 json.dump({"silence": silence, "spikes": spikes}, f, ensure_ascii=False)
         
-        stream_markers[af] = {"silence": silence, "spikes": spikes}
+        stream_markers[af] = {"silence": silence, "spikes": spikes, "duration": get_video_duration(af)}
 
 
     logger.info("Step 3/7: Running ASR and filler detection...")
@@ -183,7 +183,7 @@ def main():
                 with open(cnn_cache, "w", encoding="utf-8") as f:
                     json.dump(fillers, f, ensure_ascii=False)
             
-            cutting_segments.extend(fillers)
+            # cutting_segments.extend(fillers)
 
     # Pass 1b: Whisper Filler Detection has been removed. Filler detection now relies solely on Step 1 (CNN).
     
@@ -251,17 +251,16 @@ def main():
     else:
         logger.info("Skipping Step 3c (Gemma Cleanup). Use --refine to enable.")
 
-    # Compress global silence: instead of cutting it entirely, keep a compressed portion
-    # Rules: >1s truncated to 1s, then >0.2s compressed to half
-    # We use a 0.2s threshold here because we want to capture ALL silences that are candidates for compression.
-    global_silence = find_global_silence(stream_markers, 0.2)
-    silence_excess_cuts = compress_global_silence(global_silence)
-    cutting_segments.extend(silence_excess_cuts)
-
-    cutting_segments = merge_intervals(cutting_segments)
-    
     # Use max duration of all inputs as total duration
     total_dur = max([get_video_duration(v) for v in final_inputs])
+
+    # Find global silence using the union of all speech intervals across tracks.
+    # This correctly identifies trailing silences for truncation.
+    global_silence = find_global_silence(stream_markers, 0.2, total_dur)
+    # silence_excess_cuts = compress_global_silence(global_silence)
+    cutting_segments.extend(global_silence)
+
+    cutting_segments = merge_intervals(cutting_segments)
     keep_segments = calculate_keep_segments(cutting_segments, total_dur)
 
     logger.info("Step 4/7: VAD and Overlap detection...")

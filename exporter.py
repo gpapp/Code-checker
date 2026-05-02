@@ -7,7 +7,7 @@ from audio_utils import get_video_duration, has_video_stream, get_video_fps
 from mlt_python.project import MLTProject
 from mlt_python.filter import Filter
 from mlt_python.timecode import Timecode
-from interval_utils import merge_intervals
+from interval_utils import merge_intervals, intersect_intervals, calculate_keep_segments, adjust_timestamps
 
 
 logger = logging.getLogger(__name__)
@@ -148,69 +148,39 @@ def generate_kdenlive_project(
         
         # Audio filters only for audio-carrying producers
         if s_idx >= 0 or (s_idx == -1 and not is_vid):
-            # 1. Volume mutes (spikes/silence) - moved from clips to producer
-            temp_path = path_to_temp.get((orig_path, s_idx))
-            markers_data = (stream_markers or {}).get(temp_path, {}) if temp_path else {}
-            silences = markers_data.get("silence", [])
-            # spikes = markers_data.get("spikes", []) # User request: only use silences for now
-            mute_intervals = merge_intervals(silences)
-
-            
-            if mute_intervals:
-                def to_tc(s): return str(Timecode.from_seconds(max(0, s), fps))
-                prod_dur = get_video_duration(orig_path)
-                
-                rel_mutes = []
-                for ms, me in mute_intervals:
-                    if ms < prod_dur:
-                        rel_mutes.append((ms, min(prod_dur, me)))
-                
-                if rel_mutes:
-                    rel_mutes.sort()
-                    # Merge overlapping mutes
-                    merged = []
-                    merged.append(list(rel_mutes[0]))
-                    for curr in rel_mutes[1:]:
-                        if curr[0] <= merged[-1][1]:
-                            merged[-1][1] = max(merged[-1][1], curr[1])
-                        else:
-                            merged.append(list(curr))
-                    
-                    kfs = []
-                    if merged[0][0] > 0: kfs.append(f"{to_tc(0)}=1")
-                    for idx, (ms, me) in enumerate(merged):
-                        if ms > 0: kfs.append(f"{to_tc(ms - 0.5/fps)}=1") # Half-frame before
-                        kfs.append(f"{to_tc(ms)}=0")
-                        kfs.append(f"{to_tc(me)}=0")
-                        if idx + 1 < len(merged):
-                            next_ms = merged[idx+1][0]
-                            if next_ms > me + 0.5/fps: kfs.append(f"{to_tc(me + 0.5/fps)}=1")
-                        elif me < prod_dur: kfs.append(f"{to_tc(me + 0.5/fps)}=1")
-                    
-                    if kfs:
-                        producer.add_filter(Filter("volume", properties={
-                            "gain": ";".join(kfs), 
-                            "mlt_service": "volume", 
-                            "kdenlive_id": "volume"
-                        }))
+            # Volume mutes (spikes/silence) - now handled by track-level clipping for silences.
+            # Spikes could still be handled here if re-enabled.
+            # temp_path = path_to_temp.get((orig_path, s_idx))
+            # markers_data = (stream_markers or {}).get(temp_path, {}) if temp_path else {}
+            # silence_intervals = markers_data.get("silence", [])
+            # spikes = markers_data.get("spikes", [])
+            # ...
 
 
-            # 2. Mastering effects
+            # 2. Mastering effects (Compression & Normalization)
+            # Pre-amp / Enhancer
             producer.add_filter(Filter("ladspa.1073", properties={
                 "internal_added": "237",
                 "0": "1", "1": "0.5", "2": "0.1", "3": "0.1",
                 "wetness": "1", "instances": "2", "disable": "0"
             }))
             
-            producer.add_filter(Filter("dynamic_loudness", properties={
-                "internal_added": "237",
-                "target_loudness": "-23",
-                "window": "3",
-                "max_gain": "15",
-                "min_gain": "-15",
-                "max_rate": "3",
-                "discontinuity_reset": "1",
-                "disable": "0"
+            # Compressor to tighten the dynamic range
+            producer.add_filter(Filter("avfilter.acompressor", properties={
+                "av.threshold": "0.125", # approx -18dB
+                "av.ratio": "4",
+                "av.attack": "20",
+                "av.release": "250",
+                "av.makeup": "2",
+                "kdenlive_id": "avfilter.acompressor"
+            }))
+            
+            # Loudness Normalization (EBU R128)
+            producer.add_filter(Filter("avfilter.loudnorm", properties={
+                "av.I": "-23",
+                "av.TP": "-1.5",
+                "av.LRA": "7",
+                "kdenlive_id": "avfilter.loudnorm"
             }))
 
 
@@ -270,14 +240,48 @@ def generate_kdenlive_project(
             a_prod_id = producer_map.get((src["original"], src["stream_idx"]))
             if not a_prod_id: continue
 
+            a_dur = get_video_duration(src["original"])
+            markers_data = (stream_markers or {}).get(a_source, {})
+            silences = markers_data.get("silence", [])
+            # NSA = Non-Silent Audio intervals in the original producer timeline
+            nsa = calculate_keep_segments(silences, a_dur)
+            
+            # Map keep_segments to audio producer timeline (shifted by offset)
+            audio_keep_intervals = []
             for ks, ke in keep_segments:
-                if ke <= ks: continue
+                # Clip to producer range [0, a_dur]
+                s = max(0, ks + offset)
+                e = min(a_dur, ke + offset)
+                if s < e:
+                    audio_keep_intervals.append((s, e))
+            
+            # Intersect valid audio ranges with non-silent parts
+            final_audio_segments = intersect_intervals(nsa, audio_keep_intervals)
+            
+            # Shift back to video/keep timeline to find positions in the cut project
+            video_aligned_segments = [(as_ - offset, ae - offset) for as_, ae in final_audio_segments]
+            timeline_segments = adjust_timestamps(video_aligned_segments, keep_segments)
+            
+            curr_timeline_pos = 0.0
+            for i, (ts, te) in enumerate(timeline_segments):
+                as_, ae = final_audio_segments[i]
+                
+                # Add blank if there's a gap between the current position and the next audio clip
+                if ts > curr_timeline_pos + 0.001:
+                    gap_dur = ts - curr_timeline_pos
+                    playlist.add_blank_timecode(
+                        str(Timecode.from_seconds(gap_dur, fps)),
+                        fps=fps
+                    )
+                
+                # Add the actual audio clip
                 playlist.add_clip_timecode(
-                    a_prod_id, 
-                    start=str(Timecode.from_seconds(ks + offset, fps)),
-                    duration=str(Timecode.from_seconds(ke - ks, fps)),
+                    a_prod_id,
+                    start=str(Timecode.from_seconds(as_, fps)),
+                    duration=str(Timecode.from_seconds(ae - as_, fps)),
                     fps=fps
                 )
+                curr_timeline_pos = te
 
 
 

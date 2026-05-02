@@ -122,26 +122,37 @@ def detect_silence_and_spikes(audio_path: str, threshold_db: float, min_silence_
         if (end - start) < max_spike_len:
             spikes.append((start, end))
 
+    from interval_utils import merge_intervals, calculate_keep_segments
+
     return silence_intervals, spikes
 
-def find_global_silence(stream_markers: dict[str, dict], min_duration: float) -> list[tuple[float, float]]:
+def find_global_silence(stream_markers: dict[str, dict], min_duration: float, total_duration: float) -> list[tuple[float, float]]:
     """Finds intervals where all streams are silent for at least min_duration."""
     if not stream_markers:
         return []
 
-    streams = list(stream_markers.keys())
-    global_silence = stream_markers[streams[0]]["silence"]
-
-    for audio_file in streams[1:]:
-        new_global_silence = []
-        stream_silence = stream_markers[audio_file]["silence"]
-        for s1_start, s1_end in global_silence:
-            for s2_start, s2_end in stream_silence:
-                start = max(s1_start, s2_start)
-                end = min(s1_end, s2_end)
-                if start < end:
-                    new_global_silence.append((start, end))
-        global_silence = new_global_silence
+    all_speech_intervals = []
+    for af, markers in stream_markers.items():
+        dur = markers.get("duration", 0.0)
+        silences = markers.get("silence", [])
+        # Non-silent intervals for this track
+        from interval_utils import calculate_keep_segments
+        speech = calculate_keep_segments(silences, dur)
+        all_speech_intervals.extend(speech)
+    
+    # Union of all speech across all tracks
+    merged_speech = merge_intervals(all_speech_intervals)
+    
+    # Global silence is the complement of merged_speech relative to total_duration
+    global_silence = []
+    last_end = 0.0
+    for s, e in merged_speech:
+        if s > last_end:
+            global_silence.append((last_end, s))
+        last_end = max(last_end, e)
+    
+    if last_end < total_duration:
+        global_silence.append((last_end, total_duration))
 
     return [s for s in global_silence if (s[1] - s[0]) >= min_duration]
 
