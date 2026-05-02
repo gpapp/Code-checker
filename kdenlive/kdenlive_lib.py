@@ -40,7 +40,7 @@ class KdenliveProject:
         self.transition_counter = 100
         self.playlist_counter = 0
         self.tractor_counter = 0
-        
+
         # Discover current counters to avoid collisions
         self._discover_counters()
 
@@ -95,7 +95,7 @@ class KdenliveProject:
                         try: self.root.remove(prod)
                         except ValueError: pass
                 self.seq_tractor.remove(t)
-        
+
         # Remove all transitions from sequence
         for trans in self.seq_tractor.findall("transition"):
             self.seq_tractor.remove(trans)
@@ -468,6 +468,41 @@ class KdenliveProject:
         for k, v in properties.items():
             ET.SubElement(trans, "property", name=k).text = str(v)
         return trans
+
+    def addSubtitle(self, filepath, name=None):
+        """
+        Adds a subtitle file to the project and registers it in the sequence.
+        """
+        if not name:
+            name = os.path.basename(filepath)
+
+        # 1. Add as a project asset (chain)
+        # Note: Kdenlive sometimes treats subtitles as distinct assets from media bin
+        # but adding to bin ensures it is tracked.
+        cid = self.addFileToBin(filepath, duration=0, clip_type="5") # 5 is typical for subtitles
+
+        # 2. Add to sequence properties
+        import json
+        sub_prop = self.seq_tractor.find("property[@name='kdenlive:sequenceproperties.subtitles']")
+        if sub_prop is None:
+            sub_prop = ET.SubElement(self.seq_tractor, "property", name="kdenlive:sequenceproperties.subtitles")
+            sub_data = {}
+        else:
+            try:
+                sub_data = json.loads(sub_prop.text)
+            except (ValueError, TypeError):
+                sub_data = {}
+
+        # Format for kdenlive subtitles property (based on general kdenlive JSON properties)
+        sub_id = str(uuid.uuid4())
+        sub_data[sub_id] = {
+            "file": filepath,
+            "name": name,
+            "active": 1 if not sub_data else 0
+        }
+
+        sub_prop.text = json.dumps(sub_data, indent=4)
+        return sub_id
 
     def setDuration(self, seconds):
         """Sets the sequence and project duration."""

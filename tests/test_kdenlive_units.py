@@ -59,3 +59,19 @@ def test_add_transition():
     assert trans.find("property[@name='b_track']").text == "2"
     assert trans.find("property[@name='mlt_service']").text == "mix"
     assert trans.find("property[@name='sum']").text == "1"
+
+def test_add_subtitle():
+    template = "kdenlive/empty.kdenlive"
+    proj = KdenliveProject(template)
+
+    sub_id = proj.addSubtitle("test_subs.ass", "My Subtitles")
+
+    # Check if registered in sequence properties
+    sub_prop = proj.seq_tractor.find("property[@name='kdenlive:sequenceproperties.subtitles']")
+    assert sub_prop is not None
+
+    import json
+    data = json.loads(sub_prop.text)
+    assert sub_id in data
+    assert data[sub_id]["file"] == "test_subs.ass"
+    assert data[sub_id]["name"] == "My Subtitles"

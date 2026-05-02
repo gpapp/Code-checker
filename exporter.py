@@ -249,6 +249,11 @@ def generate_kdenlive_project(
     total_dur_s = sum(ke - ks for ks, ke in keep_segments)
     proj.setDuration(total_dur_s)
     
+    # 6. Link subtitles
+    for ass_file in (ass_paths or []):
+        if os.path.exists(ass_file):
+            proj.addSubtitle(ass_file)
+
     # Update project tractor (tractor4 is the sequence)
     proj.save(output_path)
 def format_ass_time(seconds: float) -> str:
