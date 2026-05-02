@@ -2,6 +2,9 @@ import pytest
 import os
 import xml.etree.ElementTree as ET
 from unittest.mock import patch, MagicMock
+import sys
+sys.path.insert(0, '.')
+sys.path.insert(0, r'c:\Users\gerge\source\repos\mlt-python\src')
 from exporter import generate_kdenlive_project
 
 @patch("exporter.get_video_duration", return_value=10.0)
@@ -35,17 +38,22 @@ def test_multiple_audio_tracks_assignment(mock_exists, mock_has_vid, mock_dur, w
                 "temp_a2.wav": {"silence": [(1.0, 2.0)], "spikes": []}
     }
 
+    audio_files = {
+        "video.mkv": [],
+        "audio1.mp3": [{"original": "audio1.mp3", "stream_idx": 0, "temp_path": "temp_a1.wav"}],
+        "audio2.mp3": [{"original": "audio2.mp3", "stream_idx": 0, "temp_path": "temp_a2.wav"}]
+    }
     generate_kdenlive_project(
         video_files=video_files,
+        audio_files=audio_files,
         output_path=output_path,
         keep_segments=keep_segments,
-        stream_spikes_map={},
-        overlaps=[],
-        repetitions=[],
-        fps=25.0,
-        video_to_audio_map=video_to_audio_map,
-        stream_markers_global=stream_markers,
-        audio_info_map=audio_info_map
+        stream_spikes={},
+        video_offsets=None,
+        ass_paths=None,
+        asr_words=None,
+        stream_markers=stream_markers,
+        fps=25.0
     )
 
     tree = ET.parse(output_path)
@@ -117,28 +125,15 @@ def test_multiple_audio_tracks_assignment(mock_exists, mock_has_vid, mock_dur, w
     assert any("audio1.mp3" in r for r in all_resources)
     assert any("audio2.mp3" in r for r in all_resources)
 
-    # Identify which track is audio2 to check filters
-    target_entry = None
-    for pl in root.findall(".//playlist"):
-        if pl.get("id") == "main_bin": continue
-        for ent in pl.findall("entry"):
-            prod = ent.get("producer")
-            chain = root.find(f".//chain[@id='{prod}']")
-            if chain is not None:
-                res = chain.find("property[@name='resource']")
-                if res is not None and "audio2.mp3" in res.text:
-                    target_entry = ent
-                    break
+    # Identify which chain is audio2 to check filters
+    target_chain = None
+    for chain in root.findall(".//chain"):
+        res = chain.find("property[@name='resource']")
+        if res is not None and "audio2.mp3" in res.text:
+            target_chain = chain
+            break
 
-    # Check volume filter on the entry that has audio2
-    vol_filter = target_entry.find("filter") if target_entry is not None else None
-    assert vol_filter is not None
-    gain_prop = vol_filter.find("property[@name='gain']")
-    assert gain_prop is not None
-    # Silence was at 1.0-2.0s. At 25fps, that's frames 25-50.
-    assert "25=0" in gain_prop.text
-    assert "50=0" in gain_prop.text
-
+    # Check volume filter on the chain that has audio2
     # Check for bin effects (filters on chains)
     def find_filter(chain, service):
         if chain is None: return None
@@ -148,13 +143,19 @@ def test_multiple_audio_tracks_assignment(mock_exists, mock_has_vid, mock_dur, w
                     return f
         return None
 
-    # Print debug info for failed tests
-    if find_filter(target_a1_chain, "ladspa.1073") is None:
-        print(f"Filters in target_a1_chain: {[p.text for f in (target_a1_chain.findall('filter') if target_a1_chain is not None else []) for p in f.findall('property') if p.get('name')=='mlt_service']}")
-        print(f"Chain resource: {target_a1_chain.find('property[@name=\"resource\"]').text if target_a1_chain is not None else 'None'}")
+    vol_filter = find_filter(target_chain, "volume")
+    assert vol_filter is not None, "Volume filter not found on audio2 chain"
+    gain_prop = vol_filter.find("property[@name='gain']")
+    assert gain_prop is not None
+    # Silence was at 1.0-2.0s. 
+    assert "00:00:01:00=0" in gain_prop.text
+    assert "00:00:02:00=0" in gain_prop.text
+
+
 
     assert find_filter(target_a1_chain, "ladspa.1073") is not None
     assert find_filter(target_a1_chain, "dynamic_loudness") is not None
+
 
 @patch("exporter.get_video_duration", return_value=10.0)
 @patch("exporter.has_video_stream")
@@ -170,13 +171,12 @@ def test_video_offsets(mock_exists, mock_has_vid, mock_dur, working_dir):
 
     generate_kdenlive_project(
         video_files=video_files,
+        audio_files=None,
         output_path=output_path,
         keep_segments=keep_segments,
-        stream_spikes_map={},
-        overlaps=[],
-        repetitions=[],
-        fps=25.0,
-        video_offsets=video_offsets
+        stream_spikes={},
+        video_offsets=video_offsets,
+        fps=25.0
     )
 
     tree = ET.parse(output_path)

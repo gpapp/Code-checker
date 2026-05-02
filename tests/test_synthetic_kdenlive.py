@@ -2,6 +2,9 @@ import pytest
 import os
 import xml.etree.ElementTree as ET
 from unittest.mock import patch
+import sys
+sys.path.insert(0, '.')
+sys.path.insert(0, r'c:\Users\gerge\source\repos\mlt-python\src')
 from exporter import generate_kdenlive_project
 
 def test_synthetic_audio_cutting(synthetic_audio, working_dir):
@@ -28,12 +31,11 @@ def test_synthetic_audio_cutting(synthetic_audio, working_dir):
 
         generate_kdenlive_project(
             video_files=video_files,
+            audio_files=None,
             output_path=output_path,
             keep_segments=keep_segments,
-            stream_spikes_map={},
-            overlaps=[],
-            repetitions=[],
-            stream_markers_global=stream_markers,
+            stream_spikes={},
+            stream_markers=stream_markers,
             fps=25.0
         )
 
@@ -56,22 +58,25 @@ def test_synthetic_audio_cutting(synthetic_audio, working_dir):
     assert len(entries) > 0, "Expected audio entries"
 
     # Check for volume filter with mute keyframes at 5-10s (frames 125-249)
+    # Note: filters are now on the producer/chain, not the timeline entry.
     volume_found = False
-    for entry in entries:
-        for filt in entry.findall('filter'):
+    for chain in root.findall('chain'):
+        for filt in chain.findall('filter'):
             service = filt.find("property[@name='mlt_service']")
             if service is not None and service.text == 'volume':
                 gain_prop = filt.find("property[@name='gain']")
                 if gain_prop is not None:
                     gain_text = gain_prop.text
-                    # Should mute at 5s (frame 125) and unmute at 10s (frame 250)
-                    if '125=0' in gain_text or '124=0' in gain_text:
+                    # Should mute at 5s and unmute at 10s
+                    if '00:00:05:00=0' in gain_text:
                         volume_found = True
-                        # Verify unmute happens after silence (at frame 250 or 251)
-                        assert '250=0' in gain_text or '251=1' in gain_text or '250=1' in gain_text, \
+                        # Verify unmute happens after silence (at 10s)
+                        assert '00:00:10:00=0' in gain_text or '00:00:10:01=1' in gain_text, \
                             f"Expected unmute after silence, got: {gain_text}"
 
-    assert volume_found, "No volume filter with mute keyframes found for 5-10s silence"
+
+    assert volume_found, "No volume filter with mute keyframes found for 5-10s silence in any chain"
+
 
 def test_chained_transitions(working_dir):
     """Test that transitions blend against track 0 (star model)."""
@@ -86,11 +91,10 @@ def test_chained_transitions(working_dir):
 
         generate_kdenlive_project(
             video_files=video_files,
+            audio_files=None,
             output_path=output_path,
             keep_segments=keep_segments,
-            stream_spikes_map={},
-            overlaps=[],
-            repetitions=[],
+            stream_spikes={},
             fps=25.0
         )
 

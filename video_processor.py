@@ -354,11 +354,7 @@ def main():
         generate_srt_file(adj_words, srt_path)
         ass_files.append(ass_path)
         
-    # 2. Adjust Overlaps and Repetitions
-    adj_overlaps = adjust_timestamps(overlap_segments, keep_segments)
-    adj_reps = adjust_timestamps(repetition_segments, keep_segments)
-
-    # 3. Final Kdenlive Project Generation
+    # 2. Final Kdenlive Project Generation
     kdenlive_path = os.path.join(output_base_dir, "project.kdenlive")
     stream_spikes_map = {v: [stream_markers[af]["spikes"] for af in video_to_audio_map.get(v, []) if af in stream_markers] for v in final_inputs}
     
@@ -371,20 +367,32 @@ def main():
         else:
             source_asr_words.append([])
 
+    # Prepare consolidated audio files configuration
+    audio_files_config = {}
+    for i, out_v in enumerate(output_files):
+        orig_v = final_inputs[i]
+        af_list = video_to_audio_map.get(orig_v, [])
+        sources = []
+        for af in af_list:
+            info = audio_info_map.get(af, {"original": af, "stream_idx": 0})
+            sources.append({
+                "original": info["original"],
+                "stream_idx": info["stream_idx"],
+                "temp_path": af
+            })
+        audio_files_config[out_v] = sources
+
     generate_kdenlive_project(
-        output_files, 
-        kdenlive_path, 
-        keep_segments, 
-        stream_spikes_map, 
-        adj_overlaps, 
-        adj_reps, 
-        fps=fps, 
+        video_files=output_files,
+        audio_files=audio_files_config,
+        output_path=kdenlive_path,
+        keep_segments=keep_segments,
+        stream_spikes=stream_spikes_map,
         video_offsets=offsets,
         ass_paths=ass_files,
         asr_words=source_asr_words,
-        stream_markers_global=stream_markers,
-        video_to_audio_map=video_to_audio_map,
-        audio_info_map=audio_info_map
+        stream_markers=stream_markers,
+        fps=fps
     )
     # Run cleanup routine if the flag is set (don't delete outputs at the end)
     if args.clean:

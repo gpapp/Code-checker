@@ -14,6 +14,7 @@ import numpy as np
 import soundfile as sf
 
 sys.path.insert(0, '.')
+sys.path.insert(0, r'c:\Users\gerge\source\repos\mlt-python\src')
 
 from exporter import generate_kdenlive_project
 from audio_utils import get_video_fps
@@ -41,7 +42,9 @@ def create_synthetic_mkv_mock(path):
 
 
 def tc_to_frames(tc_str, fps=25.0):
-    """Convert HH:MM:SS:FF to frames."""
+    """Convert HH:MM:SS:FF or frame number string to frames."""
+    if ":" not in tc_str:
+        return int(tc_str)
     parts = tc_str.split(':')
     h, m, s, f = int(parts[0]), int(parts[1]), int(parts[2]), int(parts[3])
     return h * 3600 * int(fps) + m * 60 * int(fps) + s * int(fps) + f
@@ -76,17 +79,21 @@ def test_audio_clips_on_both_tracks():
              mock.patch('exporter.get_video_duration', return_value=60.0), \
              mock.patch('exporter.get_video_fps', return_value=25.0):
             
+            audio_files = {
+                video1: [{"original": audio1, "stream_idx": 0, "temp_path": audio1}],
+                video2: [{"original": audio2, "stream_idx": 0, "temp_path": audio2}]
+            }
             generate_kdenlive_project(
-                [video1, video2], output, keep_segments,
-                stream_spikes_map={},
-                overlaps=[],
-                repetitions=[],
-                fps=25.0,
+                video_files=[video1, video2],
+                audio_files=audio_files,
+                output_path=output,
+                keep_segments=keep_segments,
+                stream_spikes={},
                 video_offsets=[0.0, 0.0],
                 ass_paths=[],
                 asr_words=[[], []],
-                stream_markers_global={},
-                video_to_audio_map=video_to_audio_map
+                stream_markers={},
+                fps=25.0
             )
         
         # Load and verify (check XML directly without triggering _reset_timelines)
@@ -160,17 +167,20 @@ def test_video_clip_length():
              mock.patch('exporter.get_video_duration', return_value=60.0), \
              mock.patch('exporter.get_video_fps', return_value=25.0):
             
+            audio_files = {
+                video1: [{"original": audio1, "stream_idx": 0, "temp_path": audio1}]
+            }
             generate_kdenlive_project(
-                [video1], output, keep_segments,
-                stream_spikes_map={},
-                overlaps=[],
-                repetitions=[],
-                fps=25.0,
+                video_files=[video1],
+                audio_files=audio_files,
+                output_path=output,
+                keep_segments=keep_segments,
+                stream_spikes={},
                 video_offsets=[0.0],
                 ass_paths=[],
                 asr_words=[[]],
-                stream_markers_global={},
-                video_to_audio_map=video_to_audio_map
+                stream_markers={},
+                fps=25.0
             )
         
         # Check XML directly without reloading (which would trigger _reset_timelines)
@@ -238,17 +248,20 @@ def test_silence_gaps_in_audio():
              mock.patch('exporter.get_video_duration', return_value=60.0), \
              mock.patch('exporter.get_video_fps', return_value=25.0):
 
+            audio_files = {
+                video1: [{"original": audio1, "stream_idx": 0, "temp_path": audio1}]
+            }
             generate_kdenlive_project(
-                [video1], output, keep_segments,
-                stream_spikes_map={},
-                overlaps=[],
-                repetitions=[],
-                fps=25.0,
+                video_files=[video1],
+                audio_files=audio_files,
+                output_path=output,
+                keep_segments=keep_segments,
+                stream_spikes={},
                 video_offsets=[0.0],
                 ass_paths=[],
                 asr_words=[[]],
-                stream_markers_global=stream_markers_global,
-                video_to_audio_map=video_to_audio_map
+                stream_markers=stream_markers_global,
+                fps=25.0
             )
 
         # Check XML directly without reloading (which would trigger _reset_timelines)
@@ -266,25 +279,27 @@ def test_silence_gaps_in_audio():
         entries = a1_pl.findall('entry') if a1_pl is not None else []
         assert len(entries) > 0, "A1 track has no entries"
 
-        # Check that volume filter with mute keyframes exists
+        # Check that volume filter with mute keyframes exists on the chain
         # The silence intervals should be muted (volume=0)
         volume_found = False
-        for entry in entries:
-            for filt in entry.findall('filter'):
+        for chain in root.findall('chain'):
+            for filt in chain.findall('filter'):
                 service = filt.find("property[@name='mlt_service']")
                 if service is not None and service.text == 'volume':
                     gain_prop = filt.find("property[@name='gain']")
                     if gain_prop is not None:
                         gain_text = gain_prop.text
                         # Should have mute keyframes (volume=0) at silence intervals
-                        # 10-15s = frames 250-374, 25-30s = frames 625-749
-                        assert '250=0' in gain_text or '249=0' in gain_text, \
-                            f"Expected mute at 10s (frame ~250), got: {gain_text}"
-                        assert '625=0' in gain_text or '624=0' in gain_text, \
-                            f"Expected mute at 25s (frame ~625), got: {gain_text}"
+                        # 10-15s and 25-30s
+                        assert '00:00:10:00=0' in gain_text, \
+                            f"Expected mute at 10s, got: {gain_text}"
+                        assert '00:00:25:00=0' in gain_text, \
+                            f"Expected mute at 25s, got: {gain_text}"
+
                         volume_found = True
 
-        assert volume_found, "No volume filter with mute keyframes found for silences"
+        assert volume_found, "No volume filter with mute keyframes found for silences in any chain"
+
         print(f"✓ A1 has {len(entries)} entries with volume muting for silences")
 
 

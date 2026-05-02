@@ -6,7 +6,9 @@ from audio_utils import get_video_duration, has_video_stream, get_video_fps
 
 from mlt_python.project import MLTProject
 from mlt_python.filter import Filter
+from mlt_python.timecode import Timecode
 from interval_utils import merge_intervals
+
 
 logger = logging.getLogger(__name__)
 
@@ -49,25 +51,23 @@ def generate_kdenlive_speech_html(prod_id: int, words: List[Dict]) -> str:
 
 def generate_kdenlive_project(
     video_files: List[str],
+    audio_files: Dict[str, List[Dict]],
     output_path: str,
     keep_segments: List[Tuple[float, float]],
-    stream_spikes_map: Dict[str, List[List[Tuple[float, float]]]],
-    overlaps: List[Tuple[float, float]],
-    repetitions: List[Tuple[float, float]],
-    fps: float = 25.0,
+    stream_spikes: Dict = None,
     video_offsets: List[float] = None,
     ass_paths: List[str] = None,
     asr_words: List[List[Dict]] = None,
-    stream_markers_global: Dict = None,
-    video_to_audio_map: Dict = None,
-    audio_info_map: Dict = None
+    stream_markers: Dict = None,
+    fps: float = 25.0
 ):
     if not video_offsets:
         video_offsets = [0.0] * len(video_files)
-    if video_to_audio_map is None:
-        video_to_audio_map = {f: [f] for f in video_files}
-    if stream_markers_global is None:
-        stream_markers_global = {}
+    if audio_files is None:
+        # Default to video files themselves as audio sources
+        audio_files = {f: [{"original": f, "stream_idx": -1, "temp_path": f}] for f in video_files}
+    if stream_markers is None:
+        stream_markers = {}
     if ass_paths is None:
         ass_paths = []
     if asr_words is None:
@@ -99,29 +99,46 @@ def generate_kdenlive_project(
 
     # 1. Add Files to Bin (Producers)
     required_chains = []
+    
+    # Determine if we have audio overrides for videos
+    has_override = {}
+    for v in video_files:
+        has_override[v] = v in (audio_files or {}) and audio_files[v]
+
     for v in video_files:
         if has_video_stream(v):
-            required_chains.append((v, -1)) # -1 for video+audio stream 1
+            # If we have separate audio info for this video, add as video-only (-2).
+            # Otherwise, add it as combined video+audio (-1).
+            required_chains.append((v, -2 if has_override[v] else -1))
+        elif not has_override[v]:
+            # For audio-only files, use combined (-1) which selects first audio stream if no override
+            required_chains.append((v, -1))
 
-    for temp_wav, info in (audio_info_map or {}).items():
-        required_chains.append((info["original"], info["stream_idx"]))
-
-    for v, audios in (video_to_audio_map or {}).items():
-        for a in audios:
-            if a not in video_files or not has_video_stream(a):
-                required_chains.append((a, 0))
+    # Add audio producers from explicit info
+    for v, sources in (audio_files or {}).items():
+        for src in sources:
+            required_chains.append((src["original"], src["stream_idx"]))
 
     required_chains = list(set(required_chains))
     producer_map = {} # (original_file_path, s_idx) -> producer_id
+    # Map (original, stream_idx) -> temp_path for markers lookup
+    path_to_temp = {}
+    for v, sources in (audio_files or {}).items():
+        for src in sources:
+            path_to_temp[(src["original"], src["stream_idx"])] = src.get("temp_path")
 
     for orig_path, s_idx in required_chains:
+
         is_vid = has_video_stream(orig_path)
         
         props = {}
-        if s_idx == -1:
-            props["audio_index"] = "1" if is_vid else "0"
+        if s_idx == -1: # Combined (Video + Audio)
+            props["audio_index"] = "0"
             props["video_index"] = "0" if is_vid else "-1"
-        else:
+        elif s_idx == -2: # Video Only
+            props["audio_index"] = "-1"
+            props["video_index"] = "0"
+        else: # Audio Only (specific stream index)
             props["audio_index"] = str(s_idx)
             props["video_index"] = "-1"
         props["astream"] = "0"
@@ -129,7 +146,56 @@ def generate_kdenlive_project(
         producer = proj.add_producer(orig_path, properties=props)
         producer_map[(orig_path, s_idx)] = producer.id
         
-        if s_idx != -1 or not is_vid:
+        # Audio filters only for audio-carrying producers
+        if s_idx >= 0 or (s_idx == -1 and not is_vid):
+            # 1. Volume mutes (spikes/silence) - moved from clips to producer
+            temp_path = path_to_temp.get((orig_path, s_idx))
+            markers_data = (stream_markers or {}).get(temp_path, {}) if temp_path else {}
+            silences = markers_data.get("silence", [])
+            # spikes = markers_data.get("spikes", []) # User request: only use silences for now
+            mute_intervals = merge_intervals(silences)
+
+            
+            if mute_intervals:
+                def to_tc(s): return str(Timecode.from_seconds(max(0, s), fps))
+                prod_dur = get_video_duration(orig_path)
+                
+                rel_mutes = []
+                for ms, me in mute_intervals:
+                    if ms < prod_dur:
+                        rel_mutes.append((ms, min(prod_dur, me)))
+                
+                if rel_mutes:
+                    rel_mutes.sort()
+                    # Merge overlapping mutes
+                    merged = []
+                    merged.append(list(rel_mutes[0]))
+                    for curr in rel_mutes[1:]:
+                        if curr[0] <= merged[-1][1]:
+                            merged[-1][1] = max(merged[-1][1], curr[1])
+                        else:
+                            merged.append(list(curr))
+                    
+                    kfs = []
+                    if merged[0][0] > 0: kfs.append(f"{to_tc(0)}=1")
+                    for idx, (ms, me) in enumerate(merged):
+                        if ms > 0: kfs.append(f"{to_tc(ms - 0.5/fps)}=1") # Half-frame before
+                        kfs.append(f"{to_tc(ms)}=0")
+                        kfs.append(f"{to_tc(me)}=0")
+                        if idx + 1 < len(merged):
+                            next_ms = merged[idx+1][0]
+                            if next_ms > me + 0.5/fps: kfs.append(f"{to_tc(me + 0.5/fps)}=1")
+                        elif me < prod_dur: kfs.append(f"{to_tc(me + 0.5/fps)}=1")
+                    
+                    if kfs:
+                        producer.add_filter(Filter("volume", properties={
+                            "gain": ";".join(kfs), 
+                            "mlt_service": "volume", 
+                            "kdenlive_id": "volume"
+                        }))
+
+
+            # 2. Mastering effects
             producer.add_filter(Filter("ladspa.1073", properties={
                 "internal_added": "237",
                 "0": "1", "1": "0.5", "2": "0.1", "3": "0.1",
@@ -147,6 +213,7 @@ def generate_kdenlive_project(
                 "disable": "0"
             }))
 
+
     # Add speech info
     paired_inputs = []
     for i in range(len(video_files)):
@@ -159,7 +226,8 @@ def generate_kdenlive_project(
 
     for i, item in enumerate(paired_inputs):
         v_path = item["path"]
-        p_id = producer_map.get((v_path, -1))
+        # Look for video-only or combined producer
+        p_id = producer_map.get((v_path, -2)) or producer_map.get((v_path, -1))
         if not p_id:
             for (p, s), pid in producer_map.items():
                 if p == v_path:
@@ -177,85 +245,53 @@ def generate_kdenlive_project(
         offset = item["offset"]
         is_vid = has_video_stream(video_path)
 
-        audio_sources = video_to_audio_map.get(video_path, [])
-        if not audio_sources and not is_vid:
-            audio_sources = [video_path]
+        sources = (audio_files or {}).get(video_path, [])
+        if not sources and not is_vid:
+            # Fallback for audio-only file in video_files list
+            sources = [{"original": video_path, "stream_idx": -1, "temp_path": video_path}]
 
-        vid_prod_id = producer_map.get((video_path, -1))
+        vid_prod_id = producer_map.get((video_path, -2)) or producer_map.get((video_path, -1))
 
         if is_vid:
             playlist = proj.add_track("video")
             for ks, ke in keep_segments:
                 if ke > ks:
-                    in_frame = int(round((ks + offset) * fps))
-                    dur_frames = int(round((ke - ks) * fps))
-                    playlist.add_clip(vid_prod_id, in_point=in_frame, length=dur_frames)
+                    playlist.add_clip_timecode(
+                        vid_prod_id, 
+                        start=str(Timecode.from_seconds(ks + offset, fps)),
+                        duration=str(Timecode.from_seconds(ke - ks, fps)),
+                        fps=fps
+                    )
 
-        for a_source in audio_sources:
+
+        for src in sources:
             playlist = proj.add_track("audio")
-            a_prod_id = None
-            if audio_info_map and a_source in audio_info_map:
-                info = audio_info_map[a_source]
-                a_prod_id = producer_map.get((info["original"], info["stream_idx"]))
-            else:
-                a_prod_id = producer_map.get((a_source, 0)) or producer_map.get((a_source, -1))
+            a_source = src["temp_path"]
+            a_prod_id = producer_map.get((src["original"], src["stream_idx"]))
             if not a_prod_id: continue
-
-            markers = stream_markers_global.get(a_source, {})
-            silences = markers.get("silence", [])
-            spikes = markers.get("spikes", [])
-            mute_intervals = merge_intervals(silences + spikes)
 
             for ks, ke in keep_segments:
                 if ke <= ks: continue
-                in_frame = int(round((ks + offset) * fps))
-                dur_frames = int(round((ke - ks) * fps))
-                
-                clip = playlist.add_clip(a_prod_id, in_point=in_frame, length=dur_frames)
-                
-                # Volume mutes
-                kfs = []
-                rel_mutes = []
-                clip_start = ks + offset
-                clip_end = ke + offset
-                for ms, me in mute_intervals:
-                    is_s = max(ms, clip_start)
-                    is_e = min(me, clip_end)
-                    if is_e > is_s:
-                        rs = int(round((is_s - clip_start) * fps))
-                        re = int(round((is_e - clip_start) * fps))
-                        rel_mutes.append((rs, re))
-                
-                if rel_mutes:
-                    rel_mutes.sort()
-                    merged = []
-                    if rel_mutes:
-                        merged.append(list(rel_mutes[0]))
-                        for curr in rel_mutes[1:]:
-                            if curr[0] <= merged[-1][1]:
-                                merged[-1][1] = max(merged[-1][1], curr[1])
-                            else:
-                                merged.append(list(curr))
-                    
-                    if merged[0][0] > 0: kfs.append("0=1")
-                    for idx, (rs, re) in enumerate(merged):
-                        re = min(dur_frames - 1, re)
-                        if re < rs: continue
-                        if rs > 0: kfs.append(f"{max(0, rs-1)}=1")
-                        kfs.append(f"{rs}=0")
-                        kfs.append(f"{re}=0")
-                        if idx + 1 < len(merged):
-                            next_rs = merged[idx+1][0]
-                            if next_rs > re + 1: kfs.append(f"{re+1}=1")
-                        elif re < dur_frames - 1: kfs.append(f"{re+1}=1")
-                    
-                    if kfs:
-                        clip.filters.append(Filter("volume", properties={"gain": ";".join(kfs), "mlt_service": "volume", "kdenlive_id": "volume"}))
+                playlist.add_clip_timecode(
+                    a_prod_id, 
+                    start=str(Timecode.from_seconds(ks + offset, fps)),
+                    duration=str(Timecode.from_seconds(ke - ks, fps)),
+                    fps=fps
+                )
+
+
 
     # 3. Sequence-level Filters
+    duration_tc = proj.get_duration_timecode(fps)
+    proj.add_filter("volume", properties={
+        "gain": f"00:00:00:00=1;{duration_tc}=1", 
+        "mlt_service": "volume", 
+        "kdenlive_id": "volume"
+    })
     proj.add_filter("volume", properties={
         "window": "75", "max_gain": "20dB", "channel_mask": "-1", "internal_added": "237", "disable": "1"
     })
+
     proj.add_filter("panner", properties={
         "internal_added": "237", "start": "0.5", "disable": "1"
     })

@@ -2,6 +2,9 @@ import pytest
 import os
 import xml.etree.ElementTree as ET
 from unittest.mock import patch
+import sys
+sys.path.insert(0, '.')
+sys.path.insert(0, r'c:\Users\gerge\source\repos\mlt-python\src')
 from exporter import generate_kdenlive_project
 
 @patch("exporter.get_video_duration", return_value=10.0)
@@ -16,11 +19,10 @@ def test_kdenlive_xml_sync(mock_size, mock_has_vid, mock_dur, working_dir):
     
     generate_kdenlive_project(
         video_files=video_files,
+        audio_files=None,
         output_path=output_path,
         keep_segments=keep_segments,
-        stream_spikes_map={},
-        overlaps=[],
-        repetitions=[],
+        stream_spikes={},
         fps=25.0
     )
     
