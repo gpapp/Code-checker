@@ -102,6 +102,13 @@ def generate_kdenlive_project(
     for temp_wav, info in (audio_info_map or {}).items():
         required_chains.append((info["original"], info["stream_idx"]))
 
+    # Audio chains from video_to_audio_map (for tests or when audio_info_map not provided)
+    for v, audios in (video_to_audio_map or {}).items():
+        for a in audios:
+            if a not in video_files or not has_video_stream(a):
+                # It's a separate audio file, add with stream_idx=0
+                required_chains.append((a, 0))
+
     # Deduplicate
     required_chains = list(set(required_chains))
 
@@ -206,11 +213,13 @@ def generate_kdenlive_project(
             a_track_name = proj.addTrack("audio")
 
             # Find chain for this audio source
+            a_chain_id = None
             if audio_info_map and a_source in audio_info_map:
                 info = audio_info_map[a_source]
                 a_chain_id = chain_map.get((info["original"], info["stream_idx"]))
             else:
-                a_chain_id = chain_map.get((a_source, -1))
+                # Try different stream indices
+                a_chain_id = chain_map.get((a_source, 0)) or chain_map.get((a_source, -1))
             if not a_chain_id:
                 continue
 

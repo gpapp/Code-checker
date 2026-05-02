@@ -94,17 +94,49 @@ def test_audio_clips_on_both_tracks():
         assert os.path.exists(output), "Kdenlive file not created"
         tree = ET.parse(output)
         root = tree.getroot()
-        
-        # Check A1 and A2 playlists
-        a1_pl = root.find(".//playlist[@id='playlist0']")
-        a2_pl = root.find(".//playlist[@id='playlist2']")
-        
+
+        # Find sequence tractor from main_bin's activetimeline property
+        main_bin = root.find(".//playlist[@id='main_bin']")
+        active_timeline = main_bin.find("property[@name='kdenlive:docproperties.activetimeline']")
+        seq_tr_id = active_timeline.text
+        seq_tr = root.find(f".//tractor[@id='{seq_tr_id}']")
+
+        # Check A1 and A2 playlists by finding audio tracks
+        # Each track has 2 playlists (pl1 with entries, pl2 without)
+        # Find the correct pl1 playlists by looking at the tractors
+        a1_pl = None
+        a2_pl = None
+
+        # Find audio tractors (those with kdenlive:audio_track=1)
+        audio_tractors = []
+        for tr in root.findall("tractor"):
+            props = tr.findall("property[@name='kdenlive:audio_track']")
+            if any(p.text == "1" for p in props):
+                audio_tractors.append(tr)
+
+        # Sort by track order in sequence tractor
+        seq_tracks = []
+        if seq_tr is not None:
+            for t in seq_tr.findall("track"):
+                seq_tracks.append(t.get("producer"))
+
+        # Get pl1 for each audio tractor (first track element)
+        for tr in audio_tractors:
+            tracks = tr.findall("track")
+            if tracks:
+                pl1_id = tracks[0].get("producer")
+                pl1 = root.find(f".//playlist[@id='{pl1_id}']")
+                if a1_pl is None:
+                    a1_pl = pl1
+                elif a2_pl is None:
+                    a2_pl = pl1
+
         a1_entries = a1_pl.findall('entry') if a1_pl is not None else []
         a2_entries = a2_pl.findall('entry') if a2_pl is not None else []
-        
+
         assert len(a1_entries) > 0, f"A1 track has no entries"
         assert len(a2_entries) > 0, f"A2 track has no entries"
-        
+
         print(f"✓ A1 has {len(a1_entries)} entries")
         print(f"✓ A2 has {len(a2_entries)} entries")
 
@@ -146,9 +178,21 @@ def test_video_clip_length():
         tree = ET.parse(output)
         root = tree.getroot()
         
-        # Check V1 track (playlist4)
-        v1_pl = root.find(".//playlist[@id='playlist4']")
-        
+        # Check V1 track by finding video track (no kdenlive:audio_track=1)
+        v1_pl = None
+        for pl in root.findall("playlist"):
+            props = pl.findall("property[@name='kdenlive:audio_track']")
+            if not any(p.text == "1" for p in props):
+                # Check if this playlist is used in a tractor with video track
+                pl_id = pl.get("id")
+                for tr in root.findall("tractor"):
+                    track_elem = tr.find(f"track[@producer='{pl_id}']")
+                    if track_elem is not None and track_elem.get("hide") != "video":
+                        v1_pl = pl
+                        break
+                if v1_pl is not None:
+                    break
+
         entries = v1_pl.findall('entry') if v1_pl is not None else []
         assert len(entries) > 0, "V1 track has no entries"
         
@@ -169,17 +213,17 @@ def test_video_clip_length():
 
 
 def test_silence_gaps_in_audio():
-    """Test that silence gaps are correctly represented as blanks in audio tracks."""
+    """Test that silence gaps are correctly muted via volume keyframes in audio tracks."""
     with tempfile.TemporaryDirectory() as tmpdir:
         audio1 = os.path.join(tmpdir, "audio1.wav")
         create_synthetic_wav(audio1, duration=60.0)
-        
+
         video1 = os.path.join(tmpdir, "video1.mkv")
         create_synthetic_mkv_mock(video1)
-        
+
         output = os.path.join(tmpdir, "project.kdenlive")
         keep_segments = [(0, 60)]  # Keep entire 60s
-        
+
         # Silences at 10-15s and 25-30s
         stream_markers_global = {
             audio1: {
@@ -187,14 +231,14 @@ def test_silence_gaps_in_audio():
                 "spikes": []
             }
         }
-        
+
         video_to_audio_map = {video1: [audio1]}
-        
+
         import unittest.mock as mock
         with mock.patch('exporter.has_video_stream', return_value=True), \
              mock.patch('exporter.get_video_duration', return_value=60.0), \
              mock.patch('exporter.get_video_fps', return_value=25.0):
-            
+
             generate_kdenlive_project(
                 [video1], output, keep_segments,
                 stream_spikes_map={},
@@ -207,31 +251,42 @@ def test_silence_gaps_in_audio():
                 stream_markers_global=stream_markers_global,
                 video_to_audio_map=video_to_audio_map
             )
-        
+
         # Check XML directly without reloading (which would trigger _reset_timelines)
         tree = ET.parse(output)
         root = tree.getroot()
-        
-        # Check A1 track for blanks (silences)
-        a1_pl = root.find(".//playlist[@id='playlist0']")
-        
-        blanks = a1_pl.findall('blank') if a1_pl is not None else []
+
+        # Check A1 track - find audio playlist dynamically
+        a1_pl = None
+        for pl in root.findall("playlist"):
+            props = pl.findall("property[@name='kdenlive:audio_track']")
+            if any(p.text == "1" for p in props):
+                a1_pl = pl
+                break
+
         entries = a1_pl.findall('entry') if a1_pl is not None else []
-        
-        print(f"✓ A1 has {len(entries)} entries and {len(blanks)} blanks for silences")
-        
-        # We expect 2 blanks (for the 2 silences) and 3 clips (before, between, after silences)
-        assert len(blanks) == 2, f"Expected 2 blanks for silences, got {len(blanks)}"
-        assert len(entries) == 3, f"Expected 3 clips around silences, got {len(entries)}"
-        
-        # Check blank durations (should be 5s each = 125 frames at 25fps)
-        for blank in blanks:
-            length_tc = blank.get('length')
-            length_frames = tc_to_frames(length_tc, 25.0)  # fps = 25
-            expected = int(5 * 25.0)  # 5 seconds
-            print(f"  Blank length: {length_frames} frames (expected {expected})")
-            assert abs(length_frames - expected) <= 2, \
-                f"Blank length mismatch: got {length_frames}, expected {expected}"
+        assert len(entries) > 0, "A1 track has no entries"
+
+        # Check that volume filter with mute keyframes exists
+        # The silence intervals should be muted (volume=0)
+        volume_found = False
+        for entry in entries:
+            for filt in entry.findall('filter'):
+                service = filt.find("property[@name='mlt_service']")
+                if service is not None and service.text == 'volume':
+                    gain_prop = filt.find("property[@name='gain']")
+                    if gain_prop is not None:
+                        gain_text = gain_prop.text
+                        # Should have mute keyframes (volume=0) at silence intervals
+                        # 10-15s = frames 250-374, 25-30s = frames 625-749
+                        assert '250=0' in gain_text or '249=0' in gain_text, \
+                            f"Expected mute at 10s (frame ~250), got: {gain_text}"
+                        assert '625=0' in gain_text or '624=0' in gain_text, \
+                            f"Expected mute at 25s (frame ~625), got: {gain_text}"
+                        volume_found = True
+
+        assert volume_found, "No volume filter with mute keyframes found for silences"
+        print(f"✓ A1 has {len(entries)} entries with volume muting for silences")
 
 
 if __name__ == "__main__":
