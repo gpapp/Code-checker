@@ -81,14 +81,9 @@ def generate_kdenlive_project(
     import uuid
     from interval_utils import merge_intervals, adjust_timestamps
 
-    max_dur_frames = sum(proj.seconds_to_frames(ke) - proj.seconds_to_frames(ks) for ks, ke in keep_segments)
+    max_dur_frames = sum(proj.seconds_to_frames(ke - ks) for ks, ke in keep_segments)
     max_dur_tc = proj.frames_to_tc(max_dur_frames - 1) if max_dur_frames > 0 else "00:00:00:00"
 
-    # Track assignments based on the template's 4 tracks (A1, A2, V1, V2)
-    vid_tracks = ["V1", "V2"]
-    aud_tracks = ["A1", "A2"]
-    v_idx = 0
-    a_idx = 0
     
     chain_map = {} # (original_file_path, stream_idx) -> chain_id
 
@@ -112,10 +107,9 @@ def generate_kdenlive_project(
 
     for orig_path, s_idx in required_chains:
         duration_s = get_video_duration(orig_path)
-        total_f = proj.seconds_to_frames(duration_s)
         is_vid = has_video_stream(orig_path)
-        
-        chain_id = proj.addFileToBin(orig_path, duration_frames=total_f, clip_type="0" if is_vid else "1")
+
+        chain_id = proj.addFileToBin(orig_path, duration=duration_s, clip_type="0" if is_vid else "1")
         chain_map[(orig_path, s_idx)] = chain_id
         
         # Set extra chain properties
@@ -162,20 +156,30 @@ def generate_kdenlive_project(
     # Sort: prioritize those WITH video streams
     paired_inputs.sort(key=lambda x: not has_video_stream(x["path"]))
 
+    # DEBUG
+    for pi in paired_inputs:
+        logger.info(f"Paired input: {pi['path']} (offset={pi['offset']})")
+
     # Add speech info
     for i, item in enumerate(paired_inputs):
         v_path = item["path"]
-        vid_chain_id = chain_map.get((v_path, -1))
-        if vid_chain_id and item["asr"]:
-            chain = proj.root.find(f".//chain[@id='{vid_chain_id}']")
+        is_vid = has_video_stream(v_path)
+        # Find any chain for this file (prefer video+audio combo)
+        c_id = chain_map.get((v_path, -1))
+        if not c_id:
+            # Try finding any audio stream from this file
+            for (p, s), cid in chain_map.items():
+                if p == v_path:
+                    c_id = cid
+                    break
+
+        if c_id and item["asr"]:
+            chain = proj.root.find(f".//chain[@id='{c_id}']")
             if chain is not None:
                 speech_html = generate_kdenlive_speech_html(i+1, item["asr"])
                 ET.SubElement(chain, "property", name="kdenlive:speech").text = speech_html
 
     # 2. Add Clips to Tracks using keep_segments
-    video_track_idx = 0
-    audio_track_idx = 0
-
     for item in paired_inputs:
         video_path = item["path"]
         offset = item["offset"]
@@ -188,25 +192,18 @@ def generate_kdenlive_project(
         vid_chain_id = chain_map.get((video_path, -1))
 
         # Add video track if exists
-        if is_vid and video_track_idx < len(vid_tracks):
-            v_track_name = vid_tracks[video_track_idx]
-            video_track_idx += 1
+        if is_vid:
+            v_track_name = proj.addTrack("video")
 
-            timeline_pos = 0
+            timeline_pos = 0.0
             for ks, ke in keep_segments:
-                ks_f = proj.seconds_to_frames(ks + offset)
-                ke_f = proj.seconds_to_frames(ke + offset)
-                if ke_f > ks_f:
-                    proj.addClipToTrack(v_track_name, vid_chain_id, ks_f, ke_f, timeline_pos)
-                    timeline_pos += (ke_f - ks_f)
+                if ke > ks:
+                    proj.addClipToTrack(v_track_name, vid_chain_id, ks + offset, ke + offset, timeline_pos)
+                    timeline_pos += (ke - ks)
 
         # Add audio tracks
         for a_source in audio_sources:
-            if audio_track_idx >= len(aud_tracks):
-                break
-
-            a_track_name = aud_tracks[audio_track_idx]
-            audio_track_idx += 1
+            a_track_name = proj.addTrack("audio")
 
             # Find chain for this audio source
             if audio_info_map and a_source in audio_info_map:
@@ -222,155 +219,35 @@ def generate_kdenlive_project(
             silences = markers.get("silence", [])
             spikes = markers.get("spikes", [])
 
-            timeline_pos = 0
+            timeline_pos = 0.0
             for ks, ke in keep_segments:
-                ks_f = proj.seconds_to_frames(ks + offset)
-                ke_f = proj.seconds_to_frames(ke + offset)
-                if ke_f <= ks_f:
+                if ke <= ks:
                     continue
 
                 # Add continuous clip
-                entry = proj.addClipToTrack(a_track_name, a_chain_id, ks_f, ke_f, timeline_pos)
+                entry = proj.addClipToTrack(a_track_name, a_chain_id, ks + offset, ke + offset, timeline_pos)
 
                 # Build volume keyframes for muting
-                # Mute if:
-                # 1. It is a silence on THIS stream
-                # 2. It is a spike on THIS stream
-
                 mute_intervals = merge_intervals(silences + spikes)
-                # Clip-relative intervals
-                clip_mutes = []
-                for ms, me in mute_intervals:
-                    # Intersect with [ks, ke]
-                    is_s = max(ms, ks)
-                    is_e = min(me, ke)
-                    if is_e > is_s:
-                        # Convert to clip-relative frames
-                        rel_s = int(round((is_s - ks) * proj.fps))
-                        rel_e = int(round((is_e - ks) * proj.fps))
-                        clip_mutes.append((rel_s, rel_e))
+                proj.addVolumeMutes(entry, mute_intervals, ks + offset, ke + offset)
 
-                if clip_mutes:
-                    # Generate volume keyframes: frame=level;frame=level
-                    # level 0 for mute, 1 for normal
-                    kfs = []
-                    clip_len_f = ke_f - ks_f
-                    # Sort and merge just in case
-                    clip_mutes = merge_intervals([(float(s), float(e)) for s, e in clip_mutes])
-                    clip_mutes = [(int(s), int(e)) for s, e in clip_mutes]
-
-                    if clip_mutes[0][0] > 0:
-                        kfs.append("0=1")
-
-                    for idx, (rs, re) in enumerate(clip_mutes):
-                        # Clamp to clip boundaries
-                        rs = max(0, rs)
-                        re = min(clip_len_f - 1, re)
-                        if re < rs: continue
-
-                        if rs > 0:
-                            # If there was space before this mute, ensure we were 1
-                            if not kfs or not kfs[-1].split('=')[0] == str(rs-1):
-                                kfs.append(f"{rs-1}=1")
-                        kfs.append(f"{rs}=0")
-                        kfs.append(f"{re}=0")
-
-                        # Look ahead to see if we should unmute
-                        if idx + 1 < len(clip_mutes):
-                            next_rs = clip_mutes[idx+1][0]
-                            if next_rs > re + 1:
-                                kfs.append(f"{re+1}=1")
-                        else:
-                            # Last mute
-                            if re < clip_len_f - 1:
-                                kfs.append(f"{re+1}=1")
-
-                    if kfs:
-                        proj.addFilterToEntry(entry, "volume", {"gain": ";".join(kfs)})
-
-                timeline_pos += (ke_f - ks_f)
+                timeline_pos += (ke - ks)
     
-    # 3. Add Track-level Filters (audio tracks A1, A2)
-    for track_name in aud_tracks:
-        if track_name in proj.tracks:
-            proj.addFilterToTrack(track_name, "volume", {
-                "window": "75",
-                "max_gain": "20dB",
-                "channel_mask": "-1",
-                "mlt_service": "volume",
-                "internal_added": "237",
-                "disable": "1"
-            })
-            proj.addFilterToTrack(track_name, "panner", {
-                "channel": "-1",
-                "mlt_service": "panner",
-                "internal_added": "237",
-                "start": "0.5",
-                "disable": "1"
-            })
-            proj.addFilterToTrack(track_name, "audiolevel", {
-                "iec_scale": "0",
-                "mlt_service": "audiolevel",
-                "internal_added": "237",
-                "dbpeak": "1",
-                "disable": "1"
-            })
+    # 3. Track-level Filters are now handled automatically by proj.addTrack('audio')
     
-    # 4. Add Sequence-level Filters and Transitions (tractor4)
-    seq_tractor = proj.root.find(".//tractor[@id='tractor4']")
-    if seq_tractor is not None:
-        # Update sequence duration
-        seq_tractor.set("out", max_dur_tc)
-        
+    # 4. Add Sequence-level Filters
+    if proj.seq_tractor is not None:
         # Add sequence filters (master level)
-        filt = ET.SubElement(seq_tractor, "filter", id=proj._get_next_filter_id())
-        ET.SubElement(filt, "property", name="mlt_service").text = "volume"
-        ET.SubElement(filt, "property", name="internal_added").text = "237"
-        ET.SubElement(filt, "property", name="window").text = "75"
-        ET.SubElement(filt, "property", name="max_gain").text = "20dB"
-        ET.SubElement(filt, "property", name="channel_mask").text = "-1"
-        ET.SubElement(filt, "property", name="disable").text = "1"
-        
-        filt2 = ET.SubElement(seq_tractor, "filter", id=proj._get_next_filter_id())
-        ET.SubElement(filt2, "property", name="mlt_service").text = "panner"
-        ET.SubElement(filt2, "property", name="internal_added").text = "237"
-        ET.SubElement(filt2, "property", name="start").text = "0.5"
-        ET.SubElement(filt2, "property", name="disable").text = "1"
-        
-        # Add transitions for audio tracks (blend against track 0)
-        for idx, track_name in enumerate(aud_tracks):
-            proj.addTransition(0, idx + 1, "mix", {
-                "internal_added": "237",
-                "always_active": "1",
-                "accepts_blanks": "1",
-                "sum": "1"
-            })
-        
-        # Add transitions for video tracks
-        vid_offset = len(aud_tracks) + 1  # +1 for black track (track 0)
-        for idx, track_name in enumerate(vid_tracks):
-            proj.addTransition(0, vid_offset + idx, "qtblend", {
-                "internal_added": "237",
-                "always_active": "1",
-                "compositing": "0",
-                "distort": "0",
-                "rotate_center": "0"
-            })
-    
-    # 5. Adjust sequence duration properties
-    seq_tr = proj.seq_tractor
-    if seq_tr is not None:
-        duration_prop = seq_tr.find("property[@name='kdenlive:duration']")
-        if duration_prop is not None:
-            duration_prop.text = max_dur_tc
-        else:
-            ET.SubElement(seq_tr, "property", name="kdenlive:duration").text = max_dur_tc
+        proj.addFilterToTractor(proj.seq_tractor, "volume", {
+            "window": "75", "max_gain": "20dB", "channel_mask": "-1", "internal_added": "237", "disable": "1"
+        })
+        proj.addFilterToTractor(proj.seq_tractor, "panner", {
+            "internal_added": "237", "start": "0.5", "disable": "1"
+        })
 
-        max_dur_prop = seq_tr.find("property[@name='kdenlive:maxduration']")
-        if max_dur_prop is not None:
-            max_dur_prop.text = str(max_dur_frames)
-        else:
-            ET.SubElement(seq_tr, "property", name="kdenlive:maxduration").text = str(max_dur_frames)
+    # 5. Adjust sequence duration properties
+    total_dur_s = sum(ke - ks for ks, ke in keep_segments)
+    proj.setDuration(total_dur_s)
     
     # Update project tractor (tractor4 is the sequence)
     proj.save(output_path)

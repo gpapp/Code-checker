@@ -51,38 +51,81 @@ def test_multiple_audio_tracks_assignment(mock_exists, mock_has_vid, mock_dur, w
     tree = ET.parse(output_path)
     root = tree.getroot()
 
-    # V1 (playlist4) should have video.mkv
-    v1_pl = root.find(".//playlist[@id='playlist4']")
-    v1_entry = v1_pl.find("entry")
-    v1_chain_id = v1_entry.get("producer")
-    v1_chain = root.find(f".//chain[@id='{v1_chain_id}']")
-    assert "video.mkv" in v1_chain.find("property[@name='resource']").text
+    # V1 should have video.mkv
+    # With dynamic tracks, V1 is the first video track created
+    # We find playlist IDs by looking for "A" or "V" properties or just looking at chain resources
+    playlists = [pl for pl in root.findall(".//playlist") if pl.get("id") != "main_bin"]
+
+    def find_pl_by_resource(res_name):
+        for pl in playlists:
+            for ent in pl.findall("entry"):
+                prod = ent.get("producer")
+                chain = root.find(f".//chain[@id='{prod}']")
+                if chain is not None and res_name in chain.find("property[@name='resource']").text:
+                    # In dynamic tracks, entries point to chains.
+                    return pl
+        return None
+
+    def find_chain_by_resource(res_name):
+        for chain in root.findall(".//chain"):
+            res = chain.find("property[@name='resource']")
+            if res is not None and res_name in res.text:
+                return chain
+        return None
+
+    v1_chain = find_chain_by_resource("video.mkv")
+    assert v1_chain is not None
+    v1_chain_id = v1_chain.get("id")
+
+    # Find entry pointing to this chain
+    v1_entry = None
+    for ent in root.findall(".//playlist/entry"):
+        if ent.get("producer") == v1_chain_id:
+            v1_entry = ent
+            break
+    assert v1_entry is not None
 
     # Check all audio tracks
-    a1_pl = root.find(".//playlist[@id='playlist0']")
-    a2_pl = root.find(".//playlist[@id='playlist2']")
+    a1_pl = find_pl_by_resource("audio1.mp3")
+    a2_pl = find_pl_by_resource("audio2.mp3")
 
     a1_entry = a1_pl.find("entry")
     a2_entry = a2_pl.find("entry")
 
     a1_chain = root.find(f".//chain[@id='{a1_entry.get('producer')}']")
-    a2_chain = root.find(f".//chain[@id='{a2_entry.get('producer')}']")
+    # a1_entry might be a2_entry if resources were found in different order.
+    # Recalculate a1_chain and a2_chain based on entries
+    def get_chain_for_entry(entry):
+        return root.find(f".//chain[@id='{entry.get('producer')}']")
+
+    # Identify chain with audio1.mp3
+    target_a1_chain = None
+    if "audio1.mp3" in get_chain_for_entry(a1_entry).find("property[@name='resource']").text:
+        target_a1_chain = get_chain_for_entry(a1_entry)
+    else:
+        target_a1_chain = get_chain_for_entry(a2_entry)
 
     resources = [
-        a1_chain.find("property[@name='resource']").text,
-        a2_chain.find("property[@name='resource']").text
+        get_chain_for_entry(a1_entry).find("property[@name='resource']").text,
+        get_chain_for_entry(a2_entry).find("property[@name='resource']").text
     ]
 
     # Both audio1 and audio2 (ORIGINAL) should be present on audio tracks
-    assert any("audio1.mp3" in r for r in resources)
-    assert any("audio2.mp3" in r for r in resources)
+    all_chains = root.findall(".//chain")
+    all_resources = [c.find("property[@name='resource']").text for c in all_chains]
+
+    assert any("audio1.mp3" in r for r in all_resources)
+    assert any("audio2.mp3" in r for r in all_resources)
 
     # Identify which track is audio2 to check filters
     target_entry = None
-    if a1_chain is not None and "audio2.mp3" in a1_chain.find("property[@name='resource']").text:
-        target_entry = a1_entry
-    elif a2_chain is not None and "audio2.mp3" in a2_chain.find("property[@name='resource']").text:
-        target_entry = a2_entry
+    for pl in root.findall(".//playlist"):
+        for ent in pl.findall("entry"):
+            prod = ent.get("producer")
+            chain = root.find(f".//chain[@id='{prod}']")
+            if chain is not None and "audio2.mp3" in chain.find("property[@name='resource']").text:
+                target_entry = ent
+                break
 
     # Check volume filter on the entry that has audio2
     vol_filter = target_entry.find("filter") if target_entry is not None else None
@@ -95,14 +138,20 @@ def test_multiple_audio_tracks_assignment(mock_exists, mock_has_vid, mock_dur, w
 
     # Check for bin effects (filters on chains)
     def find_filter(chain, service):
+        if chain is None: return None
         for f in chain.findall("filter"):
             for p in f.findall("property"):
                 if p.get("name") == "mlt_service" and p.text == service:
                     return f
         return None
 
-    assert find_filter(a1_chain, "ladspa.1073") is not None
-    assert find_filter(a1_chain, "dynamic_loudness") is not None
+    # Print debug info for failed tests
+    if find_filter(target_a1_chain, "ladspa.1073") is None:
+        print(f"Filters in target_a1_chain: {[p.text for f in (target_a1_chain.findall('filter') if target_a1_chain is not None else []) for p in f.findall('property') if p.get('name')=='mlt_service']}")
+        print(f"Chain resource: {target_a1_chain.find('property[@name=\"resource\"]').text if target_a1_chain is not None else 'None'}")
+
+    assert find_filter(target_a1_chain, "ladspa.1073") is not None
+    assert find_filter(target_a1_chain, "dynamic_loudness") is not None
 
 @patch("exporter.get_video_duration", return_value=10.0)
 @patch("exporter.has_video_stream")

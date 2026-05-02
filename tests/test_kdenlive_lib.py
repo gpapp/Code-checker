@@ -14,7 +14,7 @@ def test_add_file_to_bin():
     template = "kdenlive/empty.kdenlive"
     proj = KdenliveProject(template)
     
-    chain_id = proj.addFileToBin("dummy_video.mp4", duration_frames=500)
+    chain_id = proj.addFileToBin("dummy_video.mp4", duration=20.0)
     
     # Check if chain is in root
     chain = proj.root.find(f".//chain[@id='{chain_id}']")
@@ -28,7 +28,7 @@ def test_add_filter():
     template = "kdenlive/empty.kdenlive"
     proj = KdenliveProject(template)
     
-    chain_id = proj.addFileToBin("dummy_video.mp4", duration_frames=500)
+    chain_id = proj.addFileToBin("dummy_video.mp4", duration=20.0)
     proj.addFilterToChain(chain_id, "volume", {"level": "0.5"})
     
     chain = proj.root.find(f".//chain[@id='{chain_id}']")
@@ -41,11 +41,12 @@ def test_add_clip_to_track():
     template = "kdenlive/empty.kdenlive"
     proj = KdenliveProject(template)
     
-    chain_id = proj.addFileToBin("dummy_video.mp4", duration_frames=500)
+    chain_id = proj.addFileToBin("dummy_video.mp4", duration=20.0)
     
-    proj.addClipToTrack("V1", chain_id, in_frame=0, out_frame=100, timeline_start_frame=0)
+    track_name = proj.addTrack("video", "V1")
+    proj.addClipToTrack(track_name, chain_id, in_time=0, out_time=4.0, timeline_start_time=0)
     
-    pl_id = proj.tracks["V1"]
+    pl_id = proj.tracks[track_name]
     pl = proj.root.find(f".//playlist[@id='{pl_id}']")
     entry = pl.find(f".//entry[@producer='{chain_id}']")
     assert entry is not None
@@ -58,13 +59,13 @@ def test_case1_empty():
 def test_case2_add_files():
     template = "kdenlive/empty.kdenlive"
     proj = KdenliveProject(template)
-    proj.addFileToBin("dummy_video.mp4", duration_frames=5000)
+    proj.addFileToBin("dummy_video.mp4", duration=200.0)
     proj.save("tests/outputs/case2_add_files.kdenlive")
 
 def test_case3_add_filters():
     template = "kdenlive/empty.kdenlive"
     proj = KdenliveProject(template)
-    chain_id = proj.addFileToBin("dummy_video.mp4", duration_frames=5000)
+    chain_id = proj.addFileToBin("dummy_video.mp4", duration=200.0)
     proj.addFilterToChain(chain_id, "volume", {"level": "0.5"})
     proj.save("tests/outputs/case3_add_filters.kdenlive")
 
@@ -72,7 +73,7 @@ def test_case4_add_timeline():
     # In template approach, the timeline is always present. We just save it.    
     template = "kdenlive/empty.kdenlive"
     proj = KdenliveProject(template)
-    chain_id = proj.addFileToBin("dummy_video.mp4", duration_frames=5000)
+    chain_id = proj.addFileToBin("dummy_video.mp4", duration=200.0)
     proj.addFilterToChain(chain_id, "volume", {"level": "0.5"})
     proj.addTimeline()
     proj.save("tests/outputs/case4_add_timeline.kdenlive")
@@ -80,16 +81,18 @@ def test_case4_add_timeline():
 def test_case5_add_tracks_whole_files():
     template = "kdenlive/empty.kdenlive"
     proj = KdenliveProject(template)
-    chain_id = proj.addFileToBin("dummy_video.mp4", duration_frames=5000)
-    proj.addClipToTrack("V1", chain_id, in_frame=0, out_frame=5000, timeline_start_frame=0)
+    chain_id = proj.addFileToBin("dummy_video.mp4", duration=200.0)
+    track_name = proj.addTrack("video", "V1")
+    proj.addClipToTrack(track_name, chain_id, in_time=0, out_time=200.0, timeline_start_time=0)
     proj.save("tests/outputs/case5_add_tracks_whole.kdenlive")
 
 def test_case6_add_clips_individually():
     template = "kdenlive/empty.kdenlive"
     proj = KdenliveProject(template)
-    chain_id = proj.addFileToBin("dummy_video.mp4", duration_frames=5000)
+    chain_id = proj.addFileToBin("dummy_video.mp4", duration=200.0)
+    track_name = proj.addTrack("video", "V1")
     # Add two split clips
-    proj.addClipToTrack("V1", chain_id, in_frame=0, out_frame=1000, timeline_start_frame=0)
-    # Add second clip starting at 1500 (meaning there is a 500 frame gap on the timeline relative to end of first clip)
-    proj.addClipToTrack("V1", chain_id, in_frame=2000, out_frame=3000, timeline_start_frame=1500)
+    proj.addClipToTrack(track_name, chain_id, in_time=0, out_time=40.0, timeline_start_time=0)
+    # Add second clip starting at 60s (meaning there is a 20s gap on the timeline relative to end of first clip)
+    proj.addClipToTrack(track_name, chain_id, in_time=80.0, out_time=120.0, timeline_start_time=60.0)
     proj.save("tests/outputs/case6_add_clips.kdenlive")

@@ -29,7 +29,11 @@ def test_kdenlive_xml_sync(mock_size, mock_has_vid, mock_dur, working_dir):
     root = tree.getroot()
     
     # Check if entries use the correct frame-based TC
-    playlist_entries = root.findall(".//playlist/entry")
+    # Exclude main_bin
+    playlist_entries = []
+    for pl in root.findall(".//playlist"):
+        if pl.get("id") != "main_bin":
+            playlist_entries.extend(pl.findall("entry"))
     
     found_in_out = []
     for ent in playlist_entries:
