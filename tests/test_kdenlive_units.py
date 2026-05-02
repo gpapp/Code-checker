@@ -75,3 +75,18 @@ def test_add_subtitle():
     assert sub_id in data
     assert data[sub_id]["file"] == "test_subs.ass"
     assert data[sub_id]["name"] == "My Subtitles"
+
+def test_mlt_order_validity():
+    from tests.verify_mlt import verify_mlt_structure
+    template = "kdenlive/empty.kdenlive"
+    proj = KdenliveProject(template)
+
+    proj.addFileToBin("test.mp4", duration=10.0)
+    proj.addTrack("video", "V1")
+    proj.addTrack("audio", "A1")
+
+    output = "tests/outputs/test_order.kdenlive"
+    proj.save(output)
+
+    errors = verify_mlt_structure(output)
+    assert not errors, f"MLT structure errors found: {errors}"

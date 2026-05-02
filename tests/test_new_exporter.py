@@ -32,7 +32,7 @@ def test_multiple_audio_tracks_assignment(mock_exists, mock_has_vid, mock_dur, w
     # Silence only on audio2
     stream_markers = {
         "temp_a1.wav": {"silence": [], "spikes": []},
-        "temp_a2.wav": {"silence": [(1.0, 2.0)], "spikes": []}
+                "temp_a2.wav": {"silence": [(1.0, 2.0)], "spikes": []}
     }
 
     generate_kdenlive_project(
@@ -120,12 +120,15 @@ def test_multiple_audio_tracks_assignment(mock_exists, mock_has_vid, mock_dur, w
     # Identify which track is audio2 to check filters
     target_entry = None
     for pl in root.findall(".//playlist"):
+        if pl.get("id") == "main_bin": continue
         for ent in pl.findall("entry"):
             prod = ent.get("producer")
             chain = root.find(f".//chain[@id='{prod}']")
-            if chain is not None and "audio2.mp3" in chain.find("property[@name='resource']").text:
-                target_entry = ent
-                break
+            if chain is not None:
+                res = chain.find("property[@name='resource']")
+                if res is not None and "audio2.mp3" in res.text:
+                    target_entry = ent
+                    break
 
     # Check volume filter on the entry that has audio2
     vol_filter = target_entry.find("filter") if target_entry is not None else None
