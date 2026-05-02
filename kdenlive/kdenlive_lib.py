@@ -202,25 +202,56 @@ class KdenliveProject:
                 total_frames += self._tc_to_frames(out_tc) - self._tc_to_frames(in_tc) + 1
         return total_frames
 
+    def _get_insertion_index(self, tag, category=None):
+        """
+        Calculates insertion index based on MLT conventions:
+        - Profile and Producers/Chains (physical media) come first.
+        - Playlists (tracks) come next.
+        - Tractors (track arrangements) come next.
+        - main_bin playlist.
+        - Project Tractor (the very last element).
+        """
+        # Find where specific sections start/end
+        indices = {"chain": 0, "playlist": 0, "tractor": 0, "main_bin": len(self.root), "project_tractor": len(self.root)}
+
+        for i, child in enumerate(self.root):
+            ctag = child.tag
+            cid = child.get("id", "")
+
+            if ctag == "profile": continue
+
+            if ctag == "chain" or ctag == "producer":
+                indices["playlist"] = max(indices["playlist"], i + 1)
+                indices["tractor"] = max(indices["tractor"], i + 1)
+            elif ctag == "playlist" and cid != "main_bin":
+                indices["tractor"] = max(indices["tractor"], i + 1)
+            elif ctag == "tractor":
+                if child.find("property[@name='kdenlive:projectTractor']") is not None:
+                    indices["project_tractor"] = i
+                else:
+                    # Normal track tractor
+                    pass
+
+            if cid == "main_bin":
+                indices["main_bin"] = i
+
+        if tag in ["chain", "producer"]: return indices["playlist"]
+        if tag == "playlist": return indices["tractor"]
+        if tag == "tractor": return indices["main_bin"]
+        return len(self.root)
+
     def addFileToBin(self, filepath, duration=40.0, clip_type="1"):
         chain_id = self._get_next_chain_id()
         duration_frames = self.seconds_to_frames(duration)
         tc = self._frames_to_tc(duration_frames - 1) if duration_frames > 0 else "00:00:00:00"
-        
-        # Create chain producer
-        insert_idx = 0
-        for i, child in enumerate(self.root):
-            if child.tag == "tractor":
-                insert_idx = i
-                break
-                
+
         chain = ET.Element("chain", id=chain_id, out=tc)
         ET.SubElement(chain, "property", name="resource").text = filepath
-        ET.SubElement(chain, "property", name="mlt_service").text = "avformat-novalidate"
+        ET.SubElement(chain, "property", name="mlt_service").text = "avformat"
         ET.SubElement(chain, "property", name="kdenlive:clip_type").text = str(clip_type) 
         ET.SubElement(chain, "property", name="kdenlive:id").text = str(self.chain_counter)
         
-        self.root.insert(insert_idx, chain)
+        self.root.insert(self._get_insertion_index("chain"), chain)
         
         # Add to main_bin
         entry = ET.SubElement(self.main_bin, "entry", producer=chain_id, **{"in": "00:00:00:00", "out": tc})
@@ -247,6 +278,7 @@ class KdenliveProject:
         # Find the tractor that has a track with producer=pl_id
         tractor = None
         for tr in self.root.findall(".//tractor"):
+            # Check for direct producer match
             if tr.find("track[@producer='{}']".format(pl_id)) is not None:
                 tractor = tr
                 break
@@ -306,22 +338,25 @@ class KdenliveProject:
         """
         is_audio = track_type.lower() == 'audio'
 
-        # 1. Create Playlist(s)
-        # Kdenlive usually uses two playlists per track (one for main clips, one for something else)
-        # but we'll stick to one for simplicity, following the template structure.
+        # 1. Create Playlists
         pl1_id = self._get_next_playlist_id()
-        pl1 = ET.SubElement(self.root, "playlist", id=pl1_id)
+        pl1 = ET.Element("playlist", id=pl1_id)
         if is_audio:
             ET.SubElement(pl1, "property", name="kdenlive:audio_track").text = "1"
 
         pl2_id = self._get_next_playlist_id()
-        pl2 = ET.SubElement(self.root, "playlist", id=pl2_id)
+        pl2 = ET.Element("playlist", id=pl2_id)
         if is_audio:
             ET.SubElement(pl2, "property", name="kdenlive:audio_track").text = "1"
 
+        # Insert playlists before tractors
+        idx = self._get_insertion_index("playlist")
+        self.root.insert(idx, pl1)
+        self.root.insert(idx + 1, pl2)
+
         # 2. Create Track Tractor
         tr_id = self._get_next_tractor_id()
-        tr = ET.SubElement(self.root, "tractor", id=tr_id, **{"in": "00:00:00:00"})
+        tr = ET.Element("tractor", id=tr_id, **{"in": "00:00:00:00"})
         if is_audio:
             ET.SubElement(tr, "property", name="kdenlive:audio_track").text = "1"
         ET.SubElement(tr, "property", name="kdenlive:trackheight").text = "64"
@@ -343,6 +378,9 @@ class KdenliveProject:
             self.addFilterToTractor(tr, "audiolevel", {
                 "iec_scale": "0", "internal_added": "237", "dbpeak": "1", "disable": "1"
             })
+
+        # Insert track tractor before sequence tractor
+        self.root.insert(self._get_insertion_index("tractor"), tr)
 
         # 3. Add to Sequence Tractor
         ET.SubElement(self.seq_tractor, "track", producer=tr_id)
@@ -477,9 +515,8 @@ class KdenliveProject:
             name = os.path.basename(filepath)
 
         # 1. Add as a project asset (chain)
-        # Note: Kdenlive sometimes treats subtitles as distinct assets from media bin
-        # but adding to bin ensures it is tracked.
-        cid = self.addFileToBin(filepath, duration=0, clip_type="5") # 5 is typical for subtitles
+        # For subtitles, duration doesn't matter much in bin
+        cid = self.addFileToBin(filepath, duration=1.0, clip_type="5") # 5 is typical for subtitles
 
         # 2. Add to sequence properties
         import json
