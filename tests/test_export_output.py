@@ -16,7 +16,6 @@ import soundfile as sf
 sys.path.insert(0, '.')
 
 from exporter import generate_kdenlive_project
-from kdenlive.kdenlive_lib import KdenliveProject
 from audio_utils import get_video_fps
 
 

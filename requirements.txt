@@ -15,3 +15,4 @@ soundfile
 openai
 pytest
 pytest-cov
+mlt-python
