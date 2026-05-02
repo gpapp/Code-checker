@@ -127,7 +127,7 @@ def detect_silence_and_spikes(audio_path: str, threshold_db: float, min_silence_
     return silence_intervals, spikes
 
 def find_global_silence(stream_markers: dict[str, dict], min_duration: float, total_duration: float) -> list[tuple[float, float]]:
-    """Finds intervals where all streams are silent for at least min_duration."""
+    """Finds intervals where all streams are silent for at least min_duration, accounting for track offsets."""
     if not stream_markers:
         return []
 
@@ -135,12 +135,17 @@ def find_global_silence(stream_markers: dict[str, dict], min_duration: float, to
     for af, markers in stream_markers.items():
         dur = markers.get("duration", 0.0)
         silences = markers.get("silence", [])
-        # Non-silent intervals for this track
+        offset = markers.get("offset", 0.0)
+        
+        # Non-silent intervals for this track (track timeline)
         from interval_utils import calculate_keep_segments
         speech = calculate_keep_segments(silences, dur)
-        all_speech_intervals.extend(speech)
+        
+        # Shift speech to master timeline: T_master = T_track - offset
+        shifted_speech = [(s - offset, e - offset) for s, e in speech]
+        all_speech_intervals.extend(shifted_speech)
     
-    # Union of all speech across all tracks
+    # Union of all speech across all tracks in the master timeline
     merged_speech = merge_intervals(all_speech_intervals)
     
     # Global silence is the complement of merged_speech relative to total_duration

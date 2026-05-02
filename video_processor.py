@@ -156,7 +156,12 @@ def main():
             with open(cache_path, "w", encoding="utf-8") as f:
                 json.dump({"silence": silence, "spikes": spikes}, f, ensure_ascii=False)
         
-        stream_markers[af] = {"silence": silence, "spikes": spikes, "duration": get_video_duration(af)}
+        stream_markers[af] = {
+            "silence": silence, 
+            "spikes": spikes, 
+            "duration": get_video_duration(af),
+            "offset": offsets[final_inputs.index(audio_info_map[af]["original"])] if af in audio_info_map else 0.0
+        }
 
 
     logger.info("Step 3/7: Running ASR and filler detection...")
@@ -251,13 +256,15 @@ def main():
     else:
         logger.info("Skipping Step 3c (Gemma Cleanup). Use --refine to enable.")
 
-    # Use max duration of all inputs as total duration
-    total_dur = max([get_video_duration(v) for v in final_inputs])
+    # Use max duration of all inputs as total duration, adjusted by their offsets
+    # Master timeline T = track_time - offset. So track end at duration_i is at master time duration_i - offset_i.
+    total_dur = 0.0
+    for i, v in enumerate(final_inputs):
+        total_dur = max(total_dur, get_video_duration(v) - offsets[i])
 
-    # Find global silence using the union of all speech intervals across tracks.
-    # This correctly identifies trailing silences for truncation.
+    # Find global silence using the union of all speech intervals across tracks,
+    # correctly accounting for track-specific offsets.
     global_silence = find_global_silence(stream_markers, 0.2, total_dur)
-    # silence_excess_cuts = compress_global_silence(global_silence)
     cutting_segments.extend(global_silence)
 
     cutting_segments = merge_intervals(cutting_segments)

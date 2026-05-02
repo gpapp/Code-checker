@@ -145,34 +145,6 @@ def generate_kdenlive_project(
 
         producer = proj.add_producer(orig_path, properties=props)
         producer_map[(orig_path, s_idx)] = producer.id
-        
-        # Audio filters only for audio-carrying producers
-        if s_idx >= 0 or (s_idx == -1 and not is_vid):
-            # 2. Mastering effects (Compand & Dynamic Loudness)
-            # Compressor/Expander
-            producer.add_filter(Filter("avfilter.compand", properties={
-                "av.attacks": "0",
-                "av.decays": "0.8",
-                "av.soft-knee": "0.01",
-                "av.gain": "0",
-                "av.volume": "0",
-                "kdenlive_id": "avfilter.compand"
-            }))
-            
-            # Dynamic Loudness Normalization
-            producer.add_filter(Filter("dynamic_loudness", properties={
-                "target_loudness": "-23",
-                "window": "3",
-                "max_gain": "15",
-                "min_gain": "-15",
-                "max_rate": "3",
-                "discontinuity_reset": "1",
-                "in_loudness": "-100.0",
-                "out_gain": "0.0",
-                "reset_count": "0",
-                "kdenlive_id": "dynamic_loudness"
-            }))
-
 
     # Add speech info
     paired_inputs = []
@@ -226,6 +198,32 @@ def generate_kdenlive_project(
 
         for src in sources:
             playlist = proj.add_track("audio")
+            
+            # Add mastering filters to the audio track (tractor level in XML)
+            # Compressor/Expander
+            playlist.add_filter(Filter("avfilter.compand", properties={
+                "av.attacks": "0",
+                "av.decays": "0.8",
+                "av.soft-knee": "0.01",
+                "av.gain": "0",
+                "av.volume": "0",
+                "kdenlive_id": "avfilter.compand"
+            }))
+            
+            # Dynamic Loudness Normalization
+            playlist.add_filter(Filter("dynamic_loudness", properties={
+                "target_loudness": "-23",
+                "window": "3",
+                "max_gain": "15",
+                "min_gain": "-15",
+                "max_rate": "3",
+                "discontinuity_reset": "1",
+                "in_loudness": "-100.0",
+                "out_gain": "0.0",
+                "reset_count": "0",
+                "kdenlive_id": "dynamic_loudness"
+            }))
+
             a_source = src["temp_path"]
             a_prod_id = producer_map.get((src["original"], src["stream_idx"]))
             if not a_prod_id: continue
@@ -235,6 +233,25 @@ def generate_kdenlive_project(
             silences = markers_data.get("silence", [])
             # NSA = Non-Silent Audio intervals in the original producer timeline
             nsa = calculate_keep_segments(silences, a_dur)
+            
+            # Improve Smoothing:
+            # 1. Add padding (0.1s) to speech segments to avoid clipping words
+            # 2. Merge gaps < 0.4s to keep audio continuous during natural pauses
+            if nsa:
+                padded_nsa = []
+                for start, end in nsa:
+                    padded_nsa.append((max(0, start - 0.1), min(a_dur, end + 0.1)))
+                
+                # Merge padded segments and small gaps
+                nsa = merge_intervals(padded_nsa)
+                smoothed_nsa = [nsa[0]]
+                for start, end in nsa[1:]:
+                    prev_start, prev_end = smoothed_nsa[-1]
+                    if start - prev_end < 0.4:
+                        smoothed_nsa[-1] = (prev_start, end)
+                    else:
+                        smoothed_nsa.append((start, end))
+                nsa = smoothed_nsa
             
             # Map keep_segments to audio producer timeline (shifted by offset)
             audio_keep_intervals = []
