@@ -31,7 +31,7 @@ if errorlevel 1 (
 )
 
 echo [2/2] Installing PyTorch with CUDA 12.6 support...
-uv pip install torch torchvision torchaudio --upgrade --index-url https://download.pytorch.org/whl/cu126
+uv pip install torch torchvision torchaudio torchcodec --upgrade --index-url https://download.pytorch.org/whl/cu126
 if errorlevel 1 (
     echo [ERROR] Failed to install PyTorch with CUDA.
     pause

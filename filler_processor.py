@@ -4,10 +4,6 @@ import librosa
 
 logger = logging.getLogger(__name__)
 
-def run_vad(audio_path: str):
-    """Runs NeMo VAD and returns active speech intervals with robustness improvements."""
-    duration = librosa.get_duration(path=audio_path)
-    
 _silero_model_cache = None
 
 def run_vad(audio_path: str):
@@ -17,7 +13,8 @@ def run_vad(audio_path: str):
     
     try:
         import torch
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        import numpy as np
+        device = torch.device("cpu")
         
         if _silero_model_cache is None:
             logger.info("Loading Silero VAD model via torch.hub...")
@@ -29,12 +26,12 @@ def run_vad(audio_path: str):
             _silero_model_cache = (model, utils)
         
         model, utils = _silero_model_cache
-        (get_speech_timestamps, _, read_audio, _, _) = utils
+        (get_speech_timestamps, _, _, _, _) = utils
         
-        # Silero read_audio handles various formats and ensures 16kHz
-        wav = read_audio(audio_path, sampling_rate=16000).to(device)
+        # Load audio via librosa to avoid torchaudio/torchcodec dependency
+        y, sr = librosa.load(audio_path, sr=16000)
+        wav = torch.from_numpy(y).unsqueeze(0).to(device)
         
-        # get_speech_timestamps returns a list of dicts: {'start': sample, 'end': sample}
         speech_timestamps = get_speech_timestamps(
             wav, model, 
             sampling_rate=16000,

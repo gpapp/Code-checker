@@ -1,0 +1,444 @@
+1
+00:00:00,000 --> 00:00:02,000
+de általában nem is éri
+
+2
+00:00:02,000 --> 00:00:03,480
+meg, mert annyi munkaórát kellene
+
+3
+00:00:03,480 --> 00:00:06,620
+beleölni, hogy annál olcsóbb megcsinálni,
+
+4
+00:00:06,620 --> 00:00:07,820
+vagy megvenni egy újat.
+
+5
+00:00:09,448 --> 00:00:13,276
+Na, de azért, ahhoz képest,
+
+6
+00:00:13,276 --> 00:00:14,596
+hogy még nem is aktívak
+
+7
+00:00:14,596 --> 00:00:16,596
+benne az összes szenzor, meg
+
+8
+00:00:16,596 --> 00:00:18,916
+mikrofon, meg ilyesmi, ugye, mikrofont,
+
+9
+00:00:18,916 --> 00:00:21,196
+azt elég nehéz megindokolni.
+
+10
+00:00:21,196 --> 00:00:24,504
+Ahhoz képest az, hogy ennek
+
+11
+00:00:24,504 --> 00:00:27,384
+van egy viszonylag jól behatárolható
+
+12
+00:00:27,484 --> 00:00:32,104
+életciklusa, ami után maximum kockaként
+
+13
+00:00:32,104 --> 00:00:34,768
+használható fel a kocka, az,
+
+14
+00:00:35,458 --> 00:00:37,778
+ahhoz már drága, nem?
+
+15
+00:00:42,158 --> 00:00:43,052
+Így, így.
+
+16
+00:00:44,224 --> 00:00:47,414
+Ugyanakkor, most már, ha a
+
+17
+00:00:47,414 --> 00:00:50,274
+játékokra átértünk,
+
+18
+00:00:51,612 --> 00:00:55,896
+nehéz mostanában játszani számítógépeken, hiszen
+
+19
+00:00:55,956 --> 00:00:57,716
+annyira megdrágult mindenkor.
+
+20
+00:00:57,736 --> 00:00:58,576
+A komponás, ugye?
+
+21
+00:00:58,656 --> 00:00:59,156
+A
+
+22
+00:01:03,482 --> 00:01:04,262
+RAM kopalips.
+
+23
+00:01:06,222 --> 00:01:06,660
+Emiatt,
+
+24
+00:01:08,284 --> 00:01:09,944
+bocsánat, ezt le kéne névítanom.
+
+25
+00:01:12,128 --> 00:01:15,474
+Emiatt, hogyha PC -t akarnál
+
+26
+00:01:15,474 --> 00:01:18,774
+venni, a legolcsóbb megvenni az
+
+27
+00:01:18,774 --> 00:01:21,394
+alaplapot, meg belevenni egy processzort,
+
+28
+00:01:21,454 --> 00:01:23,374
+de azért RAM -ot bele
+
+29
+00:01:23,374 --> 00:01:25,034
+már nem biztos, hogy kéne
+
+30
+00:01:25,034 --> 00:01:25,394
+rakni.
+
+31
+00:01:26,374 --> 00:01:29,414
+Kivált kép, mert egy szentőrült
+
+32
+00:01:29,474 --> 00:01:32,646
+megvizsgálta, hogy hogyan tud működni
+
+33
+00:01:32,646 --> 00:01:36,478
+egy számítógép RAM modulok nélkül.
+
+34
+00:01:36,498 --> 00:01:41,024
+Ez ugye a legolcsóbb build,
+
+35
+00:01:41,204 --> 00:01:44,064
+hogy nem kell belevenni a
+
+36
+00:01:44,488 --> 00:01:47,008
+legdrágább alkatrészből, elég bele memória,
+
+37
+00:01:47,188 --> 00:01:49,068
+vagy bocsánat, elég bele processzor,
+
+38
+00:01:49,148 --> 00:01:52,008
+elég bele valamilyen disk drive,
+
+39
+00:01:52,228 --> 00:01:54,660
+és hip -hop már működik
+
+40
+00:01:54,660 --> 00:01:54,820
+is.
+
+41
+00:01:56,240 --> 00:01:58,766
+Picit kellett csak belenyúlnia az
+
+42
+00:01:58,766 --> 00:02:02,836
+alaplap bioszába, hogy az ne
+
+43
+00:02:02,836 --> 00:02:06,788
+utasítsa vissza az indulást.
+
+44
+00:02:06,868 --> 00:02:08,268
+De onnantól...
+
+45
+00:02:08,288 --> 00:02:10,548
+Meg tudta oldani, hogy például
+
+46
+00:02:10,548 --> 00:02:13,928
+a harddisk legyen a virtuális
+
+47
+00:02:13,928 --> 00:02:14,668
+memóriája.
+
+48
+00:02:20,110 --> 00:02:22,102
+És sajnos úgy találta, hogy
+
+49
+00:02:22,102 --> 00:02:24,402
+nem megfelelő arra, hogy egy
+
+50
+00:02:24,402 --> 00:02:27,522
+processzort kiszolgáljon sebességre, de se
+
+51
+00:02:27,522 --> 00:02:29,022
+baj, mert az SSD az
+
+52
+00:02:29,022 --> 00:02:30,382
+már lényegesen gyorsabb.
+
+53
+00:02:31,538 --> 00:02:35,430
+Még mindig úgy tűnik, hogy
+
+54
+00:02:35,430 --> 00:02:35,550
+a
+
+55
+00:02:36,770 --> 00:02:41,766
+RAM az egy szűk keresztmetszet,
+
+56
+00:02:41,886 --> 00:02:45,666
+és muszáj volt.
+
+57
+00:02:46,346 --> 00:02:46,586
+A
+
+58
+00:02:48,454 --> 00:02:55,254
+legutolsó mencsvárába kapaszkodjon, és képzeld
+
+59
+00:02:55,254 --> 00:02:59,638
+el a processzorát, a processzorban
+
+60
+00:02:59,638 --> 00:03:05,956
+levő 32 MB memórián futtatta,
+
+61
+00:03:06,136 --> 00:03:11,682
+illetve próbálta a környezetét futtatni,
+
+62
+00:03:11,742 --> 00:03:13,882
+ami egyébként belegondolva nem egy
+
+63
+00:03:13,882 --> 00:03:14,722
+lehetetlen dolog.
+
+64
+00:03:14,862 --> 00:03:16,462
+Azért 32 MB -ban elég
+
+65
+00:03:16,462 --> 00:03:17,342
+sok minden belefér.
+
+66
+00:03:22,972 --> 00:03:24,152
+Bizony, bizony.
+
+67
+00:03:25,092 --> 00:03:25,992
+Teljesen értem, hogy miért nem
+
+68
+00:03:25,992 --> 00:03:27,772
+tudott egy teljes Linuxot belepakolni
+
+69
+00:03:27,772 --> 00:03:28,052
+ebbe.
+
+70
+00:03:29,742 --> 00:03:33,420
+Ennél a kezdeti Linux -aim
+
+71
+00:03:34,310 --> 00:03:37,014
+szerintem ennél kisebb helyen elférte.
+
+72
+00:03:37,090 --> 00:03:37,890
+És
+
+73
+00:03:44,942 --> 00:03:46,722
+hát képes volt megoldani azt,
+
+74
+00:03:46,782 --> 00:03:49,082
+hogy a Ryzen processzoron levő
+
+75
+00:03:49,082 --> 00:03:52,342
+32 MB -os L3K sem
+
+76
+00:03:52,342 --> 00:03:56,266
+futtassa az operációs rendszerét, ami
+
+77
+00:03:56,266 --> 00:03:59,186
+ugye némileg ki volt belezve,
+
+78
+00:03:59,286 --> 00:04:01,026
+de képzeld el, hogy mennyire
+
+79
+00:04:01,026 --> 00:04:04,046
+gyorsan lehetne például ezen, a
+
+80
+00:04:04,046 --> 00:04:05,766
+32 MB -val DOOM -ozni.
+
+81
+00:04:07,698 --> 00:04:09,358
+Mert hogy az bőven belefér.
+
+82
+00:04:09,478 --> 00:04:10,614
+Hát én 8 MB -val
+
+83
+00:04:10,614 --> 00:04:11,654
+futtattam annak idején.
+
+84
+00:04:30,162 --> 00:04:33,122
+Tehát igazából most ezzel már
+
+85
+00:04:33,122 --> 00:04:35,082
+majdnem át kötöttünk a következő
+
+86
+00:04:35,082 --> 00:04:37,062
+hírünkre, mert hogy most nem
+
+87
+00:04:37,062 --> 00:04:38,582
+hoztam működő DOOM -ot.
+
+88
+00:04:39,382 --> 00:04:41,702
+Csak ezt hoztam el, hogy
+
+89
+00:04:41,702 --> 00:04:43,702
+igazából már RAM nélkül is
+
+90
+00:04:43,702 --> 00:04:45,282
+lehet számítógépet indítani.
+
+91
+00:04:46,482 --> 00:04:48,890
+A következő az, hogy nyilván
+
+92
+00:04:48,890 --> 00:04:50,570
+akkor kell a DOOM -nak
+
+93
+00:04:50,570 --> 00:04:52,130
+valami olyan hely,
+
+94
+00:04:53,170 --> 00:04:57,520
+ahonnan bárhol le tudod tölteni,
+
+95
+00:04:57,540 --> 00:04:59,600
+és meg tudod nézni, ugye?
+
+96
+00:05:01,330 --> 00:05:04,570
+És visszatudod akkor is, hogyha
+
+97
+00:05:04,570 --> 00:05:06,790
+mondjuk nincsen semmi más, hogy
+
+98
+00:05:06,790 --> 00:05:08,730
+csak egy puszta network kábeled
+
+99
+00:05:08,730 --> 00:05:11,750
+szerezni a saját DOOM -odat.
+
+100
+00:05:12,976 --> 00:05:14,404
+Na és egy másik szentőrült,
+
+101
+00:05:14,504 --> 00:05:18,054
+az azzal foglalkozott, hogy a
+
+102
+00:05:18,054 --> 00:05:19,874
+DNS, DNS -ről hallottál már,
+
+103
+00:05:19,894 --> 00:05:20,114
+ugye?
+
+104
+00:05:24,264 --> 00:05:26,464
+Egy másik DNS -re gondoltam
+
+105
+00:05:26,464 --> 00:05:27,172
+ebben a pillanatban.
+
+106
+00:05:29,382 --> 00:05:33,602
+Az igen, de magyarul elfogadható
+
+107
+00:05:33,602 --> 00:05:35,262
+a válasz, de ez a
+
+108
+00:05:35,352 --> 00:05:37,932
+Domain Name System, ami az
+
+109
+00:05:37,932 --> 00:05:44,812
+internetes névfeloldási rendszerről az rendszernek
+
+110
+00:05:45,262 --> 00:05:46,422
+a neve.
+
+111
+00:05:47,672 --> 00:05:48,292
+Valaki...
+

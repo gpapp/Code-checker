@@ -1,16 +1,12 @@
 import os
 import logging
 import sys
-import uuid
-import json
 from pathlib import Path
-import xml.etree.ElementTree as ET # Keep for generate_kdenlive_speech_html
+import xml.etree.ElementTree as ET
 from typing import List, Tuple, Dict, Set
-from audio_utils import get_video_duration, has_video_stream, get_video_fps, get_video_stream_index, get_audio_stream_indices, get_track_name_from_path
+from audio_utils import get_video_duration, has_video_stream, get_video_stream_index, get_audio_stream_indices, get_track_name_from_path
 
 from mlt_python.project import MLTProject
-from mlt_python.timecode import Timecode
-from mlt_python.marker import Marker, markers_to_json
 from interval_utils import merge_intervals, intersect_intervals, calculate_keep_segments, adjust_timestamps
 
 
@@ -57,13 +53,12 @@ def generate_kdenlive_project(
     video_files: List[str],
     audio_files: Dict[str, List[Dict]],
     output_path: str,
-    keep_segments: List[Tuple[float, float]], # Float seconds in the master timeline
+    keep_segments: List[Tuple[float, float]],
     stream_spikes: Dict = None,
     video_offsets: List[float] = None,
     ass_paths: List[str] = None,
     asr_words: List[List[Dict]] = None,
     stream_markers: Dict = None,
-    fps: float = 25.0
 ):
     if not video_offsets:
         video_offsets = [0.0] * len(video_files)
@@ -75,35 +70,20 @@ def generate_kdenlive_project(
         ass_paths = []
     if asr_words is None:
         asr_words = []
-       
 
-    # Detect profile from first video
-    if video_files and os.path.exists(video_files[0]):
-        try:
-            detected_fps = get_video_fps(video_files[0])
-        except:
-            detected_fps = fps
-    else:
-        detected_fps = fps
-
-    # Map FPS to profile preset
-    profile_name = "hd1080_30"
-    if abs(detected_fps - 25.0) < 0.1: profile_name = "hd1080_25"
-    elif abs(detected_fps - 29.97) < 0.1: profile_name = "hd1080_2997"
-    elif abs(detected_fps - 24.0) < 0.1: profile_name = "hd1080_24"
-    elif abs(detected_fps - 30.0) < 0.1: profile_name = "hd1080_30"
-    elif abs(detected_fps - 23.976) < 0.1: profile_name = "hd1080_2398"
-    elif abs(detected_fps - 50.0) < 0.1: profile_name = "hd1080_50"
-    elif abs(detected_fps - 60.0) < 0.1: profile_name = "hd1080_60"
-
-    proj = MLTProject(profile=profile_name)
+    proj = MLTProject(profile="hd1080_25")
     fps = proj.profile.fps
 
-    def to_tc(seconds: float) -> str:
-        """Convert float seconds to HH:MM:SS:FF timecode string."""
-        return str(Timecode.from_seconds(seconds, fps))
-
-    total_timeline_duration = sum(ke - ks for ks, ke in keep_segments)
+    # Frame-align ALL keep segments to prevent drift between tracks.
+    # Blanks serialize to frames, clips serialize to ms — rounding differences
+    # between these units accumulate and cause tracks with more blanks (audio)
+    # to drift from tracks with fewer blanks (video).
+    keep_contrib_frames = [int(round((ke - ks) * fps)) for ks, ke in keep_segments]
+    cumul_keep_frames = [0]
+    for cf in keep_contrib_frames:
+        cumul_keep_frames.append(cumul_keep_frames[-1] + cf)
+    total_timeline_frames = cumul_keep_frames[-1]
+    total_timeline_duration = total_timeline_frames / fps
 
     # Centralized storage for all producers (raw files and their specific stream representations)
     required_chains = []
@@ -145,18 +125,6 @@ def generate_kdenlive_project(
                 audio_props["kdenlive:id"] = get_shared_bin_id(original_audio_path)
                 audio_producer = proj.add_producer(original_audio_path, id=audio_producer_id, mlt_service="avformat", properties=audio_props)
                 kdenlive_clip_producers[(original_audio_path, f"audio_{stream_idx}")] = audio_producer
-                
-                # Add markers for fillers if available
-                if temp_path and stream_markers and temp_path in stream_markers:
-                    fillers = stream_markers[temp_path].get("fillers", [])
-                    if fillers:
-                        markers = []
-                        for start, end in fillers:
-                            frame = int(start * fps)
-                            duration_frames = int((end - start) * fps)
-                            markers.append(Marker(pos=frame, comment="Filler", marker_type=0, duration=duration_frames))
-                        if markers:
-                            proj.clip_markers[audio_producer.id] = markers
                 
                 if v_path not in primary_producer_for_file and not has_vid_stream:
                     primary_producer_for_file[v_path] = audio_producer
@@ -226,10 +194,13 @@ def generate_kdenlive_project(
                 nsa = calculate_keep_segments(silences, a_dur)
 
                 # Smoothing (in seconds)
-                pad = 0.1
+                # Asymmetric roll-off: speech onsets are sharp (0.05s),
+                # trailing words fade out gradually (0.3s)
+                pad_pre = 0.05
+                pad_post = 0.3
                 gap = 0.4
                 if nsa:
-                    padded_nsa = [(max(0.0, s - pad), min(a_dur, e + pad)) for s, e in nsa]
+                    padded_nsa = [(max(0.0, s - pad_pre), min(a_dur, e + pad_post)) for s, e in nsa]
                     merged_nsa = merge_intervals(padded_nsa)
                     if merged_nsa:
                         smoothed_nsa = [merged_nsa[0]]
@@ -251,36 +222,77 @@ def generate_kdenlive_project(
                 # Intersect in seconds domain
                 final_audio_segments = intersect_intervals(nsa, audio_keep_intervals)
                 
-                curr_timeline = 0.0
+                # Track position in frames to match XML serialization exactly
+                curr_frame = 0
+                
+                # Group final audio segments by keep segments they fall into
+                keep_seg_audio = {i: [] for i in range(len(keep_segments))}
                 for as_start, as_end in final_audio_segments:
                     master_start = as_start - offset
-                    
-                    # Find timeline position by locating the corresponding keep segment
-                    timeline_start = None
-                    accum = 0.0
-                    for ks, ke in keep_segments:
+                    # Find which keep segment contains this master position
+                    for i, (ks, ke) in enumerate(keep_segments):
                         if ks <= master_start < ke:
-                            timeline_start = accum + (master_start - ks)
+                            keep_seg_audio[i].append((as_start, as_end))
                             break
-                        accum += (ke - ks)
-                    
-                    if timeline_start is None: continue
-                    
-                    dur = as_end - as_start
-                    if timeline_start > curr_timeline:
-                        playlist.add_blank(to_tc(timeline_start - curr_timeline), fps=fps)
-                    
-                    playlist.add_clip(
-                        audio_clip_producer.id,
-                        in_point=to_tc(as_start),
-                        duration=to_tc(dur),
-                        fps=fps
-                    )
-                    curr_timeline = timeline_start + dur
 
-                # Ensure audio track length matches total keep duration exactly
-                if curr_timeline < total_timeline_duration:
-                    playlist.add_blank(to_tc(total_timeline_duration - curr_timeline), fps=fps)
+                for i, (ks, ke) in enumerate(keep_segments):
+                    prev_frame = cumul_keep_frames[i]
+                    target_end_frame = cumul_keep_frames[i+1]
+                    
+                    segs = keep_seg_audio[i]
+                    if not segs:
+                        # Keep segment is silent for this track, add a blank matching the keep segment duration
+                        blank_frames = target_end_frame - curr_frame
+                        if blank_frames > 0:
+                            playlist.add_blank(blank_frames / fps)
+                            curr_frame = target_end_frame
+                        continue
+                    
+                    # Align the first and last segments to keep segment boundaries
+                    first_as_start, first_as_end = segs[0]
+                    last_as_start, last_as_end = segs[-1]
+                    
+                    # Stretch first and last to keep segment boundaries
+                    segs[0] = (max(0.0, ks + offset), first_as_end)
+                    segs[-1] = (last_as_start, min(a_dur, ke + offset))
+                    if len(segs) == 1:
+                        segs[0] = (max(0.0, ks + offset), min(a_dur, ke + offset))
+                        
+                    # Frame-align all segments to prevent timecode rounding discrepancies
+                    aligned_segs = []
+                    for s, e in segs:
+                        s_aligned = round(s * fps) / fps
+                        e_aligned = round(e * fps) / fps
+                        aligned_segs.append((s_aligned, e_aligned))
+                    segs = aligned_segs
+                        
+                    for as_start, as_end in segs:
+                        master_start = as_start - offset
+                        start_offset_frames = int(round((master_start - ks) * fps))
+                        timeline_frame = prev_frame + start_offset_frames
+                        
+                        master_end = min(as_end - offset, ke)
+                        end_offset_frames = int(round((master_end - ks) * fps))
+                        dur_frames = end_offset_frames - start_offset_frames
+                        
+                        if timeline_frame > curr_frame:
+                            blank_frames = timeline_frame - curr_frame
+                            playlist.add_blank(blank_frames / fps)
+                            curr_frame = timeline_frame
+                        
+                        if dur_frames > 0:
+                            playlist.add_clip(
+                                audio_clip_producer.id,
+                                in_point=as_start,
+                                duration=dur_frames / fps,
+                                fps=fps,
+                            )
+                            curr_frame += dur_frames
+                            
+                    # Add any remaining blank to match keep segment end exactly
+                    if curr_frame < target_end_frame:
+                        playlist.add_blank((target_end_frame - curr_frame) / fps)
+                        curr_frame = target_end_frame
 
                 added_audio_tracks.add(audio_clip_key)
 
@@ -303,40 +315,16 @@ def generate_kdenlive_project(
                 av_track_mapping[video_path]["v"] = track_idx
 
                 for ks, ke in keep_segments:
-                    if ke > ks:
+                    dur_frames = int(round((ke - ks) * fps))
+                    dur_aligned = dur_frames / fps
+                    if dur_aligned > 0:
                         playlist.add_clip(
                             video_clip_producer.id, 
-                            in_point=to_tc(ks + offset),
-                            duration=to_tc(ke - ks),
-                            fps=fps
+                            in_point=ks + offset,
+                            duration=dur_aligned,
+                            fps=fps,
                         )
                 added_video_tracks.add(video_path)
-
-    # --- Pass 3: AV Split Groups ---
-    groups = []
-    for video_path, tracks in av_track_mapping.items():
-        v_idx = tracks["v"]
-        a_indices = tracks["a"]
-        if v_idx is not None and a_indices:
-            for i in range(len(keep_segments)):
-                group = {
-                    "type": "AVSplit",
-                    "children": [
-                        {
-                            "type": "Leaf", "leaf": "clip", 
-                            "data": f"{v_idx}:{i}:-1"
-                        }
-                    ]
-                }
-                for a_idx in a_indices:
-                    group["children"].append({
-                        "type": "Leaf", "leaf": "clip",
-                        "data": f"{a_idx}:{i}:-1"
-                    })
-                groups.append(group)
-    
-    if groups:
-        proj.kdenlive.set_doc_property("sequenceproperties.groups", json.dumps(groups, indent=4))
 
     # 3. Link subtitles
     for ass_file in (ass_paths or []):

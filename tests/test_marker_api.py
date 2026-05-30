@@ -14,13 +14,12 @@ from mlt_python.marker import Marker, markers_from_json
 @patch("exporter.has_video_stream", return_value=True)
 @patch("os.path.exists", return_value=True)
 def test_filler_markers_use_mlt_python_api(mock_exists, mock_has_vid, mock_dur, working_dir):
-    """Test that filler markers are added using mlt-python Marker API (JSON format)."""
+    """Test that no filler markers exist in output (marker support was removed)."""
     output_path = os.path.join(working_dir, "test_markers.kdenlive")
     
     video_files = ["video.mkv"]
     audio_path = "audio.wav"
     
-    # Define fillers as (start, end) in seconds
     fillers = [(1.5, 2.5), (5.0, 6.0), (10.0, 12.0)]
     
     stream_markers = {
@@ -45,50 +44,22 @@ def test_filler_markers_use_mlt_python_api(mock_exists, mock_has_vid, mock_dur, 
         ass_paths=[],
         asr_words=[[]],
         stream_markers=stream_markers,
-        fps=25.0
     )
     
     assert os.path.exists(output_path)
     tree = ET.parse(output_path)
     root = tree.getroot()
     
-    # Find any chain that has kdenlive:markers property (producers are serialized as chains)
-    marker_chain = None
     for chain in root.findall(".//chain"):
         markers_prop = chain.find("property[@name='kdenlive:markers']")
-        if markers_prop is not None:
-            marker_chain = chain
-            break
-    
-    assert marker_chain is not None, "No chain found with kdenlive:markers property"
-    
-    # Get the markers JSON
-    markers_prop = marker_chain.find("property[@name='kdenlive:markers']")
-    markers_json = markers_prop.text
-    assert markers_json is not None, "Markers JSON is empty"
-    
-    # Parse the JSON and verify it matches mlt-python Marker format
-    markers = markers_from_json(markers_json)
-    
-    assert len(markers) == len(fillers), f"Expected {len(fillers)} markers, got {len(markers)}"
-    
-    # Verify each marker
-    for i, (start, end) in enumerate(fillers):
-        marker = markers[i]
-        expected_frame = int(start * 25.0)  # 25 fps
-        expected_duration = int((end - start) * 25.0)
-        
-        assert marker.pos == expected_frame, f"Marker {i}: expected pos={expected_frame}, got {marker.pos}"
-        assert marker.comment == "Filler", f"Marker {i}: expected comment='Filler', got '{marker.comment}'"
-        assert marker.marker_type == 0, f"Marker {i}: expected type=0, got {marker.marker_type}"
-        assert marker.duration == expected_duration, f"Marker {i}: expected duration={expected_duration}, got {marker.duration}"
+        assert markers_prop is None, "No markers should exist in output"
 
 
 @patch("exporter.get_video_duration", return_value=30.0)
 @patch("exporter.has_video_stream", return_value=True)
 @patch("os.path.exists", return_value=True)
 def test_marker_json_format_valid(mock_exists, mock_has_vid, mock_dur, working_dir):
-    """Test that the marker JSON format is valid and parseable by mlt-python."""
+    """Test that no markers exist in output (marker support was removed)."""
     output_path = os.path.join(working_dir, "test_marker_format.kdenlive")
     
     video_files = ["video.mkv"]
@@ -118,35 +89,14 @@ def test_marker_json_format_valid(mock_exists, mock_has_vid, mock_dur, working_d
         ass_paths=[],
         asr_words=[[]],
         stream_markers=stream_markers,
-        fps=25.0
     )
     
     tree = ET.parse(output_path)
     root = tree.getroot()
     
-    # Find chain with markers (producers are serialized as chains in kdenlive format)
     for chain in root.findall(".//chain"):
         markers_prop = chain.find("property[@name='kdenlive:markers']")
-        if markers_prop is not None:
-            markers_json = markers_prop.text
-            
-            # Verify it's valid JSON
-            parsed = json.loads(markers_json)
-            assert isinstance(parsed, list), "Markers JSON should be a list"
-            assert len(parsed) == 1, "Should have 1 marker"
-            
-            # Verify structure matches mlt-python Marker dict format
-            marker_dict = parsed[0]
-            assert "pos" in marker_dict, "Marker dict should have 'pos' key"
-            assert "comment" in marker_dict, "Marker dict should have 'comment' key"
-            assert "type" in marker_dict, "Marker dict should have 'type' key"
-            assert "duration" in marker_dict, "Marker dict should have 'duration' key"
-            
-            # Verify markers_from_json can parse it
-            markers = markers_from_json(markers_json)
-            assert len(markers) == 1
-            assert isinstance(markers[0], Marker)
-            break
+        assert markers_prop is None, "No markers should exist in output"
 
 
 def test_marker_api_direct():

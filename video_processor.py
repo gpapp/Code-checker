@@ -17,14 +17,14 @@ except ImportError:
 from audio_utils import (
     process_streams_to_flac,
     detect_silence_and_spikes,
-    find_global_silence_f,
+    find_global_silence,
     find_repetitions,
+    get_track_name_from_path,
     get_video_duration,
-    get_video_fps,
     has_video_stream
 )
 from filler_processor import run_vad, find_overlaps
-from interval_utils import merge_intervals, calculate_keep_segments, adjust_timestamps, compress_global_silence, merge_intervals_f, calculate_keep_segments_f, compress_global_silence_f
+from interval_utils import merge_intervals, calculate_keep_segments, adjust_timestamps, compress_global_silence
 from exporter import generate_kdenlive_project, generate_ass_file, generate_srt_file
 from transcription_processor import process_transcription, get_full_language_name
 from PodcastFillerLib import PodcastFillerLib
@@ -37,7 +37,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Process multiple videos based on audio streams for synchronized cutting and Kdenlive project generation.")
     parser.add_argument("inputs", nargs="+", help="Input MKV/MP3/M4A/etc. files")
     parser.add_argument("--working-dir", help="Working directory (default: subfolder in input directory)")
-    parser.add_argument("--silence-threshold", type=float, default=-30.0, help="Silence threshold in dB (default: -30.0)")
+    parser.add_argument("--silence-threshold", type=float, default=-40.0, help="Silence threshold in dB (default: -40.0)")
     parser.add_argument("--silence-duration", type=float, default=2.0, help="Minimum silence duration in seconds for cutting (default: 2.0)")
     parser.add_argument("--spike-duration", type=float, default=0.2, help="Maximum duration in seconds for a spike to be silenced (default: 0.2)")
     parser.add_argument("--overlap-duration", type=float, default=5.0, help="Minimum duration in seconds for overlapping talk to be marked (default: 5.0)")
@@ -116,8 +116,6 @@ def main():
             for i, val in enumerate(parsed_vals):
                 if i < len(offsets):
                     offsets[i] = float(val)
-
-    fps = get_video_fps(final_inputs[0])
 
     # Process audio streams: compress and level to -14 LUFS, save as FLAC
     logger.info("Step 1/7: Processing audio streams to FLAC (-14 LUFS)...")
@@ -281,27 +279,24 @@ def main():
 
     # Use max duration of all inputs as total duration, adjusted by their offsets
     # Master timeline T = track_time - offset. So track end at duration_i is at master time duration_i - offset_i.
-    total_dur_f = 0
+    total_duration = 0.0
     for i, v in enumerate(final_inputs):
-        total_dur_f = max(total_dur_f, int(round((get_video_duration(v) - offsets[i]) * fps)))
+        total_duration = max(total_duration, get_video_duration(v) - offsets[i])
 
-    # 1. Collect and shift per-stream spikes in frame domain
-    cutting_segments_f = []
+    # 1. Collect and shift per-stream spikes in seconds
+    cutting_segments = []
     for af, markers in stream_markers.items():
-        offset_f = int(round(markers["offset"] * fps))
+        offset = markers["offset"]
         for s, e in markers.get("spikes", []):
-            cutting_segments_f.append((int(round(s * fps)) - offset_f, int(round(e * fps)) - offset_f))
+            cutting_segments.append((s - offset, e - offset))
 
-   # 2. Find global silence using frame-accurate utility
-    global_silence_f = find_global_silence_f(stream_markers, int(round(0.2 * fps)), total_dur_f, fps)
-    global_silence_cuts_f = compress_global_silence_f(global_silence_f, fps)
-    cutting_segments_f.extend(global_silence_cuts_f)
+    # 2. Find and compress global silence using time-based utilities
+    global_silence = find_global_silence(stream_markers, 0.2, total_duration)
+    global_silence_cuts = compress_global_silence(global_silence)
+    cutting_segments.extend(global_silence_cuts)
 
-    cutting_segments_f = merge_intervals_f(cutting_segments_f)
-    keep_segments_f = calculate_keep_segments_f(cutting_segments_f, total_dur_f)
-    
-    # Convert to seconds ONLY for subtitle adjustment (floats are fine for text)
-    keep_segments_s = [(f[0] / fps, f[1] / fps) for f in keep_segments_f]
+    cutting_segments = merge_intervals(cutting_segments)
+    keep_segments = calculate_keep_segments(cutting_segments, total_duration)
 
     logger.info("Step 4/7: VAD and Overlap detection...")
     speech_intervals = {}
@@ -369,7 +364,7 @@ def main():
         
         words = transcription_results[af]["words"]
         word_segments = [(w["start"], w["end"]) for w in words]
-        adj_segments = adjust_timestamps(word_segments, keep_segments_s)
+        adj_segments = adjust_timestamps(word_segments, keep_segments)
         
         adj_words = []
         for i, (new_s, new_e) in enumerate(adj_segments):
@@ -383,9 +378,9 @@ def main():
                         "end": new_e
                     })
         
-        base_name = os.path.splitext(os.path.basename(video_path))[0]
-        ass_path = os.path.join(output_base_dir, base_name + ".ass")
-        srt_path = os.path.join(output_base_dir, base_name + ".srt")
+        track_name = get_track_name_from_path(video_path)
+        ass_path = os.path.join(output_base_dir, track_name + ".ass")
+        srt_path = os.path.join(output_base_dir, track_name + ".srt")
         
         generate_ass_file(adj_words, ass_path)
         generate_srt_file(adj_words, srt_path)
@@ -414,7 +409,7 @@ def main():
             info = audio_info_map.get(af, {"original": af, "stream_idx": 0})
             sources.append({
                 "original": af,
-                "stream_idx": 0,
+                "stream_idx": info["stream_idx"],
                 "temp_path": af
             })
         audio_files_config[out_v] = sources
@@ -423,13 +418,12 @@ def main():
         video_files=output_files,
         audio_files=audio_files_config,
         output_path=kdenlive_path,
-        keep_segments=keep_segments_s, # Pass seconds to exporter
+        keep_segments=keep_segments,
         stream_spikes=stream_spikes_map,
         video_offsets=offsets,
         ass_paths=ass_files,
         asr_words=source_asr_words,
         stream_markers=stream_markers,
-        fps=fps
     )
     # Run cleanup routine if the flag is set (don't delete outputs at the end)
     if args.clean:
@@ -477,6 +471,14 @@ def run_cleanup(working_dir: str, args, include_outputs: bool = False):
                     cleaned_count += 1
                 except OSError as e:
                     logger.warning(f"Failed to remove output file {file}: {e}")
+        processed_dir = os.path.join(output_base_dir, "PROCESSED")
+        if os.path.isdir(processed_dir):
+            for file in glob.glob(processed_dir + os.path.sep + "*.flac"):
+                try:
+                    os.remove(file)
+                    cleaned_count += 1
+                except OSError as e:
+                    logger.warning(f"Failed to remove processed FLAC {file}: {e}")
 
     logger.info(f"Cleanup finished. Removed {cleaned_count} files/artifacts.")
     

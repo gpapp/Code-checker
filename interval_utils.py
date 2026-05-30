@@ -19,34 +19,20 @@ def merge_intervals(intervals: list[tuple[float, float]]) -> list[tuple[float, f
             merged.append((curr_start, curr_end))
     return merged
 
-def merge_intervals_f(intervals: List[Tuple[int, int]]) -> List[Tuple[int, int]]:
-    """Merges overlapping or adjacent integer (frame) intervals."""
-    if not intervals:
-        return []
-    intervals.sort()
-    merged = [intervals[0]]
-    for curr_s, curr_e in intervals[1:]:
-        prev_s, prev_e = merged[-1]
-        if curr_s <= prev_e:
-            merged[-1] = (prev_s, max(prev_e, curr_e))
-        else:
-            merged.append((curr_s, curr_e))
-    return merged
-
-def calculate_keep_segments_f(cut_segments: List[Tuple[int, int]], total_duration_f: int) -> List[Tuple[int, int]]:
-    """Inverts integer cut segments to find frame intervals to keep."""
+def calculate_keep_segments(cut_segments: list[tuple[float, float]], total_duration: float) -> list[tuple[float, float]]:
+    """Inverts cut segments to find segments to keep."""
     keep = []
-    last_end = 0
+    last_end = 0.0
     for start, end in sorted(cut_segments):
         if start > last_end:
-            keep.append((last_end, start))
+            keep.append((round_ts(last_end), round_ts(start)))
         last_end = max(last_end, end)
-    if last_end < total_duration_f:
-        keep.append((last_end, total_duration_f))
+    if last_end < total_duration:
+        keep.append((round_ts(last_end), round_ts(total_duration)))
     return keep
 
-def intersect_intervals_f(intervals1: List[Tuple[int, int]], intervals2: List[Tuple[int, int]]) -> List[Tuple[int, int]]:
-    """Returns the intersection of two sets of integer (frame) intervals."""
+def intersect_intervals(intervals1: list[tuple[float, float]], intervals2: list[tuple[float, float]]) -> list[tuple[float, float]]:
+    """Returns the intersection of two sets of intervals."""
     result = []
     for s1, e1 in sorted(intervals1):
         for s2, e2 in sorted(intervals2):
@@ -55,27 +41,6 @@ def intersect_intervals_f(intervals1: List[Tuple[int, int]], intervals2: List[Tu
             if s < e:
                 result.append((s, e))
     return result
-
-def compress_global_silence_f(global_silence: List[Tuple[int, int]], fps: float) -> List[Tuple[int, int]]:
-    """
-    Frame-accurate version of global silence compression.
-    """
-    cuts = []
-    one_sec_f = int(round(fps))
-    pt_two_f = int(round(0.2 * fps))
-    
-    for s_f, e_f in sorted(global_silence):
-        orig_dur_f = e_f - s_f
-        keep_dur_f = orig_dur_f
-        
-        if keep_dur_f > one_sec_f:
-            keep_dur_f = one_sec_f
-        if keep_dur_f > pt_two_f:
-            keep_dur_f = pt_two_f + (keep_dur_f - pt_two_f) // 2
-        
-        if keep_dur_f < orig_dur_f:
-            cuts.append((s_f + keep_dur_f, e_f))
-    return cuts
 
 def compress_global_silence(global_silence: list[tuple[float, float]]) -> list[tuple[float, float]]:
     """
@@ -111,18 +76,6 @@ def compress_global_silence(global_silence: list[tuple[float, float]]) -> list[t
     
     return cuts
 
-def calculate_keep_segments(cut_segments: list[tuple[float, float]], total_duration: float) -> list[tuple[float, float]]:
-    """Inverts cut segments to find segments to keep."""
-    keep = []
-    last_end = 0.0
-    for start, end in sorted(cut_segments):
-        if start > last_end:
-            keep.append((round_ts(last_end), round_ts(start)))
-        last_end = max(last_end, end)
-    if last_end < total_duration:
-        keep.append((round_ts(last_end), round_ts(total_duration)))
-    return keep
-
 def adjust_timestamps(segments: list[tuple[float, float]], keep_segments: list[tuple[float, float]]) -> list[tuple[float, float]]:
     """Adjusts timestamps from original timeline to the cut timeline."""
     adjusted = []
@@ -147,14 +100,3 @@ def adjust_timestamps(segments: list[tuple[float, float]], keep_segments: list[t
             if new_end is None: new_end = round_ts(current_new_time)
             adjusted.append((new_start, new_end))
     return adjusted
-
-def intersect_intervals(intervals1: list[tuple[float, float]], intervals2: list[tuple[float, float]]) -> list[tuple[float, float]]:
-    """Returns the intersection of two sets of intervals."""
-    result = []
-    for s1, e1 in sorted(intervals1):
-        for s2, e2 in sorted(intervals2):
-            s = max(s1, s2)
-            e = min(e1, e2)
-            if s < e:
-                result.append((s, e))
-    return result
