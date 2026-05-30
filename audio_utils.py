@@ -22,6 +22,22 @@ def has_video_stream(file_path: str) -> bool:
     except Exception:
         return False
 
+def get_video_stream_index(file_path: str) -> int:
+    """Returns the absolute index of the first video stream."""
+    cmd = [
+        "ffprobe", "-v", "error", "-select_streams", "v:0",
+        "-show_entries", "stream=index", "-of", "json", file_path
+    ]
+    try:
+        result = subprocess.run(cmd, check=True, capture_output=True, text=True)
+        data = json.loads(result.stdout)
+        streams = data.get("streams", [])
+        if streams:
+            return int(streams[0]["index"])
+    except Exception:
+        pass
+    return 0
+
 def get_audio_stream_indices(file_path: str) -> list[int]:
     """Returns the absolute indices of all audio streams in the file."""
     cmd = [
@@ -46,7 +62,7 @@ def extract_audio_streams(file_path: str, working_dir: str, normalize: bool = Tr
         # Check if file already exists and has a valid size
         if os.path.exists(output_path) and os.path.getsize(output_path) > 1000:
             logger.info(f"Using existing audio stream: {output_path}")
-            extracted_files.append(output_path)
+            extracted_info.append({"wav": output_path, "stream_idx": abs_idx})
             continue
 
         # 1. Fast raw extraction to a temporary file (no slow filters here)
@@ -108,9 +124,28 @@ def detect_silence_and_spikes(audio_path: str, threshold_db: float, min_silence_
     non_silent_intervals = librosa.effects.split(y_gated, top_db=top_db) / sr
     duration = len(y_gated) / sr
 
+    # Separate spikes from real speech to avoid padding noise spikes
+    spikes = []
+    real_speech = []
+    for start, end in non_silent_intervals:
+        if (end - start) < max_spike_len:
+            spikes.append((start, end))
+        else:
+            real_speech.append((start, end))
+
+    # Apply padding only to real speech segments (attack/decay)
+    padding = 0.15
+    padded_speech = []
+    for start, end in real_speech:
+        padded_speech.append((max(0.0, start - padding), min(duration, end + padding)))
+    
+    # Final non-silent intervals for silence calculation
+    from interval_utils import merge_intervals
+    combined_non_silent = merge_intervals(padded_speech + spikes)
+
     silence_intervals = []
     last_end = 0.0
-    for start, end in non_silent_intervals:
+    for start, end in combined_non_silent:
         if start > last_end:
             silence_intervals.append((last_end, start))
         last_end = end

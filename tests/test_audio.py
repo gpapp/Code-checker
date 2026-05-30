@@ -9,8 +9,9 @@ def test_silence_detection(synthetic_audio):
     
     assert len(silences) >= 2
     # Check if any detected silence covers the expected ranges
-    assert any(abs(s - 5.0) < 0.2 for s, e in silences)
-    assert any(abs(e - 10.0) < 0.2 for s, e in silences)
+    # Increased tolerance to 0.4s to account for 0.15s padding
+    assert any(abs(s - 5.0) < 0.4 for s, e in silences)
+    assert any(abs(e - 10.0) < 0.4 for s, e in silences)
 
 def test_spike_detection(synthetic_audio):
     # synthetic_audio has a spike at 7.5s (inside silence block)

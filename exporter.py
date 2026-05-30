@@ -2,11 +2,12 @@ import os
 import logging
 import xml.etree.ElementTree as ET
 from typing import List, Tuple, Dict
-from audio_utils import get_video_duration, has_video_stream, get_video_fps
+from audio_utils import get_video_duration, has_video_stream, get_video_fps, get_video_stream_index, get_audio_stream_indices
 
 from mlt_python.project import MLTProject
 from mlt_python.filter import Filter
 from mlt_python.timecode import Timecode
+from mlt_python.marker import Marker, markers_to_json
 from interval_utils import merge_intervals, intersect_intervals, calculate_keep_segments, adjust_timestamps
 
 
@@ -93,6 +94,9 @@ def generate_kdenlive_project(
     elif abs(detected_fps - 29.97) < 0.1: profile_name = "hd1080_2997"
     elif abs(detected_fps - 24.0) < 0.1: profile_name = "hd1080_24"
     elif abs(detected_fps - 30.0) < 0.1: profile_name = "hd1080_30"
+    elif abs(detected_fps - 23.976) < 0.1: profile_name = "hd1080_2398"
+    elif abs(detected_fps - 50.0) < 0.1: profile_name = "hd1080_50"
+    elif abs(detected_fps - 60.0) < 0.1: profile_name = "hd1080_60"
 
     proj = MLTProject(profile=profile_name)
     fps = proj.profile.fps
@@ -127,24 +131,39 @@ def generate_kdenlive_project(
         for src in sources:
             path_to_temp[(src["original"], src["stream_idx"])] = src.get("temp_path")
 
-    for orig_path, s_idx in required_chains:
+    for orig_path, s_idx in sorted(required_chains):
 
         is_vid = has_video_stream(orig_path)
+        v_idx = str(get_video_stream_index(orig_path)) if is_vid else "-1"
         
         props = {}
         if s_idx == -1: # Combined (Video + Audio)
-            props["audio_index"] = "0"
-            props["video_index"] = "0" if is_vid else "-1"
+            a_indices = get_audio_stream_indices(orig_path)
+            props["audio_index"] = str(a_indices[0]) if a_indices else "-1"
+            props["video_index"] = v_idx
         elif s_idx == -2: # Video Only
             props["audio_index"] = "-1"
-            props["video_index"] = "0"
+            props["video_index"] = v_idx
         else: # Audio Only (specific stream index)
             props["audio_index"] = str(s_idx)
             props["video_index"] = "-1"
-        props["astream"] = "0"
 
         producer = proj.add_producer(orig_path, properties=props)
         producer_map[(orig_path, s_idx)] = producer.id
+        
+        # Add markers for fillers if available
+        temp_path = path_to_temp.get((orig_path, s_idx))
+        if temp_path and stream_markers and temp_path in stream_markers:
+            fillers = stream_markers[temp_path].get("fillers", [])
+            if fillers:
+                markers = []
+                for start, end in fillers:
+                    frame = int(start * fps)
+                    duration_frames = int((end - start) * fps)
+                    markers.append(Marker(pos=frame, comment="Filler", marker_type=0, duration=duration_frames))
+                
+                if markers:
+                    producer.set_property("kdenlive:markers", markers_to_json(markers))
 
     # Add speech info
     paired_inputs = []
@@ -199,30 +218,6 @@ def generate_kdenlive_project(
         for src in sources:
             playlist = proj.add_track("audio")
             
-            # Add mastering filters to the audio track (tractor level in XML)
-            # Compressor/Expander
-            playlist.add_filter(Filter("avfilter.compand", properties={
-                "av.attacks": "0",
-                "av.decays": "0.8",
-                "av.soft-knee": "0.01",
-                "av.gain": "0",
-                "av.volume": "0",
-                "kdenlive_id": "avfilter.compand"
-            }))
-            
-            # Dynamic Loudness Normalization
-            playlist.add_filter(Filter("dynamic_loudness", properties={
-                "target_loudness": "-23",
-                "window": "3",
-                "max_gain": "15",
-                "min_gain": "-15",
-                "max_rate": "3",
-                "discontinuity_reset": "1",
-                "in_loudness": "-100.0",
-                "out_gain": "0.0",
-                "reset_count": "0",
-                "kdenlive_id": "dynamic_loudness"
-            }))
 
             a_source = src["temp_path"]
             a_prod_id = producer_map.get((src["original"], src["stream_idx"]))
@@ -292,7 +287,31 @@ def generate_kdenlive_project(
 
 
 
-    # 3. Sequence-level Filters
+    # 3. Sequence-level Filters (Master)
+    # Compressor/Expander
+    proj.add_filter(Filter("avfilter.compand", properties={
+        "av.attacks": "0",
+        "av.decays": "0.8",
+        "av.soft-knee": "0.01",
+        "av.gain": "0",
+        "av.volume": "0",
+        "kdenlive_id": "avfilter.compand"
+    }))
+    
+    # Dynamic Loudness Normalization
+    proj.add_filter(Filter("dynamic_loudness", properties={
+        "target_loudness": "-23",
+        "window": "3",
+        "max_gain": "15",
+        "min_gain": "-15",
+        "max_rate": "3",
+        "discontinuity_reset": "1",
+        "in_loudness": "-100.0",
+        "out_gain": "0.0",
+        "reset_count": "0",
+        "kdenlive_id": "dynamic_loudness"
+    }))
+
     duration_tc = proj.get_duration_timecode(fps)
     proj.add_filter("volume", properties={
         "gain": f"00:00:00:00=1;{duration_tc}=1", 

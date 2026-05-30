@@ -69,7 +69,7 @@ def main():
     
     # Process inputs: if directory, scan for supported files. Normalize to absolute paths.
     final_inputs = []
-    supported_extensions = {".mkv", ".mp4", ".avi", ".mp3", ".wav", ".m4a"}
+    supported_extensions = {".mkv", ".mov", ".mp4", ".avi", ".mp3", ".wav", ".m4a", ".flac"}
     
     for item in tqdm(args.inputs, desc="Scanning inputs"):
         # Strip potential literal quotes (common shell boundary issue on Windows)
@@ -120,7 +120,7 @@ def main():
     logger.info("Step 1/7: Extracting audio streams...")
     
     # If there are standalone audio files (MP3, WAV, M4A), ignore on-camera audio from video files
-    audio_exts = {".mp3", ".wav", ".m4a"}
+    audio_exts = {".mp3", ".wav", ".m4a", ".flac"}
     has_external_audio = any(os.path.splitext(v)[1].lower() in audio_exts for v in final_inputs)
     
     if has_external_audio:
@@ -188,7 +188,23 @@ def main():
                 with open(cnn_cache, "w", encoding="utf-8") as f:
                     json.dump(fillers, f, ensure_ascii=False)
             
-            # cutting_segments.extend(fillers)
+            # Shift fillers to master timeline
+            offset = stream_markers[af]["offset"]
+            silences = stream_markers[af]["silence"]
+            
+            # Filter out fillers that fall entirely within silent intervals (false positives)
+            def is_entirely_silent(start, end):
+                for s_start, s_end in silences:
+                    if s_start <= start + 0.05 and end - 0.05 <= s_end:
+                        return True
+                return False
+
+            # Add fillers to markers instead of cutting them
+            valid_fillers = [f for f in fillers if not is_entirely_silent(f[0], f[1])]
+            stream_markers[af]["fillers"] = valid_fillers
+            
+            # shifted_fillers = [(s - offset, e - offset) for s, e in valid_fillers]
+            # cutting_segments.extend(shifted_fillers) # No longer cutting fillers
 
     # Pass 1b: Whisper Filler Detection has been removed. Filler detection now relies solely on Step 1 (CNN).
     
@@ -262,10 +278,17 @@ def main():
     for i, v in enumerate(final_inputs):
         total_dur = max(total_dur, get_video_duration(v) - offsets[i])
 
-    # Find global silence using the union of all speech intervals across tracks,
+    # 1. Collect and shift per-stream spikes
+    for af, markers in stream_markers.items():
+        offset = markers["offset"]
+        shifted_spikes = [(s - offset, e - offset) for s, e in markers.get("spikes", [])]
+        cutting_segments.extend(shifted_spikes)
+
+    # 2. Find global silence using the union of all speech intervals across tracks,
     # correctly accounting for track-specific offsets.
-    global_silence = find_global_silence(stream_markers, 0.2, total_dur)
-    cutting_segments.extend(global_silence)
+    global_silence_intervals = find_global_silence(stream_markers, 0.2, total_dur)
+    global_silence_cuts = compress_global_silence(global_silence_intervals)
+    cutting_segments.extend(global_silence_cuts)
 
     cutting_segments = merge_intervals(cutting_segments)
     keep_segments = calculate_keep_segments(cutting_segments, total_dur)
@@ -307,18 +330,18 @@ def main():
     
     overlap_segments = find_overlaps(speech_intervals, args.overlap_duration)
 
-    logger.info("Step 5/7: Repetition detection...")
+    logger.info("Step 5/7: Repetition detection (IGNORED)...")
     repetition_segments = []
-    for af in tqdm(all_audio_files, desc="Repetitions"):
-        cache_path = af + ".reps.json"
-        if os.path.exists(cache_path) and os.path.getsize(cache_path) > 0:
-            with open(cache_path, "r", encoding="utf-8") as f:
-                reps = [tuple(x) for x in json.load(f)]
-        else:
-            reps = find_repetitions(af)
-            with open(cache_path, "w", encoding="utf-8") as f:
-                json.dump(reps, f, ensure_ascii=False)
-        repetition_segments.extend(reps)
+    # for af in tqdm(all_audio_files, desc="Repetitions"):
+    #     cache_path = af + ".reps.json"
+    #     if os.path.exists(cache_path) and os.path.getsize(cache_path) > 0:
+    #         with open(cache_path, "r", encoding="utf-8") as f:
+    #             reps = [tuple(x) for x in json.load(f)]
+    #     else:
+    #         reps = find_repetitions(af)
+    #         with open(cache_path, "w", encoding="utf-8") as f:
+    #             json.dump(reps, f, ensure_ascii=False)
+    #     repetition_segments.extend(reps)
 
     output_files = final_inputs
     # Output rendered files to parent directory of work dir

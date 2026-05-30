@@ -2,56 +2,6 @@
 
 A modular Python tool for synchronized multi-video editing based on audio stream analysis. Optimized for Hungarian language processing and NVIDIA 3060 GPUs.
 
-## Operation Sequence
-
-```mermaid
-sequenceDiagram
-    participant User
-    participant Main as video_processor.py
-    participant AU as audio_utils.py
-    participant FP as filler_processor.py
-    participant TP as transcription_processor.py
-    participant IU as interval_utils.py
-    participant EX as exporter.py
-
-    User->>Main: Execute with MKV/Audio inputs
-    Main->>AU: extract_audio_streams(inputs)
-    Note over AU: Compression + Normalization (-14 LUFS)
-    AU-->>Main: mono WAV files
-
-    loop Each Audio File
-        Main->>AU: detect_silence_and_spikes(wav)
-        Note over AU: Significant silences list (>=2s)
-        AU-->>Main: .markers.json (silence/spikes)
-        
-        Main->>FP: process_filler_detection_asr(wav)
-        Note over FP: CrisperWhisper (Pass 1)
-        FP-->>Main: filler words list
-        
-        Main->>TP: process_transcription(wav)
-        Note over TP: Qwen3-ASR + Forced Aligner (Pass 2)
-        TP-->>Main: .asr.json (transcript & words)
-    end
-
-    Main->>AU: find_global_silence(all_silence)
-    AU-->>Main: global cut intervals (all streams quiet)
-
-    Main->>IU: merge_intervals(global_silence + fillers)
-    IU-->>Main: final cut_segments
-
-    Main->>IU: calculate_keep_segments(cut_segments, total_duration)
-    IU-->>Main: synchronized keep_segments
-
-    loop Each Video Input
-        Main->>EX: generate_kdenlive_project(...)
-        Note over EX: Silence-Aware timeline placement
-        Note over EX: Apply Volume/Comp/Norm filters
-        EX-->>Main: project.kdenlive
-    end
-
-    Main-->>User: Done (Ready for Kdenlive)
-```
-
 ## Features
 
 - **Dual-Pass ASR Pipeline**: 
