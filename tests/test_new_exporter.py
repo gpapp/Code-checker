@@ -143,18 +143,12 @@ def test_multiple_audio_tracks_assignment(mock_exists, mock_has_vid, mock_dur, w
                     return f
         return None
 
-    vol_filter = find_filter(target_chain, "volume")
-    assert vol_filter is not None, "Volume filter not found on audio2 chain"
-    gain_prop = vol_filter.find("property[@name='gain']")
-    assert gain_prop is not None
-    # Silence was at 1.0-2.0s. 
-    assert "00:00:01:00=0" in gain_prop.text
-    assert "00:00:02:00=0" in gain_prop.text
-
-
-
-    assert find_filter(target_a1_chain, "ladspa.1073") is not None
-    assert find_filter(target_a1_chain, "dynamic_loudness") is not None
+    # Audio is pre-processed to FLAC; no volume/ladspa/dynamic_loudness filters on chains
+    for chain in [target_chain, target_a1_chain]:
+        for filt in chain.findall("filter"):
+            for p in filt.findall("property"):
+                if p.get("name") == "mlt_service" and p.text in ("volume", "ladspa.1073", "dynamic_loudness"):
+                    raise AssertionError(f"Unexpected {p.text} filter on chain (pre-processed FLAC replaces filters)")
 
 
 @patch("exporter.get_video_duration", return_value=10.0)

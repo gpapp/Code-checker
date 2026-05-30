@@ -48,64 +48,80 @@ def get_audio_stream_indices(file_path: str) -> list[int]:
     data = json.loads(result.stdout)
     return [s["index"] for s in data.get("streams", [])]
 
-def extract_audio_streams(file_path: str, working_dir: str, normalize: bool = True) -> list[dict]:
-    """Extracts all audio streams to WAV files and returns their paths and original indices."""
-    file_path = os.path.abspath(file_path)
-    working_dir = os.path.abspath(working_dir)
-    stream_indices = get_audio_stream_indices(file_path)
+def get_track_name_from_path(file_path: str) -> str:
+    """Extracts a clean track name from a file path, stripping -- prefix convention."""
     base_name = os.path.splitext(os.path.basename(file_path))[0]
-    extracted_info = []
+    if "--" in base_name:
+        return base_name.split("--", 2)[2]
+    return base_name
+
+def process_streams_to_flac(file_path: str, output_dir: str) -> list[dict]:
+    """Extracts all audio streams, compresses and levels to -14 LUFS, saves as FLAC.
+
+    Uses two-pass loudnorm for accurate loudness normalization.
+    Returns list of {flac, stream_idx} dicts.
+    """
+    file_path = os.path.abspath(file_path)
+    output_dir = os.path.abspath(output_dir)
+    os.makedirs(output_dir, exist_ok=True)
+
+    stream_indices = get_audio_stream_indices(file_path)
+    original_stem = os.path.splitext(os.path.basename(file_path))[0]
+    flac_info = []
 
     for i, abs_idx in enumerate(stream_indices):
-        output_path = os.path.join(working_dir, f"{base_name}_a{i}.wav")
-        
-        # Check if file already exists and has a valid size
+        output_path = os.path.join(output_dir, f"{original_stem}_a{i}.flac")
+
         if os.path.exists(output_path) and os.path.getsize(output_path) > 1000:
-            logger.info(f"Using existing audio stream: {output_path}")
-            extracted_info.append({"wav": output_path, "stream_idx": abs_idx})
+            logger.info(f"Using existing processed audio: {output_path}")
+            flac_info.append({"flac": output_path, "stream_idx": abs_idx})
             continue
 
-        # 1. Fast raw extraction to a temporary file (no slow filters here)
-        temp_raw = os.path.join(working_dir, f"{base_name}_temp_a{i}.wav")
-        extract_cmd = [
+        logger.info(f"Pass 1/2: Measuring loudness for stream {i} from {os.path.basename(file_path)}...")
+        measure_cmd = [
             "ffmpeg", "-i", file_path, "-map", f"0:a:{i}",
-            "-ac", "1", "-ar", "16000", "-y", temp_raw
+            "-ac", "1", "-ar", "16000",
+            "-af", "loudnorm=I=-14:LRA=11:TP=-1.5:print_format=json",
+            "-f", "null", "NUL"
         ]
-        
-        logger.info(f"Extracting raw stream {i} from {file_path}...")
-        subprocess.run(extract_cmd, check=True, capture_output=True)
-        
-        try:
-            # 2. Fast in-memory processing with librosa (fulfills speed requirement)
-            logger.info(f"Refining audio with librosa: {output_path}")
-            y, sr = librosa.load(temp_raw, sr=16000)
-            
-            if normalize:
-                # Fast Peak Normalization (replaces slow loudnorm)
-                # Target peak level of -1dB (approx 0.89)
-                max_val = np.max(np.abs(y))
-                if max_val > 1e-6:
-                    y = y * (0.89 / max_val)
-                
-                # NOTE: We no longer apply a hard noise gate here because it causes ASR gaps.
-                # Silence detection handles noise thresholds internally.
-            
-            # Save final processed file
-            sf.write(output_path, y, sr, subtype='PCM_16')
-            extracted_info.append({"wav": output_path, "stream_idx": abs_idx})
-            
-        except Exception as e:
-            logger.error(f"Failed to process stream {i} with librosa: {e}")
-            # Fallback: if librosa fails, move the raw file to output_path
-            if os.path.exists(output_path): os.remove(output_path)
-            os.rename(temp_raw, output_path)
-            extracted_info.append({"wav": output_path, "stream_idx": abs_idx})
-        finally:
-            if os.path.exists(temp_raw):
-                try: os.remove(temp_raw)
-                except: pass
+        result = subprocess.run(measure_cmd, capture_output=True, text=True)
 
-    return extracted_info
+        # Parse measured values from loudnorm JSON output in stderr
+        measured = {}
+        for line in result.stderr.split("\n"):
+            stripped = line.strip()
+            if stripped.startswith("{"):
+                try:
+                    measured = json.loads(stripped)
+                except json.JSONDecodeError:
+                    pass
+
+        measured_i = measured.get("input_i", "-14.0")
+        measured_lra = measured.get("input_lra", "7.0")
+        measured_tp = measured.get("input_tp", "-1.5")
+        measured_thresh = measured.get("input_thresh", "-21.0")
+        measured_offset = measured.get("target_offset", "0.0")
+
+        logger.info(f"Pass 2/2: Applying compression and loudness normalization for stream {i}...")
+        filter_chain = (
+            f"loudnorm=I=-14:LRA=11:TP=-1.5:"
+            f"measured_I={measured_i}:measured_LRA={measured_lra}:"
+            f"measured_TP={measured_tp}:measured_thresh={measured_thresh}:"
+            f"offset={measured_offset},"
+            f"acompressor=ratio=4:attack=20:release=200:threshold=-24dB:makeup=3dB"
+        )
+        process_cmd = [
+            "ffmpeg", "-i", file_path, "-map", f"0:a:{i}",
+            "-ac", "1", "-ar", "16000",
+            "-af", filter_chain,
+            "-c:a", "flac",
+            "-y", output_path
+        ]
+        subprocess.run(process_cmd, check=True, capture_output=True)
+
+        flac_info.append({"flac": output_path, "stream_idx": abs_idx})
+
+    return flac_info
 
 def detect_silence_and_spikes(audio_path: str, threshold_db: float, min_silence_len: float, max_spike_len: float):
     """Detects silent intervals and short spikes in an audio file."""
@@ -113,9 +129,9 @@ def detect_silence_and_spikes(audio_path: str, threshold_db: float, min_silence_
     
     # Apply a localized noise gate in-memory to improve silence detection accuracy
     # without affecting the ASR/Whisper source file on disk.
-    # -35dB (0.017) is a safe threshold for normalized audio.
+    # -45dB (0.0056) preserves quiet speech edges (fricatives, plosives, breath) while removing noise floor.
     y_gated = y.copy()
-    y_gated[np.abs(y_gated) < 0.017] = 0
+    y_gated[np.abs(y_gated) < 0.0056] = 0
     
     peak = 20 * np.log10(np.max(np.abs(y_gated)) + 1e-9)
     top_db = peak - threshold_db
@@ -134,7 +150,7 @@ def detect_silence_and_spikes(audio_path: str, threshold_db: float, min_silence_
             real_speech.append((start, end))
 
     # Apply padding only to real speech segments (attack/decay)
-    padding = 0.15
+    padding = 0.3
     padded_speech = []
     for start, end in real_speech:
         padded_speech.append((max(0.0, start - padding), min(duration, end + padding)))
@@ -160,6 +176,38 @@ def detect_silence_and_spikes(audio_path: str, threshold_db: float, min_silence_
     from interval_utils import merge_intervals, calculate_keep_segments
 
     return silence_intervals, spikes
+
+def find_global_silence_f(stream_markers: dict[str, dict], min_duration_f: int, total_duration_f: int, fps: float) -> list[tuple[int, int]]:
+    """Finds intervals where all streams are silent in the frame domain."""
+    if not stream_markers:
+        return []
+
+    from interval_utils import calculate_keep_segments_f, merge_intervals_f
+    
+    all_speech_intervals_f = []
+    for af, markers in stream_markers.items():
+        dur_f = int(round(markers.get("duration", 0.0) * fps))
+        silences_f = [(int(round(s * fps)), int(round(e * fps))) for s, e in markers.get("silence", [])]
+        offset_f = int(round(markers.get("offset", 0.0) * fps))
+        
+        speech_f = calculate_keep_segments_f(silences_f, dur_f)
+        # Shift in integer frame domain: no drift possible
+        shifted_speech_f = [(s_f - offset_f, e_f - offset_f) for s_f, e_f in speech_f]
+        all_speech_intervals_f.extend(shifted_speech_f)
+    
+    merged_speech_f = merge_intervals_f(all_speech_intervals_f)
+    
+    global_silence_f = []
+    last_end_f = 0
+    for s_f, e_f in merged_speech_f:
+        if s_f > last_end_f:
+            global_silence_f.append((last_end_f, s_f))
+        last_end_f = max(last_end_f, e_f)
+    
+    if last_end_f < total_duration_f:
+        global_silence_f.append((last_end_f, total_duration_f))
+
+    return [s for s in global_silence_f if (s[1] - s[0]) >= min_duration_f]
 
 def find_global_silence(stream_markers: dict[str, dict], min_duration: float, total_duration: float) -> list[tuple[float, float]]:
     """Finds intervals where all streams are silent for at least min_duration, accounting for track offsets."""

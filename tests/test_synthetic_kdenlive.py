@@ -7,9 +7,16 @@ sys.path.insert(0, '.')
 sys.path.insert(0, r'c:\Users\gerge\source\repos\mlt-python\src')
 from exporter import generate_kdenlive_project
 
+def tc_to_frames(tc_str, fps=25.0):
+    if ":" not in tc_str:
+        return int(tc_str)
+    parts = tc_str.split(':')
+    h, m, s, f = int(parts[0]), int(parts[1]), int(parts[2]), int(parts[3])
+    return h * 3600 * int(fps) + m * 60 * int(fps) + s * int(fps) + f
+
 def test_synthetic_audio_cutting(synthetic_audio, working_dir):
     """
-    Test that synthetic audio with a 5s gap has volume muting for silence.
+    Test that synthetic audio with a 5s gap is cut into two entries (0-5, 10-15) with a blank between.
     """
     output_path = os.path.join(working_dir, "synthetic.kdenlive")
     # Fixture provides a 15s file: 0-5s speech, 5-10s silence, 10-15s speech
@@ -53,29 +60,30 @@ def test_synthetic_audio_cutting(synthetic_audio, working_dir):
 
     assert audio_pl is not None, "Audio playlist not found"
 
-    # Should have entries with volume muting for silence (not blanks)
+    # Audio is cut into 2 entries (0-5s, 10-15s) with a blank for the 5-10s silence
+    all_children = list(audio_pl)
     entries = audio_pl.findall('entry')
-    assert len(entries) > 0, "Expected audio entries"
+    assert len(entries) == 2, f"Expected 2 audio entries for non-silent intervals, got {len(entries)}"
 
-    # Check for volume filter with mute keyframes at 5-10s (frames 125-249)
-    # Note: filters are now on the producer/chain, not the timeline entry.
-    volume_found = False
+    # Verify no volume filters on chains (silence is cut, not muted)
     for chain in root.findall('chain'):
         for filt in chain.findall('filter'):
             service = filt.find("property[@name='mlt_service']")
             if service is not None and service.text == 'volume':
-                gain_prop = filt.find("property[@name='gain']")
-                if gain_prop is not None:
-                    gain_text = gain_prop.text
-                    # Should mute at 5s and unmute at 10s
-                    if '00:00:05:00=0' in gain_text:
-                        volume_found = True
-                        # Verify unmute happens after silence (at 10s)
-                        assert '00:00:10:00=0' in gain_text or '00:00:10:01=1' in gain_text, \
-                            f"Expected unmute after silence, got: {gain_text}"
+                raise AssertionError("Unexpected volume filter on chain (pre-processed FLAC replaces filters)")
 
+    # Verify total timeline = 15s (375 frames at 25fps)
+    total_frames = 0
+    for child in all_children:
+        if child.tag == 'entry':
+            in_f = tc_to_frames(child.get('in'), 25.0)
+            out_f = tc_to_frames(child.get('out'), 25.0)
+            total_frames += out_f - in_f + 1
+        elif child.tag == 'blank':
+            total_frames += tc_to_frames(child.get('length'), 25.0)
 
-    assert volume_found, "No volume filter with mute keyframes found for 5-10s silence in any chain"
+    assert abs(total_frames - int(15 * 25.0)) <= 2, \
+        f"Audio timeline mismatch: got {total_frames}, expected {375}"
 
 
 def test_chained_transitions(working_dir):

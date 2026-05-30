@@ -222,7 +222,7 @@ def test_video_clip_length():
 
 
 def test_silence_gaps_in_audio():
-    """Test that silence gaps are correctly muted via volume keyframes in audio tracks."""
+    """Test that silence gaps are cut out via interval-based audio entries (not volume filters)."""
     with tempfile.TemporaryDirectory() as tmpdir:
         audio1 = os.path.join(tmpdir, "audio1.wav")
         create_synthetic_wav(audio1, duration=60.0)
@@ -276,31 +276,37 @@ def test_silence_gaps_in_audio():
                 a1_pl = pl
                 break
 
+        # Audio should have entries covering only the non-silent intervals:
+        # (0-10), (15-25), (30-60) with blanks between them
+        all_children = list(a1_pl) if a1_pl is not None else []
         entries = a1_pl.findall('entry') if a1_pl is not None else []
         assert len(entries) > 0, "A1 track has no entries"
 
-        # Check that volume filter with mute keyframes exists on the chain
-        # The silence intervals should be muted (volume=0)
-        volume_found = False
+        # Verify no volume filters on chains (processing is done in pre-processed FLACs)
         for chain in root.findall('chain'):
             for filt in chain.findall('filter'):
                 service = filt.find("property[@name='mlt_service']")
                 if service is not None and service.text == 'volume':
-                    gain_prop = filt.find("property[@name='gain']")
-                    if gain_prop is not None:
-                        gain_text = gain_prop.text
-                        # Should have mute keyframes (volume=0) at silence intervals
-                        # 10-15s and 25-30s
-                        assert '00:00:10:00=0' in gain_text, \
-                            f"Expected mute at 10s, got: {gain_text}"
-                        assert '00:00:25:00=0' in gain_text, \
-                            f"Expected mute at 25s, got: {gain_text}"
+                    raise AssertionError("Unexpected volume filter on chain (silence should be cut, not muted)")
 
-                        volume_found = True
+        total_frames = 0
+        entries_checked = 0
+        for child in all_children:
+            if child.tag == 'entry':
+                in_tc = child.get('in')
+                out_tc = child.get('out')
+                in_f = tc_to_frames(in_tc, 25.0)
+                out_f = tc_to_frames(out_tc, 25.0)
+                total_frames += out_f - in_f + 1
+                entries_checked += 1
+            elif child.tag == 'blank':
+                total_frames += tc_to_frames(child.get('length'), 25.0)
 
-        assert volume_found, "No volume filter with mute keyframes found for silences in any chain"
+        expected_frames = int(60 * 25.0)
+        assert abs(total_frames - expected_frames) <= 2, \
+            f"Audio timeline mismatch: got {total_frames}, expected {expected_frames}"
 
-        print(f"✓ A1 has {len(entries)} entries with volume muting for silences")
+        print(f"✓ A1 has {len(entries)} entries covering non-silent intervals ({total_frames} frames)")
 
 
 if __name__ == "__main__":

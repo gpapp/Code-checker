@@ -15,16 +15,16 @@ except ImportError:
     pass
 
 from audio_utils import (
-    extract_audio_streams,
+    process_streams_to_flac,
     detect_silence_and_spikes,
-    find_global_silence,
+    find_global_silence_f,
     find_repetitions,
     get_video_duration,
     get_video_fps,
     has_video_stream
 )
 from filler_processor import run_vad, find_overlaps
-from interval_utils import merge_intervals, calculate_keep_segments, adjust_timestamps, compress_global_silence
+from interval_utils import merge_intervals, calculate_keep_segments, adjust_timestamps, compress_global_silence, merge_intervals_f, calculate_keep_segments_f, compress_global_silence_f
 from exporter import generate_kdenlive_project, generate_ass_file, generate_srt_file
 from transcription_processor import process_transcription, get_full_language_name
 from PodcastFillerLib import PodcastFillerLib
@@ -100,6 +100,9 @@ def main():
         # Ensure directory exists after cleanup
         if not os.path.exists(working_dir):
             os.makedirs(working_dir)
+
+    output_base_dir = os.path.dirname(working_dir)
+    processed_dir = os.path.join(output_base_dir, "PROCESSED")
     
     # Parse video offsets
     offsets = [0.0] * len(final_inputs)
@@ -116,10 +119,9 @@ def main():
 
     fps = get_video_fps(final_inputs[0])
 
-    # Extract audio streams (normalization is now always enabled)
-    logger.info("Step 1/7: Extracting audio streams...")
+    # Process audio streams: compress and level to -14 LUFS, save as FLAC
+    logger.info("Step 1/7: Processing audio streams to FLAC (-14 LUFS)...")
     
-    # If there are standalone audio files (MP3, WAV, M4A), ignore on-camera audio from video files
     audio_exts = {".mp3", ".wav", ".m4a", ".flac"}
     has_external_audio = any(os.path.splitext(v)[1].lower() in audio_exts for v in final_inputs)
     
@@ -127,25 +129,30 @@ def main():
         logger.info("Standalone audio detected. On-camera video audio will be ignored for analysis.")
 
     video_to_audio_map = {}
-    # mapping of temp_wav -> {original_file, stream_idx}
     audio_info_map = {}
 
-    for v in tqdm(final_inputs, desc="Extracting"):
-        is_audio_ext = os.path.splitext(v)[1].lower() in {".mp3", ".wav", ".m4a", ".flac"}
+    for v in tqdm(final_inputs, desc="Processing Audio"):
+        is_audio_ext = os.path.splitext(v)[1].lower() in audio_exts
         if has_external_audio and has_video_stream(v) and not is_audio_ext:
             video_to_audio_map[v] = []
         else:
-            extracted = extract_audio_streams(v, working_dir)
-            video_to_audio_map[v] = [e["wav"] for e in extracted]
-            for e in extracted:
-                audio_info_map[e["wav"]] = {"original": v, "stream_idx": e["stream_idx"]}
+            processed = process_streams_to_flac(v, processed_dir)
+            video_to_audio_map[v] = [e["flac"] for e in processed]
+            for e in processed:
+                audio_info_map[e["flac"]] = {"original": v, "stream_idx": e["stream_idx"]}
 
     all_audio_files = [f for files in video_to_audio_map.values() for f in files]
+
+    # Build cache key map: flac_path -> cache path in working_dir
+    _ck = {}
+    for af in all_audio_files:
+        stem = os.path.splitext(os.path.basename(af))[0]
+        _ck[af] = os.path.join(working_dir, stem)
 
     logger.info("Step 2/7: Detecting silence and spikes...")
     stream_markers = {}
     for af in tqdm(all_audio_files, desc="Analyzing Audio"):
-        cache_path = af + ".markers.json"
+        cache_path = _ck[af] + ".markers.json"
         if os.path.exists(cache_path) and os.path.getsize(cache_path) > 0:
             with open(cache_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
@@ -179,7 +186,7 @@ def main():
     else:
         for af in tqdm(all_audio_files, desc="Pass 1: CNN Filler Detection"):
             # Check for CNN results cache
-            cnn_cache = af + ".filler_cnn.json"
+            cnn_cache = _ck[af] + ".filler_cnn.json"
             if os.path.exists(cnn_cache) and os.path.getsize(cnn_cache) > 0:
                 with open(cnn_cache, "r", encoding="utf-8") as f:
                     fillers = [tuple(x) for x in json.load(f)]
@@ -215,7 +222,7 @@ def main():
     if not args.no_asr:
         logger.info("Step 3b/7: Running Pass 2: Final Transcription (faster-whisper large-v3)...")
         for af in tqdm(all_audio_files, desc="Pass 2: Transcription"):
-            transcription_cache = af + ".asr.json"
+            transcription_cache = _ck[af] + ".asr.json"
     
             # Load from disk cache first
             if os.path.exists(transcription_cache) and os.path.getsize(transcription_cache) > 0:
@@ -252,7 +259,7 @@ def main():
         
         for af in tqdm(all_audio_files, desc="Pass 3: Cleanup"):
             # Check for refined cache
-            refined_cache = af + ".refined.json"
+            refined_cache = _ck[af] + ".refined.json"
             if os.path.exists(refined_cache) and os.path.getsize(refined_cache) > 0:
                 with open(refined_cache, "r", encoding="utf-8") as f:
                     data = json.load(f)
@@ -274,29 +281,32 @@ def main():
 
     # Use max duration of all inputs as total duration, adjusted by their offsets
     # Master timeline T = track_time - offset. So track end at duration_i is at master time duration_i - offset_i.
-    total_dur = 0.0
+    total_dur_f = 0
     for i, v in enumerate(final_inputs):
-        total_dur = max(total_dur, get_video_duration(v) - offsets[i])
+        total_dur_f = max(total_dur_f, int(round((get_video_duration(v) - offsets[i]) * fps)))
 
-    # 1. Collect and shift per-stream spikes
+    # 1. Collect and shift per-stream spikes in frame domain
+    cutting_segments_f = []
     for af, markers in stream_markers.items():
-        offset = markers["offset"]
-        shifted_spikes = [(s - offset, e - offset) for s, e in markers.get("spikes", [])]
-        cutting_segments.extend(shifted_spikes)
+        offset_f = int(round(markers["offset"] * fps))
+        for s, e in markers.get("spikes", []):
+            cutting_segments_f.append((int(round(s * fps)) - offset_f, int(round(e * fps)) - offset_f))
 
-    # 2. Find global silence using the union of all speech intervals across tracks,
-    # correctly accounting for track-specific offsets.
-    global_silence_intervals = find_global_silence(stream_markers, 0.2, total_dur)
-    global_silence_cuts = compress_global_silence(global_silence_intervals)
-    cutting_segments.extend(global_silence_cuts)
+   # 2. Find global silence using frame-accurate utility
+    global_silence_f = find_global_silence_f(stream_markers, int(round(0.2 * fps)), total_dur_f, fps)
+    global_silence_cuts_f = compress_global_silence_f(global_silence_f, fps)
+    cutting_segments_f.extend(global_silence_cuts_f)
 
-    cutting_segments = merge_intervals(cutting_segments)
-    keep_segments = calculate_keep_segments(cutting_segments, total_dur)
+    cutting_segments_f = merge_intervals_f(cutting_segments_f)
+    keep_segments_f = calculate_keep_segments_f(cutting_segments_f, total_dur_f)
+    
+    # Convert to seconds ONLY for subtitle adjustment (floats are fine for text)
+    keep_segments_s = [(f[0] / fps, f[1] / fps) for f in keep_segments_f]
 
     logger.info("Step 4/7: VAD and Overlap detection...")
     speech_intervals = {}
     for af in tqdm(all_audio_files, desc="VAD"):
-        cache_path = af + ".vad.json"
+        cache_path = _ck[af] + ".vad.json"
         
         # Bypass NeMo VAD if we have accurate word timestamps from Pass 2 (Transcription)
         if af in transcription_results:
@@ -344,8 +354,6 @@ def main():
     #     repetition_segments.extend(reps)
 
     output_files = final_inputs
-    # Output rendered files to parent directory of work dir
-    output_base_dir = os.path.dirname(working_dir)
 
     logger.info("Step 6/7: Skipping render (virtual cut mode)...")
 
@@ -361,7 +369,7 @@ def main():
         
         words = transcription_results[af]["words"]
         word_segments = [(w["start"], w["end"]) for w in words]
-        adj_segments = adjust_timestamps(word_segments, keep_segments)
+        adj_segments = adjust_timestamps(word_segments, keep_segments_s)
         
         adj_words = []
         for i, (new_s, new_e) in enumerate(adj_segments):
@@ -405,8 +413,8 @@ def main():
         for af in af_list:
             info = audio_info_map.get(af, {"original": af, "stream_idx": 0})
             sources.append({
-                "original": info["original"],
-                "stream_idx": info["stream_idx"],
+                "original": af,
+                "stream_idx": 0,
                 "temp_path": af
             })
         audio_files_config[out_v] = sources
@@ -415,7 +423,7 @@ def main():
         video_files=output_files,
         audio_files=audio_files_config,
         output_path=kdenlive_path,
-        keep_segments=keep_segments,
+        keep_segments=keep_segments_s, # Pass seconds to exporter
         stream_spikes=stream_spikes_map,
         video_offsets=offsets,
         ass_paths=ass_files,

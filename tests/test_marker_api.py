@@ -52,18 +52,18 @@ def test_filler_markers_use_mlt_python_api(mock_exists, mock_has_vid, mock_dur, 
     tree = ET.parse(output_path)
     root = tree.getroot()
     
-    # Find any producer that has kdenlive:markers property
-    marker_producer = None
-    for producer in root.findall(".//producer"):
-        markers_prop = producer.find("property[@name='kdenlive:markers']")
+    # Find any chain that has kdenlive:markers property (producers are serialized as chains)
+    marker_chain = None
+    for chain in root.findall(".//chain"):
+        markers_prop = chain.find("property[@name='kdenlive:markers']")
         if markers_prop is not None:
-            marker_producer = producer
+            marker_chain = chain
             break
     
-    assert marker_producer is not None, "No producer found with kdenlive:markers property"
+    assert marker_chain is not None, "No chain found with kdenlive:markers property"
     
     # Get the markers JSON
-    markers_prop = marker_producer.find("property[@name='kdenlive:markers']")
+    markers_prop = marker_chain.find("property[@name='kdenlive:markers']")
     markers_json = markers_prop.text
     assert markers_json is not None, "Markers JSON is empty"
     
@@ -124,9 +124,9 @@ def test_marker_json_format_valid(mock_exists, mock_has_vid, mock_dur, working_d
     tree = ET.parse(output_path)
     root = tree.getroot()
     
-    # Find producer with markers
-    for producer in root.findall(".//producer"):
-        markers_prop = producer.find("property[@name='kdenlive:markers']")
+    # Find chain with markers (producers are serialized as chains in kdenlive format)
+    for chain in root.findall(".//chain"):
+        markers_prop = chain.find("property[@name='kdenlive:markers']")
         if markers_prop is not None:
             markers_json = markers_prop.text
             
