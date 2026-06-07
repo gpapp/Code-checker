@@ -13,6 +13,8 @@ python-dotenv
 pandas
 soundfile
 openai
+aup3 @ git+https://github.com/mildsunrise/py-aup3.git
+
 pytest
 pytest-cov
 -e ../mlt-python

@@ -1,5 +1,6 @@
 import os
 import logging
+import subprocess
 import sys
 from pathlib import Path
 import xml.etree.ElementTree as ET
@@ -334,6 +335,166 @@ def generate_kdenlive_project(
     # Save
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(proj.to_xml(kdenlive_format=True))
+
+def detect_best_video_encoder() -> str:
+    """Detect best available hardware encoder (NVENC > QSV > libx264)."""
+    try:
+        result = subprocess.run(
+            ["ffmpeg", "-hide_banner", "-encoders"],
+            capture_output=True, text=True, check=True
+        )
+        encoders = result.stdout
+        if "h264_nvenc" in encoders:
+            return "h264_nvenc"
+        elif "h264_qsv" in encoders:
+            return "h264_qsv"
+    except Exception:
+        pass
+    return "libx264"
+
+
+def render_processed_video(
+    video_files: List[str],
+    audio_files: Dict[str, List[Dict]],
+    keep_segments: List[Tuple[float, float]],
+    output_dir: str,
+    video_offsets: List[float] = None,
+) -> Dict[str, Dict[str, str]]:
+    """Renders processed files per source with keep segments concatenated.
+
+    Produces two files per source: *_.mp4 (video-only, H.264) and *_.flac (audio-only).
+    Uses ffmpeg's select/aselect filters with filter_complex_script to avoid
+    Windows cmd length limits. Uses best available hardware encoder (NVENC/QSV).
+    Returns dict mapping source path -> {video: mp4_path, audio: flac_path}.
+    """
+    if video_offsets is None:
+        video_offsets = [0.0] * len(video_files)
+
+    encoder = detect_best_video_encoder()
+    enc_opts = {
+        "h264_nvenc": ["-preset", "p2", "-cq", "23"],
+        "h264_qsv": ["-preset", "veryfast", "-global_quality", "23"],
+        "libx264": ["-preset", "superfast", "-crf", "23"],
+    }.get(encoder, ["-preset", "superfast", "-crf", "23"])
+
+    from tqdm import tqdm
+
+    os.makedirs(output_dir, exist_ok=True)
+    rendered: Dict[str, Dict[str, str]] = {}
+
+    for vf_idx, v_path in enumerate(tqdm(video_files, desc="Rendering sources", unit="source")):
+        offset = video_offsets[vf_idx] if vf_idx < len(video_offsets) else 0.0
+        is_video = has_video_stream(v_path)
+        associated = audio_files.get(v_path, [])
+        track_name = get_track_name_from_path(v_path)
+        if not is_video and not associated:
+            continue
+        src_dur = get_video_duration(v_path)
+
+        valid_segs = []
+        for ks, ke in keep_segments:
+            s = max(0.0, ks + offset)
+            e = min(src_dur, ke + offset)
+            if s < e:
+                valid_segs.append((s, e))
+        if not valid_segs:
+            continue
+
+        flac_path = associated[0]["original"] if associated else None
+        select_parts = "+".join(f"between(t,{s},{e})" for s, e in valid_segs)
+        log = ["-loglevel", "error", "-hide_banner"]
+        filter_file = os.path.join(output_dir, f"_filter_{track_name}.txt")
+        entry: Dict[str, str] = {}
+
+        if is_video:
+            v_out = os.path.join(output_dir, f"{track_name}_processed.mp4")
+            filter_graph = f"[0:v:0]select='{select_parts}',setpts=N/FRAME_RATE/TB[v]"
+            with open(filter_file, "w", encoding="utf-8") as f:
+                f.write(filter_graph)
+            try:
+                subprocess.run([
+                    "ffmpeg", "-i", v_path,
+                    "-filter_complex_script", filter_file,
+                    "-map", "[v]",
+                    "-c:v", encoder, *enc_opts,
+                    *log, "-y", v_out
+                ], check=True)
+            finally:
+                if os.path.exists(filter_file):
+                    os.remove(filter_file)
+            entry["video"] = v_out
+
+        if flac_path:
+            a_out = os.path.join(output_dir, f"{track_name}_processed.flac")
+            filter_graph = f"aselect='{select_parts}',asetpts=N/SR/TB"
+            with open(filter_file, "w", encoding="utf-8") as f:
+                f.write(filter_graph)
+            try:
+                subprocess.run([
+                    "ffmpeg", "-i", flac_path,
+                    "-filter_complex_script", filter_file,
+                    "-c:a", "flac",
+                    *log, "-y", a_out
+                ], check=True)
+            finally:
+                if os.path.exists(filter_file):
+                    os.remove(filter_file)
+            entry["audio"] = a_out
+
+        if entry:
+            rendered[v_path] = entry
+
+    return rendered
+
+
+def generate_kdenlive_from_rendered(
+    rendered_files: Dict[str, Dict[str, str]],
+    output_path: str,
+    ass_paths: List[str] = None,
+):
+    """Generate a simple kdenlive project from pre-rendered processed files.
+
+    Each source gets separate video and/or audio tracks referencing the
+    rendered .mp4 (video-only H.264) and .flac (audio-only) files.
+    """
+    from mlt_python.project import MLTProject
+
+    proj = MLTProject(profile="hd1080_25")
+    fps = proj.profile.fps
+
+    for source_path, rend_entry in rendered_files.items():
+        track_name = get_track_name_from_path(source_path)
+
+        v_path = rend_entry.get("video")
+        a_path = rend_entry.get("audio")
+
+        if v_path:
+            playlist = proj.add_track("video", id=f"track_{track_name}_video")
+            playlist.set_property("kdenlive:track_name", track_name)
+            producer = proj.add_producer(
+                v_path, id=f"clip_{track_name}_video", mlt_service="avformat",
+            )
+            dur = get_video_duration(v_path)
+            if dur > 0:
+                playlist.add_clip(producer.id, in_point=0.0, duration=dur, fps=fps)
+
+        if a_path:
+            playlist = proj.add_track("audio", id=f"track_{track_name}_audio")
+            playlist.set_property("kdenlive:track_name", f"{track_name} (audio)")
+            producer = proj.add_producer(
+                a_path, id=f"clip_{track_name}_audio", mlt_service="avformat",
+            )
+            dur = get_video_duration(a_path)
+            if dur > 0:
+                playlist.add_clip(producer.id, in_point=0.0, duration=dur, fps=fps)
+
+    for ass_file in (ass_paths or []):
+        if os.path.exists(ass_file):
+            proj.add_subtitle(ass_file)
+
+    with open(output_path, "w", encoding="utf-8") as f:
+        f.write(proj.to_xml(kdenlive_format=True))
+
 
 def format_ass_time(seconds: float) -> str:
     h = int(seconds // 3600)

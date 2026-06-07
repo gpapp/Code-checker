@@ -1,5 +1,6 @@
 import os
 import argparse
+from pathlib import Path
 import torch
 import torchaudio
 import pandas as pd
@@ -90,30 +91,38 @@ class PodcastFillerLib:
         # Build datasets
         datasets = []
         dataset_weights = []
-        
-        # English dataset
-        eng_dataset = PodcastFillersDataset(csv_path, clips_dir, target_sr=self.sample_rate)
-        datasets.append(eng_dataset)
-        dataset_weights.extend([1.0] * len(eng_dataset))  # Weight 1.0 for English samples
-        print(f"English dataset: {len(eng_dataset)} samples")
-        
+
+        # English dataset (optional — skip if csv_path points to Hungarian-format CSV)
+        eng_dataset = None
+        try:
+            eng_dataset = PodcastFillersDataset(csv_path, clips_dir, target_sr=self.sample_rate)
+        except Exception as e:
+            print(f"[INFO] Skipping English dataset: {e}")
+
+        if eng_dataset is not None and len(eng_dataset) > 0:
+            datasets.append(eng_dataset)
+            dataset_weights.extend([1.0] * len(eng_dataset))
+            print(f"English dataset: {len(eng_dataset)} samples")
+        else:
+            print("English dataset: none")
+
         # Hungarian dataset (if provided)
         if hun_csv and hun_clips_dir and os.path.exists(hun_csv) and os.path.exists(hun_clips_dir):
             hun_dataset = HungarianFillersDataset(hun_csv, hun_clips_dir, target_sr=self.sample_rate)
             datasets.append(hun_dataset)
-            dataset_weights.extend([hun_weight] * len(hun_dataset))  # Weight for Hungarian samples
+            dataset_weights.extend([hun_weight] * len(hun_dataset))
             print(f"Hungarian dataset: {len(hun_dataset)} samples (weight: {hun_weight})")
         elif hun_csv or hun_clips_dir:
             print("[WARNING] Hungarian CSV or clips directory provided but not found. Training English-only.")
-        
-        # All datasets are preloaded in RAM, no need for multiprocessing workers
-        # Windows multiprocessing can cause deadlocks with large datasets
+
+        if not datasets:
+            print("[ERROR] No datasets available for training.")
+            return
+
         num_workers = 0
-        
-        # Combine datasets
+
         if len(datasets) > 1:
             combined_dataset = CombinedDataset(datasets)
-            # Create weighted sampler for biased sampling
             sampler = torch.utils.data.WeightedRandomSampler(
                 weights=dataset_weights,
                 num_samples=len(dataset_weights),
@@ -122,10 +131,9 @@ class PodcastFillerLib:
             dataloader = DataLoader(combined_dataset, batch_size=batch_size, sampler=sampler, num_workers=num_workers)
             print(f"Combined dataset: {len(combined_dataset)} samples with weighted sampling")
         else:
-            # English-only training
             dataset = datasets[0]
             dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
-            print(f"English-only dataset: {len(dataset)} samples")
+            print(f"Local dataset: {len(dataset)} samples")
         
         criterion = nn.BCELoss()
         optimizer = optim.Adam(self.model.parameters(), lr=0.001)
@@ -171,7 +179,7 @@ class PodcastFillerLib:
         """Public API to detect fillers. Returns intervals in seconds [(start, end), ...]."""
         self.model.eval()
         waveform, sr = self._load_audio_tensor(audio_path)
-        
+
         # Convert to mono and resample if needed
         if waveform.shape[0] > 1:
             waveform = torch.mean(waveform, dim=0, keepdim=True)
@@ -181,16 +189,71 @@ class PodcastFillerLib:
         total_samples = waveform.shape[1]
         win_samples = int(window_sec * self.sample_rate)
         stride_samples = int(stride_sec * self.sample_rate)
-        
+
+        # Coarse pass: detect rough filler regions
         intervals = []
         with torch.no_grad():
             for start in tqdm(range(0, total_samples - win_samples, stride_samples), desc="Analyzing Audio Features", leave=False):
                 chunk = waveform[:, start : start + win_samples].to(self.device).unsqueeze(0)
                 if self.model(chunk).item() > threshold:
-                    # Return in SECONDS for compatibility with video_processor
-                    intervals.append((start / self.sample_rate, (start + win_samples) / self.sample_rate))
+                    intervals.append((start, start + win_samples))
+        if not intervals:
+            return []
+
+        # Merge overlapping coarse intervals (in samples)
+        gap_samples = int(gap_sec * self.sample_rate)
+        intervals.sort(key=lambda x: x[0])
+        merged = [[intervals[0][0], intervals[0][1]]]
+        for s, e in intervals[1:]:
+            if s <= merged[-1][1] + gap_samples:
+                merged[-1][1] = max(merged[-1][1], e)
+            else:
+                merged.append([s, e])
+
+        # Refine boundaries with fine stride for accurate duration
+        return self._refine_boundaries(waveform, merged, threshold, win_samples, stride_samples)
+
+    def _refine_boundaries(self, waveform, coarse_intervals, threshold, win_samples, stride_samples):
+        """Refine start/end of each coarse interval with fine boundary scan.
         
-        return self._merge_intervals_seconds(intervals, gap_sec=gap_sec)
+        Returns refined intervals in seconds.
+        """
+        total_samples = waveform.shape[1]
+        fine_stride = stride_samples // 4  # ~0.0625s at 16kHz
+        # Base the search window on the detection parameters
+        margin = int(0.5 * self.sample_rate)  # search 0.5s beyond each boundary
+
+        refined = []
+        with torch.no_grad():
+            for start_samp, end_samp in coarse_intervals:
+                # --- Refine start ---
+                search_start = max(0, start_samp - margin)
+                ref_start = start_samp
+                found_start = False
+                for t in range(search_start, min(start_samp + win_samples, total_samples - win_samples), fine_stride):
+                    chunk = waveform[:, t : t + win_samples].to(self.device).unsqueeze(0)
+                    if self.model(chunk).item() > threshold:
+                        ref_start = t
+                        found_start = True
+                        break
+                if not found_start:
+                    continue  # skip if boundary no longer confirmed
+
+                # --- Refine end ---
+                search_end = min(total_samples - win_samples, end_samp + margin)
+                ref_end = end_samp
+                last_above = end_samp
+                for t in range(max(0, end_samp - win_samples), search_end + fine_stride, fine_stride):
+                    chunk = waveform[:, t : t + win_samples].to(self.device).unsqueeze(0)
+                    if self.model(chunk).item() > threshold:
+                        last_above = t + win_samples
+                ref_end = max(last_above, ref_end)
+
+                duration_sec = (ref_end - ref_start) / self.sample_rate
+                if duration_sec > 0.01:
+                    refined.append((ref_start / self.sample_rate, ref_end / self.sample_rate))
+
+        return refined
 
     def _merge_intervals_seconds(self, intervals, gap_sec=0.3):
         if not intervals: return []
@@ -367,23 +430,63 @@ class CombinedDataset(Dataset):
 # ==========================================
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--mode", choices=['train', 'process'], required=True)
+    parser.add_argument("--mode", choices=['train', 'process', 'train_fillers'], required=True)
     parser.add_argument("--csv", type=str)
     parser.add_argument("--clips_dir", type=str)
     parser.add_argument("--hun_csv", type=str, help="Path to Hungarian CSV file")
     parser.add_argument("--hun_clips_dir", type=str, help="Path to Hungarian clips directory")
     parser.add_argument("--hun_weight", type=float, default=1.0, help="Weight multiplier for Hungarian samples")
-    parser.add_argument("--epochs", type=int, default=5, help="Number of training epochs")
-    parser.add_argument("--batch_size", type=int, default=128, help="Batch size for training")
+    parser.add_argument("--epochs", type=int, default=10, help="Number of training epochs")
+    parser.add_argument("--batch_size", type=int, default=256, help="Batch size for training")
     parser.add_argument("--input", type=str)
     parser.add_argument("--output", default="cleaned.wav")
     parser.add_argument("--model", default="filler_detector.pth")
+    parser.add_argument("--filler-dir", type=str, help="Directory of positive (filler) FLAC clips")
+    parser.add_argument("--non-filler-dir", type=str, help="Directory of negative (non-filler) FLAC clips")
+    parser.add_argument("--eng_csv", type=str, help="Path to English PodcastFillers CSV (optional in train_fillers mode)")
+    parser.add_argument("--eng_clips_dir", type=str, help="Path to English clips directory (optional in train_fillers mode)")
     args = parser.parse_args()
 
-    # Using the library
     filler_lib = PodcastFillerLib(model_path=args.model)
 
-    if args.mode == 'train':
+    if args.mode == 'train_fillers':
+        import csv
+        import glob
+        pos_dir = Path(args.filler_dir).resolve()
+        neg_dir = Path(args.non_filler_dir).resolve()
+        parent = pos_dir.parent  # e.g. fillers_hun/
+        tmp_csv = parent / "_train_metadata.csv"
+
+        pos_name = pos_dir.name  # e.g. "training"
+        neg_name = neg_dir.name  # e.g. "non_filler"
+
+        rows = []
+        for fpath in glob.glob(str(pos_dir / "*.flac")):
+            rows.append({"clip_name": f"{pos_name}/{Path(fpath).name}", "consolidated_label": "Filler"})
+        for fpath in glob.glob(str(neg_dir / "*.flac")):
+            rows.append({"clip_name": f"{neg_name}/{Path(fpath).name}", "consolidated_label": "NonFiller"})
+
+        with open(str(tmp_csv), "w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=["clip_name", "consolidated_label"])
+            w.writeheader()
+            w.writerows(rows)
+        print(f"Built training metadata: {len(rows)} samples ({sum(1 for r in rows if r['consolidated_label']=='Filler')} filler, {sum(1 for r in rows if r['consolidated_label']=='NonFiller')} non-filler)")
+
+        eng_csv = args.eng_csv or str(tmp_csv)
+        eng_clips = args.eng_clips_dir or str(parent)
+
+        filler_lib.train(
+            csv_path=eng_csv,
+            clips_dir=eng_clips,
+            hun_csv=str(tmp_csv),
+            hun_clips_dir=str(parent),
+            hun_weight=5.0,
+            epochs=args.epochs,
+            batch_size=args.batch_size
+        )
+        tmp_csv.unlink(missing_ok=True)
+
+    elif args.mode == 'train':
         filler_lib.train(
             csv_path=args.csv,
             clips_dir=args.clips_dir,

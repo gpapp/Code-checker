@@ -22,7 +22,7 @@ if errorlevel 1 (
 
 call .venv\Scripts\activate  
 
-echo [1/2] Installing other dependencies from requirements.txt...
+echo [1/2] Installing dependencies from requirements.txt...
 uv pip install --upgrade -r requirements.txt
 if errorlevel 1 (
     echo [ERROR] Failed to install dependencies.
@@ -38,20 +38,26 @@ if errorlevel 1 (
     exit /b 1
 )
 
-echo [3/3] Checking for PodcastFillerLib model...
+echo [4/4] Checking for PodcastFillerLib model...
 if not exist filler_detector.pth (
     if exist PodcastFillerDataset\PodcastFillers.csv (
-        if exist fillers_hun\ZO_Hungarian.csv (
-            echo [INFO] filler_detector.pth missing. Starting training on BOTH English and Hungarian datasets with Hungarian bias...
-            python PodcastFillerLib.py --mode train --csv PodcastFillerDataset\PodcastFillers.csv --clips_dir PodcastFillerDataset\clip_wav --hun_csv fillers_hun\ZO_Hungarian.csv --hun_clips_dir fillers_hun\zo_clips --hun_weight 5.0 --batch_size 256
+        if exist fillers_hun\training\ (
+            echo "[INFO] filler_detector.pth missing. Using AUP3-extracted Hungarian data (fillers_hun/training/) + English..."
+             uv run PodcastFillerLib.py --mode train_fillers --filler-dir fillers_hun\training --non-filler-dir fillers_hun\non_filler --eng_csv PodcastFillerDataset\PodcastFillers.csv --eng_clips_dir PodcastFillerDataset\clip_wav --epochs 10 --batch_size 256
         ) else (
-            echo [INFO] filler_detector.pth missing. Starting training on English dataset only...
+            echo "[INFO] filler_detector.pth missing. Starting training on English dataset only..."
             python PodcastFillerLib.py --mode train --csv PodcastFillerDataset\PodcastFillers.csv --clips_dir PodcastFillerDataset\clip_wav --batch_size 256
         )
+    ) else if exist fillers_hun\training\ (
+        echo "[INFO] filler_detector.pth missing. Training on AUP3-extracted Hungarian data only..."
+        python PodcastFillerLib.py --mode train_fillers --filler-dir fillers_hun\training --non-filler-dir fillers_hun\non_filler --batch_size 256
     ) else (
-        echo [SKIP] Trained model missing AND PodcastFillerDataset not found. 
-        echo        Download Fillers from: https://zenodo.org/records/7121457
-        echo        Unpack to .\PodcastFillerDataset\ before running setup again.
+        echo [SKIP] Trained model missing AND no training data found.
+        echo        To add filler detection:
+        echo        1. Download PodcastFillers from: https://zenodo.org/records/7121457
+        echo        2. Unpack to .\PodcastFillerDataset\
+        echo        3. Export Audacity clips to fillers_hun/training/ and fillers_hun/non_filler/
+        echo        Then re-run setup.
     )
 ) else (
     echo [OK] filler_detector.pth exists.

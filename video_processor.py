@@ -25,7 +25,7 @@ from audio_utils import (
 )
 from filler_processor import run_vad, find_overlaps
 from interval_utils import merge_intervals, calculate_keep_segments, adjust_timestamps, compress_global_silence
-from exporter import generate_kdenlive_project, generate_ass_file, generate_srt_file
+from exporter import generate_kdenlive_project, generate_ass_file, generate_srt_file, render_processed_video, generate_kdenlive_from_rendered
 from transcription_processor import process_transcription, get_full_language_name
 from PodcastFillerLib import PodcastFillerLib
 
@@ -45,7 +45,7 @@ def parse_args():
     parser.add_argument("--output-prefix", default="processed_", help="Prefix for output video files")
     parser.add_argument("--video-offsets", default="", help="Comma-separated list of +/- second offsets for video tracks (e.g. 0.5,-0.2,0)")
     parser.add_argument("--restart", action="store_true", help="If set, deletes temporary artifact files (*.json, *.markers.json, etc.) from the working directory before processing.")
-    parser.add_argument("--clean", action="store_true", help="If set, deletes temporary artifact files (*.json, *.markers.json, etc.) from the working directory after processing.")
+    parser.add_argument("--noclear", action="store_true", help="If set, skips cleanup of temporary artifact files after processing.")
     parser.add_argument("--refine", action="store_true", help="If set, uses Gemma 4 via Ollama to clean up the transcription (Step 3c).")
     parser.add_argument("--no-asr", action="store_true", help="If set, skips all ASR/Whisper steps (filler detection and transcription).")
     parser.add_argument("--filler-threshold", type=float, default=0.9, help="Confidence threshold for filler detection (0.0 to 1.0). Default: 0.9")
@@ -102,7 +102,9 @@ def main():
             os.makedirs(working_dir)
 
     output_base_dir = os.path.dirname(working_dir)
-    processed_dir = os.path.join(output_base_dir, "PROCESSED")
+    grandparent_dir = os.path.dirname(output_base_dir)
+    grandparent_name = os.path.basename(grandparent_dir)
+    rendered_dir = os.path.join(grandparent_dir, "PROCESSED")
     
     # Parse video offsets
     offsets = [0.0] * len(final_inputs)
@@ -134,7 +136,7 @@ def main():
         if has_external_audio and has_video_stream(v) and not is_audio_ext:
             video_to_audio_map[v] = []
         else:
-            processed = process_streams_to_flac(v, processed_dir)
+            processed = process_streams_to_flac(v, working_dir)
             video_to_audio_map[v] = [e["flac"] for e in processed]
             for e in processed:
                 audio_info_map[e["flac"]] = {"original": v, "stream_idx": e["stream_idx"]}
@@ -350,7 +352,30 @@ def main():
 
     output_files = final_inputs
 
-    logger.info("Step 6/7: Skipping render (virtual cut mode)...")
+    logger.info("Step 6/7: Rendering processed video...")
+
+    # Prepare audio files configuration for rendering
+    audio_files_config = {}
+    for i, out_v in enumerate(output_files):
+        orig_v = final_inputs[i]
+        af_list = video_to_audio_map.get(orig_v, [])
+        sources = []
+        for af in af_list:
+            info = audio_info_map.get(af, {"original": af, "stream_idx": 0})
+            sources.append({
+                "original": af,
+                "stream_idx": info["stream_idx"],
+                "temp_path": af
+            })
+        audio_files_config[out_v] = sources
+
+    rendered_files = render_processed_video(
+        video_files=output_files,
+        audio_files=audio_files_config,
+        keep_segments=keep_segments,
+        output_dir=rendered_dir,
+        video_offsets=offsets,
+    )
 
     logger.info("Step 7/7: Exporting project files...")
     
@@ -369,8 +394,6 @@ def main():
         adj_words = []
         for i, (new_s, new_e) in enumerate(adj_segments):
             if i < len(words):
-                # Only keep words that have a meaningful duration after adjustment
-                # (Words entirely in a cut segment will have new_s == new_e)
                 if (new_e - new_s) > 0.05:
                     adj_words.append({
                         "word": words[i]["word"],
@@ -386,47 +409,16 @@ def main():
         generate_srt_file(adj_words, srt_path)
         ass_files.append(ass_path)
         
-    # 2. Final Kdenlive Project Generation
-    kdenlive_path = os.path.join(output_base_dir, "project.kdenlive")
-    stream_spikes_map = {v: [stream_markers[af]["spikes"] for af in video_to_audio_map.get(v, []) if af in stream_markers] for v in final_inputs}
-    
-    # Collect source-aligned words for Kdenlive's internal speech view
-    source_asr_words = []
-    for v in final_inputs:
-        af_list = video_to_audio_map.get(v, [])
-        if af_list and af_list[0] in transcription_results:
-            source_asr_words.append(transcription_results[af_list[0]].get("words", []))
-        else:
-            source_asr_words.append([])
+    # 2. Kdenlive project referencing rendered processed files
+    kdenlive_path = os.path.join(grandparent_dir, f"{grandparent_name}.kdenlive")
 
-    # Prepare consolidated audio files configuration
-    audio_files_config = {}
-    for i, out_v in enumerate(output_files):
-        orig_v = final_inputs[i]
-        af_list = video_to_audio_map.get(orig_v, [])
-        sources = []
-        for af in af_list:
-            info = audio_info_map.get(af, {"original": af, "stream_idx": 0})
-            sources.append({
-                "original": af,
-                "stream_idx": info["stream_idx"],
-                "temp_path": af
-            })
-        audio_files_config[out_v] = sources
-
-    generate_kdenlive_project(
-        video_files=output_files,
-        audio_files=audio_files_config,
+    generate_kdenlive_from_rendered(
+        rendered_files=rendered_files,
         output_path=kdenlive_path,
-        keep_segments=keep_segments,
-        stream_spikes=stream_spikes_map,
-        video_offsets=offsets,
         ass_paths=ass_files,
-        asr_words=source_asr_words,
-        stream_markers=stream_markers,
     )
-    # Run cleanup routine if the flag is set (don't delete outputs at the end)
-    if args.clean:
+    # Clean up temporary artifacts by default (use --noclear to skip)
+    if not args.noclear:
         run_cleanup(working_dir, args, include_outputs=False)
 
 def run_cleanup(working_dir: str, args, include_outputs: bool = False):
@@ -457,13 +449,15 @@ def run_cleanup(working_dir: str, args, include_outputs: bool = False):
                 
     if include_outputs:
         output_base_dir = os.path.dirname(working_dir)
+        grandparent = os.path.dirname(output_base_dir)
         output_patterns = [
             "*.srt",
             "*.ass",
-            "project.kdenlive",
+            "*.kdenlive",
             f"{args.output_prefix}*"
         ]
         logger.info("Restart specified: Deleting potential output files.")
+        # Clean from output_base_dir (subtitles)
         for pattern in output_patterns:
             for file in glob.glob(output_base_dir + os.path.sep + pattern):
                 try:
@@ -471,14 +465,30 @@ def run_cleanup(working_dir: str, args, include_outputs: bool = False):
                     cleaned_count += 1
                 except OSError as e:
                     logger.warning(f"Failed to remove output file {file}: {e}")
-        processed_dir = os.path.join(output_base_dir, "PROCESSED")
-        if os.path.isdir(processed_dir):
-            for file in glob.glob(processed_dir + os.path.sep + "*.flac"):
-                try:
-                    os.remove(file)
-                    cleaned_count += 1
-                except OSError as e:
-                    logger.warning(f"Failed to remove processed FLAC {file}: {e}")
+        # Clean kdenlive from grandparent dir (moved one up)
+        for file in glob.glob(grandparent + os.path.sep + "*.kdenlive"):
+            try:
+                os.remove(file)
+                cleaned_count += 1
+            except OSError as e:
+                logger.warning(f"Failed to remove kdenlive file {file}: {e}")
+        # Clean FLACs from working_dir (pre-processed audio)
+        for file in glob.glob(working_dir + os.path.sep + "*.flac"):
+            try:
+                os.remove(file)
+                cleaned_count += 1
+            except OSError as e:
+                logger.warning(f"Failed to remove FLAC {file}: {e}")
+        # Clean rendered files from PROCESSED dir (grandparent level)
+        rendered_dir = os.path.join(grandparent, "PROCESSED")
+        if os.path.isdir(rendered_dir):
+            for pattern in ("*_processed.mp4", "*_processed.flac"):
+                for file in glob.glob(rendered_dir + os.path.sep + pattern):
+                    try:
+                        os.remove(file)
+                        cleaned_count += 1
+                    except OSError as e:
+                        logger.warning(f"Failed to remove rendered file {file}: {e}")
 
     logger.info(f"Cleanup finished. Removed {cleaned_count} files/artifacts.")
     
