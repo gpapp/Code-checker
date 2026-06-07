@@ -1,27 +1,18 @@
 import os
-import subprocess
 import logging
+import subprocess
+import sys
+from pathlib import Path
 import xml.etree.ElementTree as ET
-from typing import List, Tuple, Dict
-from audio_utils import get_video_duration, has_video_stream, get_video_fps
+from typing import List, Tuple, Dict, Set
+from audio_utils import get_video_duration, has_video_stream, get_video_stream_index, get_audio_stream_indices, get_track_name_from_path
+
+from mlt_python.project import MLTProject
+from interval_utils import merge_intervals, intersect_intervals, calculate_keep_segments, adjust_timestamps
+
 
 logger = logging.getLogger(__name__)
 
-def frames_to_tc(frames: int, fps: float = 25.0) -> str:
-    seconds = frames / fps
-    h = int(seconds // 3600)
-    m = int((seconds % 3600) // 60)
-    s = int(seconds % 60)
-    f = int(frames % fps)
-    return f"{h:02d}:{m:02d}:{s:02d}:{f:02d}"
-
-def secs_to_tc(seconds: float) -> str:
-    # Deprecated for timeline usage, use frames_to_tc for project elements
-    h = int(seconds // 3600)
-    m = int((seconds % 3600) // 60)
-    s = int(seconds % 60)
-    ms = int(round((seconds % 1) * 1000))
-    return f"{h:02d}:{m:02d}:{s:02d}.{ms:03d}"
 
 def generate_kdenlive_speech_html(prod_id: int, words: List[Dict]) -> str:
     if not words:
@@ -61,246 +52,450 @@ def generate_kdenlive_speech_html(prod_id: int, words: List[Dict]) -> str:
 
 def generate_kdenlive_project(
     video_files: List[str],
+    audio_files: Dict[str, List[Dict]],
     output_path: str,
     keep_segments: List[Tuple[float, float]],
-    stream_spikes_map: Dict[str, List[List[Tuple[float, float]]]],
-    overlaps: List[Tuple[float, float]],
-    repetitions: List[Tuple[float, float]],
-    fps: float = 25.0,
+    stream_spikes: Dict = None,
     video_offsets: List[float] = None,
     ass_paths: List[str] = None,
     asr_words: List[List[Dict]] = None,
-    stream_markers_global: Dict = None,
-    video_to_audio_map: Dict = None
+    stream_markers: Dict = None,
 ):
     if not video_offsets:
         video_offsets = [0.0] * len(video_files)
-    if video_to_audio_map is None:
-        video_to_audio_map = {f: [f] for f in video_files}
-    if stream_markers_global is None:
-        stream_markers_global = {}
+    if audio_files is None:
+        audio_files = {f: [{"original": f, "stream_idx": -1, "temp_path": f}] for f in video_files}
+    if stream_markers is None:
+        stream_markers = {}
     if ass_paths is None:
         ass_paths = []
     if asr_words is None:
         asr_words = []
-        
-    from kdenlive.kdenlive_lib import KdenliveProject
-    
-    template_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "kdenlive", "empty.kdenlive")
-    if not os.path.exists(template_path):
-        raise FileNotFoundError(f"Template not found at {template_path}")
-        
-    proj = KdenliveProject(template_path)
-    
-    import uuid
-    from interval_utils import merge_intervals, adjust_timestamps
 
-    max_dur_frames = sum(int(round(ke * proj.fps)) - int(round(ks * proj.fps)) for ks, ke in keep_segments)
-    max_dur_tc = frames_to_tc(max_dur_frames - 1, fps) if max_dur_frames > 0 else "00:00:00:00"
+    proj = MLTProject(profile="hd1080_25")
+    fps = proj.profile.fps
 
-    # Track assignments based on the template's 4 tracks (A1, A2, V1, V2)
-    vid_tracks = ["V1", "V2"]
-    aud_tracks = ["A1", "A2"]
-    v_idx = 0
-    a_idx = 0
+    # Frame-align ALL keep segments to prevent drift between tracks.
+    # Blanks serialize to frames, clips serialize to ms — rounding differences
+    # between these units accumulate and cause tracks with more blanks (audio)
+    # to drift from tracks with fewer blanks (video).
+    keep_contrib_frames = [int(round((ke - ks) * fps)) for ks, ke in keep_segments]
+    cumul_keep_frames = [0]
+    for cf in keep_contrib_frames:
+        cumul_keep_frames.append(cumul_keep_frames[-1] + cf)
+    total_timeline_frames = cumul_keep_frames[-1]
+    total_timeline_duration = total_timeline_frames / fps
+
+    # Centralized storage for all producers (raw files and their specific stream representations)
+    required_chains = []
     
-    chain_map = {} # video_path -> chain_id
-    
-    # 1. Add Files to Bin (Chains) - use SOURCE files, not temporary WAV
-    for i, fpath in enumerate(video_files):
-        duration_s = get_video_duration(fpath)
-        total_f = int(round(duration_s * fps))
-        is_vid = has_video_stream(fpath)
+    # Determine if we have audio overrides for videos
+    has_override = {}
+    kdenlive_clip_producers: Dict[Tuple[str, str], Producer] = {}
+    primary_producer_for_file: Dict[str, Producer] = {}
+
+    # Shared Bin ID per physical file to prevent replication in Kdenlive Bin
+    file_to_bin_id: Dict[str, str] = {}
+    def get_shared_bin_id(path: str) -> str:
+        if path not in file_to_bin_id:
+            file_to_bin_id[path] = str(abs(hash(path)) % 1000000)
+        return file_to_bin_id[path]
+
+    # First pass: Create all necessary Producer objects for Kdenlive clips in the bin
+    for v_path in video_files:
+        has_vid_stream = has_video_stream(v_path)
         
-        # Add source file to bin (NOT the temporary WAV)
-        chain_id = proj.addFileToBin(fpath, duration_frames=total_f, clip_type="0" if is_vid else "1")
-        chain_map[fpath] = chain_id
-        
-        # Set extra chain properties
-        chain = proj.root.find(f".//chain[@id='{chain_id}']")
-        ET.SubElement(chain, "property", name="audio_index").text = "1" if is_vid else "0"
-        ET.SubElement(chain, "property", name="video_index").text = "0" if is_vid else "-1"
-        ET.SubElement(chain, "property", name="astream").text = "0"
-        
-        # Add audio filters to chain (not track)
-        if not is_vid:
-            proj.addFilterToChain(chain_id, "ladspa.1073", {
-                "internal_added": "237",
-                "0": "1", "1": "0.5", "2": "0.1", "3": "0.1",
-                "wetness": "1", "instances": "2", "disable": "0"
-            })
-            
-            proj.addFilterToChain(chain_id, "dynamic_loudness", {
-                "internal_added": "237",
-                "target_loudness": "-23",
-                "window": "3",
-                "max_gain": "15",
-                "min_gain": "-15",
-                "max_rate": "3",
-                "discontinuity_reset": "1",
-                "disable": "0"
-            })
-        
-        if i < len(asr_words) and asr_words[i]:
-            speech_html = generate_kdenlive_speech_html(i+1, asr_words[i])
-            ET.SubElement(chain, "property", name="kdenlive:speech").text = speech_html
-    
-    # 2. Add Clips to Tracks using keep_segments and handle silences
-    # For each video file, add timeline items to its assigned tracks
-    for i, video_path in enumerate(video_files):
+        associated_audio_sources = audio_files.get(v_path, [])
+
+        if has_vid_stream:
+            video_producer_id = f"clip_vid_{len(kdenlive_clip_producers)}"
+            video_props = {"video_index": "0", "audio_index": "-1"}
+            video_props["kdenlive:id"] = get_shared_bin_id(v_path)
+            video_producer = proj.add_producer(v_path, id=video_producer_id, mlt_service="avformat", properties=video_props)
+            kdenlive_clip_producers[(v_path, "video")] = video_producer
+            primary_producer_for_file[v_path] = video_producer
+
+        if associated_audio_sources:
+            for src_info in associated_audio_sources:
+                original_audio_path = src_info["original"]
+                stream_idx = src_info["stream_idx"]
+                temp_path = src_info["temp_path"]
+                
+                audio_producer_id = f"clip_aud_{len(kdenlive_clip_producers)}"
+                audio_props = {"audio_index": str(stream_idx), "video_index": "-1"}
+                audio_props["kdenlive:id"] = get_shared_bin_id(original_audio_path)
+                audio_producer = proj.add_producer(original_audio_path, id=audio_producer_id, mlt_service="avformat", properties=audio_props)
+                kdenlive_clip_producers[(original_audio_path, f"audio_{stream_idx}")] = audio_producer
+                
+                if v_path not in primary_producer_for_file and not has_vid_stream:
+                    primary_producer_for_file[v_path] = audio_producer
+
+        elif not has_vid_stream and v_path not in primary_producer_for_file:
+            audio_producer_id = f"clip_aud_{len(kdenlive_clip_producers)}"
+            audio_props = {"audio_index": "0", "video_index": "-1"}
+            audio_props["kdenlive:id"] = get_shared_bin_id(v_path)
+            audio_producer = proj.add_producer(v_path, id=audio_producer_id, mlt_service="avformat", properties=audio_props)
+            kdenlive_clip_producers[(v_path, "audio_0")] = audio_producer
+            primary_producer_for_file[v_path] = audio_producer
+
+    # Add speech info
+    paired_inputs = []
+    for i in range(len(video_files)):
+        paired_inputs.append({
+            "path": video_files[i],
+            "offset": video_offsets[i] if i < len(video_offsets) else 0.0,
+            "asr": asr_words[i] if asr_words and i < len(asr_words) else []
+        })
+    paired_inputs.sort(key=lambda x: (not has_video_stream(x["path"]), x["path"]))
+
+    for i, item in enumerate(paired_inputs):
+        file_path = item["path"]
+        producer = primary_producer_for_file.get(file_path)
+        if producer and item["asr"]:
+            speech_html = generate_kdenlive_speech_html(i + 1, item["asr"])
+            producer.set_property("kdenlive:speech", speech_html)
+
+    # 2. Add Tracks and Clips
+    added_video_tracks: Set[str] = set()
+    added_audio_tracks: Set[str] = set()
+    av_track_mapping: Dict[str, Dict] = {}
+
+    # --- Pass 1: Audio Tracks (Reverse Order) ---
+    for item in reversed(paired_inputs):
+        video_path = item["path"]
+        offset = item["offset"]
         is_vid = has_video_stream(video_path)
-        vid_track = None
-        aud_track = None
+        
+        current_audio_sources = audio_files.get(video_path, [])
+        if not current_audio_sources and not is_vid:
+            current_audio_sources = [{"original": video_path, "stream_idx": 0, "temp_path": video_path}]
 
-        if is_vid:
-            vid_track = vid_tracks[i] if i < len(vid_tracks) else vid_tracks[-1]
-            aud_track = aud_tracks[i] if i < len(aud_tracks) else aud_tracks[-1]
-        else:
-            aud_track = aud_tracks[i] if i < len(aud_tracks) else aud_tracks[-1]
+        for src_info in current_audio_sources:
+            original_audio_path = src_info["original"]
+            stream_idx = src_info["stream_idx"]
+            temp_path = src_info["temp_path"]
 
-        # Determine which chain to use for audio track
-        # If video_to_audio_map provides separate audio, use that chain
-        audio_path = video_path
-        if video_to_audio_map and video_path in video_to_audio_map and video_to_audio_map[video_path]:
-            audio_path = video_to_audio_map[video_path][0]  # Use first audio file
+            audio_clip_key = (original_audio_path, f"audio_{stream_idx}")
+            audio_clip_producer = kdenlive_clip_producers.get(audio_clip_key)
 
-        vid_chain_id = chain_map.get(video_path)
-        aud_chain_id = chain_map.get(audio_path, vid_chain_id)
+            if audio_clip_producer and audio_clip_key not in added_audio_tracks:
+                track_idx = len(proj.playlists) + 1
+                playlist = proj.add_track("audio", id=f"track_aud_{track_idx}")
+                playlist.set_property("kdenlive:track_name", get_track_name_from_path(original_audio_path))
+                
+                if video_path not in av_track_mapping:
+                    av_track_mapping[video_path] = {"v": None, "a": []}
+                av_track_mapping[video_path]["a"].append(track_idx)
+            
+                a_dur = get_video_duration(original_audio_path)  # seconds
+                markers_data = (stream_markers or {}).get(temp_path, {})
+                silences = markers_data.get("silence", [])  # list of (start_s, end_s)
 
-        # Get silences for this stream (use audio path for silence detection)
-        stream_markers = stream_markers_global.get(audio_path, {})
-        silences = stream_markers.get("silence", [])
+                # Non-silence intervals in producer timeline (seconds)
+                nsa = calculate_keep_segments(silences, a_dur)
 
-        # Build timeline items: list of (type, start_frame, end_frame)
-        timeline_items = []
-        for ks, ke in keep_segments:
-            ks_frame = int(round(ks * proj.fps))
-            ke_frame = int(round(ke * proj.fps))
+                # Smoothing (in seconds)
+                # Asymmetric roll-off: speech onsets are sharp (0.05s),
+                # trailing words fade out gradually (0.3s)
+                pad_pre = 0.05
+                pad_post = 0.3
+                gap = 0.4
+                if nsa:
+                    padded_nsa = [(max(0.0, s - pad_pre), min(a_dur, e + pad_post)) for s, e in nsa]
+                    merged_nsa = merge_intervals(padded_nsa)
+                    if merged_nsa:
+                        smoothed_nsa = [merged_nsa[0]]
+                        for start_s, end_s in merged_nsa[1:]:
+                            if start_s - smoothed_nsa[-1][1] < gap:
+                                smoothed_nsa[-1] = (smoothed_nsa[-1][0], end_s)
+                            else:
+                                smoothed_nsa.append((start_s, end_s))
+                        nsa = smoothed_nsa
 
-            # Get silences that fall within [ks, ke]
-            segment_silences = [(int(round(s * proj.fps)), int(round(e * proj.fps)))
-                               for s, e in silences if s < ke and e > ks]
-            segment_silences.sort()
+                # Map keep_segments to audio producer timeline (shifted by offset)
+                audio_keep_intervals = []
+                for ks, ke in keep_segments:
+                    s = max(0.0, ks + offset)
+                    e = min(a_dur, ke + offset)
+                    if s < e:
+                        audio_keep_intervals.append((s, e))
 
-            current_pos = ks_frame
-            for s_frame, e_frame in segment_silences:
-                if s_frame > current_pos:
-                    timeline_items.append(('clip', current_pos, s_frame))
-                timeline_items.append(('blank', s_frame, e_frame))
-                current_pos = e_frame
+                # Intersect in seconds domain
+                final_audio_segments = intersect_intervals(nsa, audio_keep_intervals)
+                
+                # Track position in frames to match XML serialization exactly
+                curr_frame = 0
+                
+                # Group final audio segments by keep segments they fall into
+                keep_seg_audio = {i: [] for i in range(len(keep_segments))}
+                for as_start, as_end in final_audio_segments:
+                    master_start = as_start - offset
+                    # Find which keep segment contains this master position
+                    for i, (ks, ke) in enumerate(keep_segments):
+                        if ks <= master_start < ke:
+                            keep_seg_audio[i].append((as_start, as_end))
+                            break
 
-            if current_pos < ke_frame:
-                timeline_items.append(('clip', current_pos, ke_frame))
-
-        # Now add to tracks using library methods
-        # Track timeline position for each track
-        track_timeline_pos = {}
-        for track_name in [t for t in [vid_track, aud_track] if t]:
-            track_timeline_pos[track_name] = 0
-
-        for item_type, item_start_frame, item_end_frame in timeline_items:
-            for track_name in [t for t in [vid_track, aud_track] if t]:
-                if item_type == 'clip':
-                    # Determine which chain to use
-                    if track_name == vid_track and vid_chain_id:
-                        cid = vid_chain_id
-                    elif track_name == aud_track and aud_chain_id:
-                        cid = aud_chain_id
-                    else:
+                for i, (ks, ke) in enumerate(keep_segments):
+                    prev_frame = cumul_keep_frames[i]
+                    target_end_frame = cumul_keep_frames[i+1]
+                    
+                    segs = keep_seg_audio[i]
+                    if not segs:
+                        # Keep segment is silent for this track, add a blank matching the keep segment duration
+                        blank_frames = target_end_frame - curr_frame
+                        if blank_frames > 0:
+                            playlist.add_blank(blank_frames / fps)
+                            curr_frame = target_end_frame
                         continue
+                    
+                    # Align the first and last segments to keep segment boundaries
+                    first_as_start, first_as_end = segs[0]
+                    last_as_start, last_as_end = segs[-1]
+                    
+                    # Stretch first and last to keep segment boundaries
+                    segs[0] = (max(0.0, ks + offset), first_as_end)
+                    segs[-1] = (last_as_start, min(a_dur, ke + offset))
+                    if len(segs) == 1:
+                        segs[0] = (max(0.0, ks + offset), min(a_dur, ke + offset))
+                        
+                    # Frame-align all segments to prevent timecode rounding discrepancies
+                    aligned_segs = []
+                    for s, e in segs:
+                        s_aligned = round(s * fps) / fps
+                        e_aligned = round(e * fps) / fps
+                        aligned_segs.append((s_aligned, e_aligned))
+                    segs = aligned_segs
+                        
+                    for as_start, as_end in segs:
+                        master_start = as_start - offset
+                        start_offset_frames = int(round((master_start - ks) * fps))
+                        timeline_frame = prev_frame + start_offset_frames
+                        
+                        master_end = min(as_end - offset, ke)
+                        end_offset_frames = int(round((master_end - ks) * fps))
+                        dur_frames = end_offset_frames - start_offset_frames
+                        
+                        if timeline_frame > curr_frame:
+                            blank_frames = timeline_frame - curr_frame
+                            playlist.add_blank(blank_frames / fps)
+                            curr_frame = timeline_frame
+                        
+                        if dur_frames > 0:
+                            playlist.add_clip(
+                                audio_clip_producer.id,
+                                in_point=as_start,
+                                duration=dur_frames / fps,
+                                fps=fps,
+                            )
+                            curr_frame += dur_frames
+                            
+                    # Add any remaining blank to match keep segment end exactly
+                    if curr_frame < target_end_frame:
+                        playlist.add_blank((target_end_frame - curr_frame) / fps)
+                        curr_frame = target_end_frame
 
-                    proj.addClipToTrack(track_name, cid, item_start_frame, item_end_frame,
-                                        track_timeline_pos[track_name])
+                added_audio_tracks.add(audio_clip_key)
 
-                elif item_type == 'blank':
-                    blank_frames = item_end_frame - item_start_frame
-                    proj.addBlankToTrack(track_name, blank_frames)
+    # --- Pass 2: Video Tracks (Forward Order to Mirror Audio) ---
+    for item in paired_inputs:
+        video_path = item["path"]
+        offset = item["offset"]
+        is_vid = has_video_stream(video_path)
+        track_name = get_track_name_from_path(video_path)
 
-                # Update timeline position for this track
-                track_timeline_pos[track_name] = item_end_frame
-    
-    # 3. Add Track-level Filters (audio tracks A1, A2)
-    for track_name in aud_tracks:
-        if track_name in proj.tracks:
-            proj.addFilterToTrack(track_name, "volume", {
-                "window": "75",
-                "max_gain": "20dB",
-                "channel_mask": "-1",
-                "mlt_service": "volume",
-                "internal_added": "237",
-                "disable": "1"
-            })
-            proj.addFilterToTrack(track_name, "panner", {
-                "channel": "-1",
-                "mlt_service": "panner",
-                "internal_added": "237",
-                "start": "0.5",
-                "disable": "1"
-            })
-            proj.addFilterToTrack(track_name, "audiolevel", {
-                "iec_scale": "0",
-                "mlt_service": "audiolevel",
-                "internal_added": "237",
-                "dbpeak": "1",
-                "disable": "1"
-            })
-    
-    # 4. Add Sequence-level Filters and Transitions (tractor4)
-    seq_tractor = proj.root.find(".//tractor[@id='tractor4']")
-    if seq_tractor is not None:
-        # Update sequence duration
-        seq_tractor.set("out", max_dur_tc)
-        
-        # Add sequence filters (master level)
-        filt = ET.SubElement(seq_tractor, "filter", id=proj._get_next_filter_id())
-        ET.SubElement(filt, "property", name="mlt_service").text = "volume"
-        ET.SubElement(filt, "property", name="internal_added").text = "237"
-        ET.SubElement(filt, "property", name="window").text = "75"
-        ET.SubElement(filt, "property", name="max_gain").text = "20dB"
-        ET.SubElement(filt, "property", name="channel_mask").text = "-1"
-        ET.SubElement(filt, "property", name="disable").text = "1"
-        
-        filt2 = ET.SubElement(seq_tractor, "filter", id=proj._get_next_filter_id())
-        ET.SubElement(filt2, "property", name="mlt_service").text = "panner"
-        ET.SubElement(filt2, "property", name="internal_added").text = "237"
-        ET.SubElement(filt2, "property", name="start").text = "0.5"
-        ET.SubElement(filt2, "property", name="disable").text = "1"
-        
-        # Add transitions for audio tracks (blend against track 0)
-        for idx, track_name in enumerate(aud_tracks):
-            if idx == 0:
-                continue
-            trans = ET.SubElement(seq_tractor, "transition", id=proj._get_next_filter_id().replace("filter", "transition"))
-            ET.SubElement(trans, "property", name="a_track").text = "0"
-            ET.SubElement(trans, "property", name="b_track").text = str(idx + 1)
-            ET.SubElement(trans, "property", name="mlt_service").text = "mix"
-            ET.SubElement(trans, "property", name="kdenlive_id").text = "mix"
-            ET.SubElement(trans, "property", name="internal_added").text = "237"
-            ET.SubElement(trans, "property", name="always_active").text = "1"
-            ET.SubElement(trans, "property", name="accepts_blanks").text = "1"
-            ET.SubElement(trans, "property", name="sum").text = "1"
-        
-        # Add transitions for video tracks
-        vid_offset = len(aud_tracks) + 1  # +1 for black track (track 0)
-        for idx, track_name in enumerate(vid_tracks):
-            trans = ET.SubElement(seq_tractor, "transition", id=proj._get_next_filter_id().replace("filter", "transition"))
-            ET.SubElement(trans, "property", name="a_track").text = "0"
-            ET.SubElement(trans, "property", name="b_track").text = str(vid_offset + idx)
-            ET.SubElement(trans, "property", name="mlt_service").text = "qtblend"
-            ET.SubElement(trans, "property", name="kdenlive_id").text = "qtblend"
-            ET.SubElement(trans, "property", name="internal_added").text = "237"
-            ET.SubElement(trans, "property", name="always_active").text = "1"
-            ET.SubElement(trans, "property", name="compositing").text = "0"
-            ET.SubElement(trans, "property", name="distort").text = "0"
-            ET.SubElement(trans, "property", name="rotate_center").text = "0"
-    
-    # 5. Adjust sequence duration properties
-    seq_tr = proj.seq_tractor
-    ET.SubElement(seq_tr, "property", name="kdenlive:duration").text = max_dur_tc
-    ET.SubElement(seq_tr, "property", name="kdenlive:maxduration").text = str(max_dur_frames)
-    
-    # Update project tractor (tractor4 is the sequence)
-    proj.save(output_path)
+        if is_vid and video_path not in added_video_tracks:
+            video_clip_producer = kdenlive_clip_producers.get((video_path, "video"))
+            if video_clip_producer:
+                track_idx = len(proj.playlists) + 1
+                playlist = proj.add_track("video", id=f"track_vid_{track_idx}")
+                playlist.set_property("kdenlive:track_name", track_name)
+                
+                if video_path not in av_track_mapping:
+                    av_track_mapping[video_path] = {"v": None, "a": []}
+                av_track_mapping[video_path]["v"] = track_idx
+
+                for ks, ke in keep_segments:
+                    dur_frames = int(round((ke - ks) * fps))
+                    dur_aligned = dur_frames / fps
+                    if dur_aligned > 0:
+                        playlist.add_clip(
+                            video_clip_producer.id, 
+                            in_point=ks + offset,
+                            duration=dur_aligned,
+                            fps=fps,
+                        )
+                added_video_tracks.add(video_path)
+
+    # 3. Link subtitles
+    for ass_file in (ass_paths or []):
+        if os.path.exists(ass_file):
+            proj.add_subtitle(ass_file)
+
+    # Save
+    with open(output_path, "w", encoding="utf-8") as f:
+        f.write(proj.to_xml(kdenlive_format=True))
+
+def detect_best_video_encoder() -> str:
+    """Detect best available hardware encoder (NVENC > QSV > libx264)."""
+    try:
+        result = subprocess.run(
+            ["ffmpeg", "-hide_banner", "-encoders"],
+            capture_output=True, text=True, check=True
+        )
+        encoders = result.stdout
+        if "h264_nvenc" in encoders:
+            return "h264_nvenc"
+        elif "h264_qsv" in encoders:
+            return "h264_qsv"
+    except Exception:
+        pass
+    return "libx264"
+
+
+def render_processed_video(
+    video_files: List[str],
+    audio_files: Dict[str, List[Dict]],
+    keep_segments: List[Tuple[float, float]],
+    output_dir: str,
+    video_offsets: List[float] = None,
+) -> Dict[str, Dict[str, str]]:
+    """Renders processed files per source with keep segments concatenated.
+
+    Produces two files per source: *_.mp4 (video-only, H.264) and *_.flac (audio-only).
+    Uses ffmpeg's select/aselect filters with filter_complex_script to avoid
+    Windows cmd length limits. Uses best available hardware encoder (NVENC/QSV).
+    Returns dict mapping source path -> {video: mp4_path, audio: flac_path}.
+    """
+    if video_offsets is None:
+        video_offsets = [0.0] * len(video_files)
+
+    encoder = detect_best_video_encoder()
+    enc_opts = {
+        "h264_nvenc": ["-preset", "p2", "-cq", "23"],
+        "h264_qsv": ["-preset", "veryfast", "-global_quality", "23"],
+        "libx264": ["-preset", "superfast", "-crf", "23"],
+    }.get(encoder, ["-preset", "superfast", "-crf", "23"])
+
+    from tqdm import tqdm
+
+    os.makedirs(output_dir, exist_ok=True)
+    rendered: Dict[str, Dict[str, str]] = {}
+
+    for vf_idx, v_path in enumerate(tqdm(video_files, desc="Rendering sources", unit="source")):
+        offset = video_offsets[vf_idx] if vf_idx < len(video_offsets) else 0.0
+        is_video = has_video_stream(v_path)
+        associated = audio_files.get(v_path, [])
+        track_name = get_track_name_from_path(v_path)
+        if not is_video and not associated:
+            continue
+        src_dur = get_video_duration(v_path)
+
+        valid_segs = []
+        for ks, ke in keep_segments:
+            s = max(0.0, ks + offset)
+            e = min(src_dur, ke + offset)
+            if s < e:
+                valid_segs.append((s, e))
+        if not valid_segs:
+            continue
+
+        flac_path = associated[0]["original"] if associated else None
+        select_parts = "+".join(f"between(t,{s},{e})" for s, e in valid_segs)
+        log = ["-loglevel", "error", "-hide_banner"]
+        filter_file = os.path.join(output_dir, f"_filter_{track_name}.txt")
+        entry: Dict[str, str] = {}
+
+        if is_video:
+            v_out = os.path.join(output_dir, f"{track_name}_processed.mp4")
+            filter_graph = f"[0:v:0]select='{select_parts}',setpts=N/FRAME_RATE/TB[v]"
+            with open(filter_file, "w", encoding="utf-8") as f:
+                f.write(filter_graph)
+            try:
+                subprocess.run([
+                    "ffmpeg", "-i", v_path,
+                    "-filter_complex_script", filter_file,
+                    "-map", "[v]",
+                    "-c:v", encoder, *enc_opts,
+                    *log, "-y", v_out
+                ], check=True)
+            finally:
+                if os.path.exists(filter_file):
+                    os.remove(filter_file)
+            entry["video"] = v_out
+
+        if flac_path:
+            a_out = os.path.join(output_dir, f"{track_name}_processed.flac")
+            filter_graph = f"aselect='{select_parts}',asetpts=N/SR/TB"
+            with open(filter_file, "w", encoding="utf-8") as f:
+                f.write(filter_graph)
+            try:
+                subprocess.run([
+                    "ffmpeg", "-i", flac_path,
+                    "-filter_complex_script", filter_file,
+                    "-c:a", "flac",
+                    *log, "-y", a_out
+                ], check=True)
+            finally:
+                if os.path.exists(filter_file):
+                    os.remove(filter_file)
+            entry["audio"] = a_out
+
+        if entry:
+            rendered[v_path] = entry
+
+    return rendered
+
+
+def generate_kdenlive_from_rendered(
+    rendered_files: Dict[str, Dict[str, str]],
+    output_path: str,
+    ass_paths: List[str] = None,
+):
+    """Generate a simple kdenlive project from pre-rendered processed files.
+
+    Each source gets separate video and/or audio tracks referencing the
+    rendered .mp4 (video-only H.264) and .flac (audio-only) files.
+    """
+    from mlt_python.project import MLTProject
+
+    proj = MLTProject(profile="hd1080_25")
+    fps = proj.profile.fps
+
+    for source_path, rend_entry in rendered_files.items():
+        track_name = get_track_name_from_path(source_path)
+
+        v_path = rend_entry.get("video")
+        a_path = rend_entry.get("audio")
+
+        if v_path:
+            playlist = proj.add_track("video", id=f"track_{track_name}_video")
+            playlist.set_property("kdenlive:track_name", track_name)
+            producer = proj.add_producer(
+                v_path, id=f"clip_{track_name}_video", mlt_service="avformat",
+            )
+            dur = get_video_duration(v_path)
+            if dur > 0:
+                playlist.add_clip(producer.id, in_point=0.0, duration=dur, fps=fps)
+
+        if a_path:
+            playlist = proj.add_track("audio", id=f"track_{track_name}_audio")
+            playlist.set_property("kdenlive:track_name", f"{track_name} (audio)")
+            producer = proj.add_producer(
+                a_path, id=f"clip_{track_name}_audio", mlt_service="avformat",
+            )
+            dur = get_video_duration(a_path)
+            if dur > 0:
+                playlist.add_clip(producer.id, in_point=0.0, duration=dur, fps=fps)
+
+    for ass_file in (ass_paths or []):
+        if os.path.exists(ass_file):
+            proj.add_subtitle(ass_file)
+
+    with open(output_path, "w", encoding="utf-8") as f:
+        f.write(proj.to_xml(kdenlive_format=True))
+
+
 def format_ass_time(seconds: float) -> str:
     h = int(seconds // 3600)
     m = int((seconds % 3600) // 60)
@@ -325,24 +520,19 @@ def group_words_into_segments(words: List[Dict], max_words: int = 5, max_gap: fl
     for w in words:
         word_text = w['word'].strip()
         
-        # Determine if we should start a new segment
         should_start_new = False
         if not current_group:
             should_start_new = False
         else:
-            # Too many words?
             if len(current_group) >= max_words:
                 should_start_new = True
-            # Too long a gap?
             elif w['start'] - current_group[-1]['end'] > max_gap:
                 should_start_new = True
-            # Previous word ended a sentence?
             prev_word = current_group[-1]['word'].strip()
             if prev_word.endswith(('.', '?', '!', '...', ':')):
                 should_start_new = True
         
         if should_start_new:
-            # Finalize current segment
             segments.append({
                 'start': current_group[0]['start'],
                 'end': current_group[-1]['end'],
@@ -352,7 +542,6 @@ def group_words_into_segments(words: List[Dict], max_words: int = 5, max_gap: fl
         else:
             current_group.append(w)
             
-    # Final segment
     if current_group:
         segments.append({
             'start': current_group[0]['start'],

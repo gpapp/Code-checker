@@ -4,49 +4,80 @@ import librosa
 
 logger = logging.getLogger(__name__)
 
+_silero_model_cache = None
+
 def run_vad(audio_path: str):
-    """Runs NeMo VAD and returns active speech intervals."""
+    """Runs Silero VAD and returns active speech intervals."""
+    global _silero_model_cache
+    duration = librosa.get_duration(path=audio_path)
+    
     try:
-        import nemo.collections.asr as nemo_asr
         import torch
-    except ImportError as e:
-        logger.warning(f"NeMo VAD failed to initialize: {e}. Using librosa for VAD fallback.")
+        import numpy as np
+        device = torch.device("cpu")
+        
+        if _silero_model_cache is None:
+            logger.info("Loading Silero VAD model via torch.hub...")
+            model, utils = torch.hub.load(repo_or_dir='snakers4/silero-vad',
+                                          model='silero_vad',
+                                          force_reload=False,
+                                          trust_repo=True)
+            model = model.to(device)
+            _silero_model_cache = (model, utils)
+        
+        model, utils = _silero_model_cache
+        (get_speech_timestamps, _, _, _, _) = utils
+        
+        # Load audio via librosa to avoid torchaudio/torchcodec dependency
         y, sr = librosa.load(audio_path, sr=16000)
-        non_silent = librosa.effects.split(y, top_db=30)
-        return [(float(start)/sr, float(end)/sr) for start, end in non_silent]
+        wav = torch.from_numpy(y).unsqueeze(0).to(device)
+        
+        speech_timestamps = get_speech_timestamps(
+            wav, model, 
+            sampling_rate=16000,
+            threshold=0.4,
+            min_silence_duration_ms=300,
+            speech_pad_ms=100
+        )
+        
+        segments = [(ts['start'] / 16000, ts['end'] / 16000) for ts in speech_timestamps]
+        
+        if not segments:
+            raise ValueError("Silero VAD returned no segments.")
+            
+        return segments
 
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    try:
-        vad_model = nemo_asr.models.EncDecClassificationModel.from_pretrained("vad_multilingual_marblenet").to(device)
-        probs = vad_model.transcribe([audio_path], batch_size=1)
     except Exception as e:
-        logger.error(f"NeMo transcription failed: {e}")
-        return []
+        logger.warning(f"Silero VAD failed ({e}). Falling back to librosa activity detection.")
+        try:
+            y, sr = librosa.load(audio_path, sr=16000)
+            non_silent = librosa.effects.split(y, top_db=35)
+            return [(float(start)/sr, float(end)/sr) for start, end in non_silent]
+        except Exception as e2:
+            logger.error(f"VAD Fallback also failed: {e2}")
+            return []
 
-    window_length_in_sec = 0.02
-    threshold = 0.5
-
-    segments = []
-    curr_start = None
-    for i, p in enumerate(probs[0]):
-        if p >= threshold:
-            if curr_start is None:
-                curr_start = i * window_length_in_sec
-        else:
-            if curr_start is not None:
-                segments.append((curr_start, i * window_length_in_sec))
-                curr_start = None
-    if curr_start is not None:
-        segments.append((curr_start, len(probs[0]) * window_length_in_sec))
-
-    return segments
+def unload_silero_model():
+    """Unloads Silero VAD model from memory."""
+    global _silero_model_cache
+    if _silero_model_cache is not None:
+        logger.info("Unloading Silero VAD model...")
+        _silero_model_cache = None
+        import gc
+        import torch
+        gc.collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
 
 _whisper_model_cache = {}
 
 
 def unload_crisper_model():
-    """Explicitly unloads the CrisperWhisper model from VRAM."""
+    """Explicitly unloads the CrisperWhisper and Silero VAD models from VRAM."""
     global _whisper_model_cache
+    
+    unload_silero_model()
+    
     if _whisper_model_cache:
         logger.info("Unloading faster-whisper model from memory...")
         _whisper_model_cache.clear()

@@ -9,6 +9,14 @@ __pycache__/
 processed_*.mkv
 *.wav
 PodcastFillerDataset/*
+
+fillers_hun/training
+fillers_hun/non_filler
+fillers_hun/_train_metadata.csv
+
 tests/outputs
-test_data/project.kdenlive
+test_data/PROCESSED/
+test_data/MASTER/*.ass
+test_data/MASTER/*.srt
+test_data/test_data.kdenlive
 .coverage

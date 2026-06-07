@@ -43,10 +43,10 @@ The primary execution command is handled by `process.bat` (on Windows).
 
 **Example Execution:**
 ```batch
-process.bat "C:\MyRecording\Source" --video-offsets 0.5
+process.bat "C:\Videos\Recording\Source" --video-offsets 0.5
 ```
 *   **Function:** This calls `video_processor.py` within the activated virtual environment to run the entire pipeline.
-*   **Output:** The tool will generate cache files (e.g., `.asr.json`, `.markers.json`) in a `video_processing_work` folder and place the final `project.kdenlive` file in the parent directory of the source.
+*   **Output:** Cache files (`.asr.json`, `.markers.json`) and pre-processed FLACs in `video_processing_work/` under the source's parent. Rendered gap-free files in `PROCESSED/` at the grandparent level. Kdenlive project at `grandparent/{grandparent_name}.kdenlive`.
 
 ### Testing
 *   **Recommendation:** Testing should involve running `process.bat` with sample data from the `test_data/` directory and manually validating the output artifacts against expected results.
@@ -64,11 +64,11 @@ The system operates as a linear, state-passing pipeline, orchestrated by `video_
 | **`filler_processor.py`** | **Speech Analysis Core:** Handles VAD and initial filler detection using CrisperWhisper. | `librosa`, `faster-whisper`, `nemo`. |
 | **`audio_utils.py`** | **Signal Processing:** Handles audio manipulation. Tasks include: audio extraction, normalization, silence/spike detection, and finding acoustic repetitions. | `librosa`, Signal Processing. |
 | **`interval_utils.py`** | **Time Logic:** The mathematical core. Responsible for merging, inverting, and adjusting all detected time boundaries (silences, fillers, overlaps) to create the final "keep" segments. | Interval Algebra. |
-| **`exporter.py`** | **Output Generation:** Creates the final, editable assets. Interfaces with industry standards: generating the **`.kdenlive` project file**, and creating time-synced **`.ass` / `.srt`** subtitle files. | FFmpeg, Kdenlive API/Format. |
+| **`exporter.py`** | **Output Generation:** Renders gap-free per-source video/audio files with hardware encoding (NVENC/QSV). Creates the **`.kdenlive` project file** referencing rendered files, and generates time-synced **`.ass` / `.srt`** subtitle files. | FFmpeg, Kdenlive API/Format. |
 
 ### Interaction Flow (Pipeline Stages)
 
-1.  **Input $\rightarrow$ Audio Extraction (`audio_utils.py`):** Raw video/audio is separated into normalized mono WAV files.
+1.  **Input $\rightarrow$ Audio Extraction (`audio_utils.py`):** Raw video/audio is separated into normalized FLAC files (two-pass loudnorm, -14 LUFS) in `video_processing_work/`.
 2.  **Analysis Loop (Iterative):** For every audio file:
     *   **Silence/Spike Detection (`audio_utils.py`):** Generates initial markers.
     *   **ASR & Transcription (`filler_processor.py` & `transcription_processor.py`):** Transcribes audio using the dual-pass engine (CrisperWhisper $\rightarrow$ Qwen3-ASR).

@@ -1,4 +1,9 @@
 # Interval utilities for merging and adjusting timestamps
+from typing import List, Tuple
+
+def round_ts(ts: float) -> float:
+    """Standardized rounding for timestamp calculations to avoid floating point drift."""
+    return round(ts, 6)
 
 def merge_intervals(intervals: list[tuple[float, float]]) -> list[tuple[float, float]]:
     """Merges overlapping or adjacent intervals."""
@@ -9,10 +14,33 @@ def merge_intervals(intervals: list[tuple[float, float]]) -> list[tuple[float, f
     for curr_start, curr_end in intervals[1:]:
         prev_start, prev_end = merged[-1]
         if curr_start <= prev_end:
-            merged[-1] = (prev_start, max(prev_end, curr_end))
+            merged[-1] = (round_ts(prev_start), round_ts(max(prev_end, curr_end)))
         else:
             merged.append((curr_start, curr_end))
     return merged
+
+def calculate_keep_segments(cut_segments: list[tuple[float, float]], total_duration: float) -> list[tuple[float, float]]:
+    """Inverts cut segments to find segments to keep."""
+    keep = []
+    last_end = 0.0
+    for start, end in sorted(cut_segments):
+        if start > last_end:
+            keep.append((round_ts(last_end), round_ts(start)))
+        last_end = max(last_end, end)
+    if last_end < total_duration:
+        keep.append((round_ts(last_end), round_ts(total_duration)))
+    return keep
+
+def intersect_intervals(intervals1: list[tuple[float, float]], intervals2: list[tuple[float, float]]) -> list[tuple[float, float]]:
+    """Returns the intersection of two sets of intervals."""
+    result = []
+    for s1, e1 in sorted(intervals1):
+        for s2, e2 in sorted(intervals2):
+            s = max(s1, s2)
+            e = min(e1, e2)
+            if s < e:
+                result.append((s, e))
+    return result
 
 def compress_global_silence(global_silence: list[tuple[float, float]]) -> list[tuple[float, float]]:
     """
@@ -32,7 +60,7 @@ def compress_global_silence(global_silence: list[tuple[float, float]]) -> list[t
     """
     cuts = []
     for s_start, s_end in sorted(global_silence):
-        orig_dur = s_end - s_start
+        orig_dur = round_ts(s_end - s_start)
         keep_dur = orig_dur
         
         # 1. Truncate > 1s to 1s
@@ -40,25 +68,13 @@ def compress_global_silence(global_silence: list[tuple[float, float]]) -> list[t
             keep_dur = 1.0
         # 2. Compress > 0.2s to half
         if keep_dur > 0.2:
-            keep_dur = 0.2 + (keep_dur - 0.2) / 2.0
+            keep_dur = round_ts(0.2 + (keep_dur - 0.2) / 2.0)
         
         # The portion we CUT is everything after the kept portion
         if keep_dur < orig_dur - 0.01:
-            cuts.append((s_start + keep_dur, s_end))
+            cuts.append((round_ts(s_start + keep_dur), s_end))
     
     return cuts
-
-def calculate_keep_segments(cut_segments: list[tuple[float, float]], total_duration: float) -> list[tuple[float, float]]:
-    """Inverts cut segments to find segments to keep."""
-    keep = []
-    last_end = 0.0
-    for start, end in sorted(cut_segments):
-        if start > last_end:
-            keep.append((last_end, start))
-        last_end = max(last_end, end)
-    if last_end < total_duration:
-        keep.append((last_end, total_duration))
-    return keep
 
 def adjust_timestamps(segments: list[tuple[float, float]], keep_segments: list[tuple[float, float]]) -> list[tuple[float, float]]:
     """Adjusts timestamps from original timeline to the cut timeline."""
@@ -71,16 +87,16 @@ def adjust_timestamps(segments: list[tuple[float, float]], keep_segments: list[t
             duration = ke - ks
             if new_start is None:
                 if ks <= start < ke:
-                    new_start = current_new_time + (start - ks)
+                    new_start = round_ts(current_new_time + (start - ks))
                 elif start < ks:
-                    new_start = current_new_time
+                    new_start = round_ts(current_new_time)
             if new_end is None:
-                if ks <= end < ke:
-                    new_end = current_new_time + (end - ks)
+                if ks <= end <= ke:
+                    new_end = round_ts(current_new_time + (end - ks))
                 elif end < ks and new_start is not None:
-                    new_end = current_new_time
+                    new_end = round_ts(current_new_time)
             current_new_time += duration
         if new_start is not None:
-            if new_end is None: new_end = current_new_time
+            if new_end is None: new_end = round_ts(current_new_time)
             adjusted.append((new_start, new_end))
     return adjusted

@@ -2,56 +2,6 @@
 
 A modular Python tool for synchronized multi-video editing based on audio stream analysis. Optimized for Hungarian language processing and NVIDIA 3060 GPUs.
 
-## Operation Sequence
-
-```mermaid
-sequenceDiagram
-    participant User
-    participant Main as video_processor.py
-    participant AU as audio_utils.py
-    participant FP as filler_processor.py
-    participant TP as transcription_processor.py
-    participant IU as interval_utils.py
-    participant EX as exporter.py
-
-    User->>Main: Execute with MKV/Audio inputs
-    Main->>AU: extract_audio_streams(inputs)
-    Note over AU: Compression + Normalization (-14 LUFS)
-    AU-->>Main: mono WAV files
-
-    loop Each Audio File
-        Main->>AU: detect_silence_and_spikes(wav)
-        Note over AU: Significant silences list (>=2s)
-        AU-->>Main: .markers.json (silence/spikes)
-        
-        Main->>FP: process_filler_detection_asr(wav)
-        Note over FP: CrisperWhisper (Pass 1)
-        FP-->>Main: filler words list
-        
-        Main->>TP: process_transcription(wav)
-        Note over TP: Qwen3-ASR + Forced Aligner (Pass 2)
-        TP-->>Main: .asr.json (transcript & words)
-    end
-
-    Main->>AU: find_global_silence(all_silence)
-    AU-->>Main: global cut intervals (all streams quiet)
-
-    Main->>IU: merge_intervals(global_silence + fillers)
-    IU-->>Main: final cut_segments
-
-    Main->>IU: calculate_keep_segments(cut_segments, total_duration)
-    IU-->>Main: synchronized keep_segments
-
-    loop Each Video Input
-        Main->>EX: generate_kdenlive_project(...)
-        Note over EX: Silence-Aware timeline placement
-        Note over EX: Apply Volume/Comp/Norm filters
-        EX-->>Main: project.kdenlive
-    end
-
-    Main-->>User: Done (Ready for Kdenlive)
-```
-
 ## Features
 
 - **Dual-Pass ASR Pipeline**: 
@@ -61,8 +11,7 @@ sequenceDiagram
 - **Precision Timestamps**: Re-maps transcript timestamps from unified audio back to the original timeline with millisecond precision.
 - **High-Quality Signal Processing**: Automatically applies compression and targets -14 LUFS for consistent levels across all streams.
 - **Fast Execution via Caching**: Metadata (ASR, repetitions, silence) is cached in JSON files for instant re-runs.
-- **Silence-Aware Export**: Kdenlive project generator matches ASR logic, skipping long silences (>=2s) to create a clean, synchronized multi-track timeline.
-- **Automatic Audio Filters**: Every audio clip on the Kdenlive timeline automatically receives high-quality Compressor, Limiter, and Loudness Normalization filters.
+- **Silence-Aware Export**: Cuts long silences (>=2s) and renders each source into a single gap-free file using hardware encoding (NVENC/QSV). A simple Kdenlive project is generated referencing the rendered files.
 - **Filler Detection**: Automatically identifies and cuts Hungarian/English filler words like `[UH]`, `[UM]`, `er`, and `ő`.
 - **Overlap & Repetition Detection**: Highlights active discussions and marks duplicate acoustic patterns for easy editing.
 - **ASR Subtitles**: Generates synchronized `.ass` and `.srt` files with timestamps adjusted for the final cut.
@@ -74,7 +23,7 @@ sequenceDiagram
 - `filler_processor.py`: Speech boundary detection and filler word identification using CrisperWhisper.
 - `transcription_processor.py`: Main ASR engine for high-fidelity transcription using Qwen3-ASR.
 - `interval_utils.py`: Mathematical logic for merging, inverting, and adjusting time intervals.
-- `exporter.py`: FFmpeg processing and file generation (Kdenlive XML, ASS).
+- `exporter.py`: FFmpeg processing (hardware-accelerated rendering) and file generation (Kdenlive XML, ASS).
 
 ## Prerequisites
 
@@ -122,10 +71,11 @@ process.bat "C:\MyRecording\Source" --video-offsets 0.5
 ```
 
 #### Advanced Options
-- `--no-render`: Generates the Kdenlive project using original files (lossless and fast).
+- `--no-render`: Skip hardware-accelerated rendering. Kdenlive project references original source files (lossless and fast).
 - `--video-offsets`: Comma-separated or single value in seconds (e.g., `1.2` or `0.5,-0.2,0`) to align tracks.
 - `--silence-threshold`: Set dB level for silence (default: `-30.0`).
 - `--filler-words`: Comma-separated list of Hungarian filler words to cut (default: `er,ő`).
+- `--no-asr`: Skip ASR transcription pass (for fast testing).
 
 ### Automatic File Discovery
 When a directory is provided, the tool automatically finds:
@@ -133,17 +83,32 @@ When a directory is provided, the tool automatically finds:
 - **Audio**: `.mp3`, `.wav`, `.m4a`
 
 ### Directory Structure
-- **Working Directory**: The tool creates a `video_processing_work` folder in the **parent directory** of your input source to store cache files (`.asr.json`, etc.) and extracted audio.
-- **Output Position**: Rendered videos and the `project.kdenlive` file are placed in the **parent directory** of the input source.
 
-## Project Output
+```
+grandparent_dir/                          # e.g. videos/
+├── {grandparent_name}.kdenlive           # Kdenlive project referencing PROCESSED files
+├── PROCESSED/                            # Final rendered files (gap-free, per source)
+│   ├── {track}_processed.mp4
+│   ├── {track}_processed.flac
+│   └── {track}_processed.flac
+└── input_source_dir/                     # e.g. recordings/
+    ├── source1.mkv
+    ├── source2.mkv
+    └── video_processing_work/            # Cache + pre-processed audio
+        ├── {track}_a0.flac               # Normalized FLAC (-14 LUFS, compressed)
+        ├── *.asr.json
+        ├── *.markers.json
+        ├── *.vad.json
+        ├── *.reps.json
+        ├── *.filler_*.json
+        ├── *.ass / *.srt                 # Subtitles with cut-adjusted timestamps
+        └── ...
+```
 
-The `video_processing_work` directory will contain:
-- Extracted and normalized mono WAV files.
-- Transcribed `.ass` files.
-- A `project.kdenlive` file ready for further editing.
-- Cache files: `*.markers.json`, `*.asr.json`, `*.vad.json`, `*.reps.json`.
+- **Working Directory**: `video_processing_work/` in the source's parent dir for cache JSONs and pre-processed FLACs.
+- **Rendered Output**: `PROCESSED/` at the grandparent level contains one gap-free file per source, re-encoded with the best available hardware encoder (NVENC > QSV > libx264). Presets favor speed: `p2` (NVENC), `veryfast` (QSV), `superfast` (libx264).
+- **Kdenlive Project**: `{grandparent_name}.kdenlive` at the grandparent level, referencing files in `PROCESSED/`.
 
 ## Kdenlive / MLT Reference
 
-For MLT XML formatting rules, see [`kdenlive/README.md`](kdenlive/README.md).
+See [AGENTS.md](AGENTS.md) for MLT XML formatting rules used by `exporter.py`.
