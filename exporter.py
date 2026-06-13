@@ -472,7 +472,13 @@ def render_processed_video_lossless_cut(
             v_out = os.path.join(output_dir, f"{track_name}_processed{ext}")
             ef_opts = _edit_friendly_opts(encoder)
             src_bitrate = _get_video_bitrate(v_path)
-            nvenc_opts = ["-preset", "p2", "-rc", "vbr_hq", "-b:v", f"{src_bitrate}", "-maxrate", f"{int(src_bitrate * 1.5)}", *ef_opts] if src_bitrate else ["-preset", "p2", "-cq", "23", *ef_opts]
+            if src_bitrate:
+                cap = 50_000_000
+                bv = min(src_bitrate, cap)
+                maxrate = min(int(src_bitrate * 1.5), cap)
+                nvenc_opts = ["-preset", "p2", "-rc", "vbr_hq", "-b:v", str(bv), "-maxrate", str(maxrate), *ef_opts]
+            else:
+                nvenc_opts = ["-preset", "p2", "-cq", "23", *ef_opts]
             enc_opts = {"h264_nvenc": nvenc_opts,
                         "h264_qsv": ["-preset", "veryfast", "-global_quality", "23", "-b:v", "50M", *ef_opts],
                         "libx264": ["-preset", "superfast", "-crf", "23", *ef_opts],
