@@ -753,22 +753,7 @@ def generate_kdenlive_from_rendered(
         stem = os.path.splitext(os.path.basename(item[0]))[0].lower()
         return (1 if "obs" in stem else 2, item[0])
 
-    # Pass 1: All video tracks (V1, V2, V3 ... bottom to top)
-    for source_path, rend_entry in sorted(rendered_files.items(), key=_obs_key):
-        track_name = get_track_name_from_path(source_path)
-        v_path = rend_entry.get("video")
-
-        if v_path:
-            playlist = proj.add_track("video", id=f"track_{track_name}_video")
-            playlist.set_property("kdenlive:track_name", track_name)
-            producer = proj.add_producer(
-                v_path, id=f"clip_{track_name}_video", mlt_service="avformat",
-            )
-            dur = get_video_duration(v_path)
-            if dur > 0:
-                playlist.add_clip(producer.id, in_point=0.0, duration=dur, fps=fps)
-
-    # Pass 2: All audio tracks (A1, A2, A3 ... below video)
+    # Pass 1: All audio tracks (lower tractor numbers = bottom of Kdenlive timeline)
     for source_path, rend_entry in sorted(rendered_files.items(), key=_obs_key):
         track_name = get_track_name_from_path(source_path)
         a_path = rend_entry.get("audio")
@@ -790,6 +775,21 @@ def generate_kdenlive_from_rendered(
                             fs, comment="Filler", marker_type=4,
                             duration=fe - fs, producer_id=producer.id,
                         )
+
+    # Pass 2: All video tracks (higher tractor numbers = top of Kdenlive timeline)
+    for source_path, rend_entry in sorted(rendered_files.items(), key=_obs_key):
+        track_name = get_track_name_from_path(source_path)
+        v_path = rend_entry.get("video")
+
+        if v_path:
+            playlist = proj.add_track("video", id=f"track_{track_name}_video")
+            playlist.set_property("kdenlive:track_name", track_name)
+            producer = proj.add_producer(
+                v_path, id=f"clip_{track_name}_video", mlt_service="avformat",
+            )
+            dur = get_video_duration(v_path)
+            if dur > 0:
+                playlist.add_clip(producer.id, in_point=0.0, duration=dur, fps=fps)
 
     for ass_file in (ass_paths or []):
         if os.path.exists(ass_file):
