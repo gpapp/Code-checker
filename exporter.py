@@ -755,12 +755,10 @@ def generate_kdenlive_from_rendered(
     proj = MLTProject(profile="hd1080_25")
     fps = proj.profile.fps
 
+    # Pass 1: All video tracks (V1, V2, V3 ... bottom to top)
     for source_path, rend_entry in rendered_files.items():
         track_name = get_track_name_from_path(source_path)
-
         v_path = rend_entry.get("video")
-        a_path = rend_entry.get("audio")
-        intervals = filler_intervals.get(source_path, [])
 
         if v_path:
             playlist = proj.add_track("video", id=f"track_{track_name}_video")
@@ -771,6 +769,12 @@ def generate_kdenlive_from_rendered(
             dur = get_video_duration(v_path)
             if dur > 0:
                 playlist.add_clip(producer.id, in_point=0.0, duration=dur, fps=fps)
+
+    # Pass 2: All audio tracks (A1, A2, A3 ... below video)
+    for source_path, rend_entry in rendered_files.items():
+        track_name = get_track_name_from_path(source_path)
+        a_path = rend_entry.get("audio")
+        intervals = filler_intervals.get(source_path, [])
 
         if a_path:
             playlist = proj.add_track("audio", id=f"track_{track_name}_audio")
