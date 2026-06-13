@@ -134,7 +134,8 @@ def main():
 
     for v in tqdm(final_inputs, desc="Processing Audio"):
         is_audio_ext = os.path.splitext(v)[1].lower() in audio_exts
-        if has_external_audio and has_video_stream(v) and not is_audio_ext:
+        is_obs = "obs" in os.path.splitext(os.path.basename(v))[0].lower()
+        if (has_external_audio or is_obs) and has_video_stream(v) and not is_audio_ext:
             video_to_audio_map[v] = []
         else:
             processed = process_streams_to_flac(v, working_dir)
