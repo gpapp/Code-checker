@@ -19,7 +19,7 @@ if "%~1" == "" (
 call .venv\Scripts\activate  
 
 echo Running Video Processor...
-uv run python video_processor.py %*
+uv run python --no-asr video_processor.py %*
 
 if errorlevel 1 (
     echo [ERROR] Processing failed.

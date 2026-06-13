@@ -414,10 +414,21 @@ def main():
     # 2. Kdenlive project referencing rendered processed files
     kdenlive_path = os.path.join(grandparent_dir, f"{grandparent_name}.kdenlive")
 
+    # Adjust filler timestamps to the cut timeline
+    source_fillers: Dict[str, List[Tuple[float, float]]] = {}
+    for src_path in rendered_files:
+        af_list = video_to_audio_map.get(src_path, [])
+        for af in af_list:
+            raw = stream_markers.get(af, {}).get("fillers", [])
+            if raw:
+                source_fillers[src_path] = adjust_timestamps(raw, keep_segments)
+                break
+
     generate_kdenlive_from_rendered(
         rendered_files=rendered_files,
         output_path=kdenlive_path,
         ass_paths=ass_files,
+        filler_intervals=source_fillers,
     )
     # Clean up temporary artifacts by default (use --noclear to skip)
     if not args.noclear:

@@ -652,13 +652,19 @@ def generate_kdenlive_from_rendered(
     rendered_files: Dict[str, Dict[str, str]],
     output_path: str,
     ass_paths: List[str] = None,
+    filler_intervals: Dict[str, List[Tuple[float, float]]] = None,
 ):
     """Generate a simple kdenlive project from pre-rendered processed files.
 
     Each source gets separate video and/or audio tracks referencing the
     rendered .mp4 (H.264+FLAC) and .flac (audio-only) files.
+    Filler markers are added as colored bars on audio chains when
+    filler_intervals is provided (keyed by source path).
     """
     from mlt_python.project import MLTProject
+
+    if filler_intervals is None:
+        filler_intervals = {}
 
     proj = MLTProject(profile="hd1080_25")
     fps = proj.profile.fps
@@ -668,6 +674,7 @@ def generate_kdenlive_from_rendered(
 
         v_path = rend_entry.get("video")
         a_path = rend_entry.get("audio")
+        intervals = filler_intervals.get(source_path, [])
 
         if v_path:
             playlist = proj.add_track("video", id=f"track_{track_name}_video")
@@ -688,6 +695,13 @@ def generate_kdenlive_from_rendered(
             dur = get_video_duration(a_path)
             if dur > 0:
                 playlist.add_clip(producer.id, in_point=0.0, duration=dur, fps=fps)
+
+                for fs, fe in intervals:
+                    if fe - fs > 0.01:
+                        proj.add_marker(
+                            fs, comment="Filler", marker_type=4,
+                            duration=fe - fs, producer_id=producer.id,
+                        )
 
     for ass_file in (ass_paths or []):
         if os.path.exists(ass_file):
