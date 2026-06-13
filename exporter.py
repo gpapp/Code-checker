@@ -1,4 +1,5 @@
 import os
+import math
 import logging
 import subprocess
 import sys
@@ -345,26 +346,60 @@ def generate_kdenlive_project(
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(proj.to_xml(kdenlive_format=True))
 
-def detect_best_video_encoder() -> str:
-    """Detect best available hardware encoder (NVENC > QSV > libx264)."""
+def detect_best_intra_frame_encoder() -> str:
+    """Detect best available intra-frame encoder (prores_ks > prores > ffv1 > libx264)."""
     try:
         result = subprocess.run(
             ["ffmpeg", "-hide_banner", "-encoders"],
             capture_output=True, text=True, check=True
         )
         encoders = result.stdout
-        if "h264_nvenc" in encoders:
-            return "h264_nvenc"
-        elif "h264_qsv" in encoders:
-            return "h264_qsv"
+        if "prores_ks" in encoders:
+            return "prores_ks"
+        elif "prores" in encoders:
+            return "prores"
+        elif "ffv1" in encoders:
+            return "ffv1"
     except Exception:
         pass
     return "libx264"
 
 
-def _edit_friendly_opts() -> List[str]:
-    """Common options for edit-friendly output (All-I, faststart, broad compatibility)."""
-    return ["-g", "1", "-pix_fmt", "yuv420p", "-movflags", "+faststart"]
+def _video_extension(encoder: str) -> str:
+    """Return the recommended container extension for a video encoder."""
+    if encoder in ("prores_ks", "prores"):
+        return ".mov"
+    elif encoder == "ffv1":
+        return ".mkv"
+    return ".mp4"
+
+
+def _edit_friendly_opts(encoder: str) -> List[str]:
+    """Common options for edit-friendly output (30fps, intra-frame, CFR, broad compatibility)."""
+    if encoder in ("prores_ks", "prores"):
+        return ["-profile:v", "hq", "-pix_fmt", "yuv422p10le", "-r", "30", "-vsync", "cfr"]
+    elif encoder == "ffv1":
+        return ["-level", "3", "-pix_fmt", "yuv422p", "-r", "30", "-vsync", "cfr"]
+    return ["-g", "1", "-pix_fmt", "yuv420p", "-movflags", "+faststart", "-r", "30", "-vsync", "cfr"]
+
+
+def _frame_align_segments(
+    segments: List[Tuple[float, float]],
+    fps: float,
+) -> List[Tuple[float, float]]:
+    """Snap segment boundaries to the nearest video frame boundaries (inward).
+
+    Ensures audio cuts align exactly with video frames, preventing
+    audio/video duration mismatch.
+    """
+    frame_dur = 1.0 / fps
+    aligned = []
+    for s, e in segments:
+        s_aligned = math.ceil(s / frame_dur) * frame_dur
+        e_aligned = math.floor(e / frame_dur) * frame_dur
+        if s_aligned < e_aligned:
+            aligned.append((s_aligned, e_aligned))
+    return aligned
 
 
 def _get_video_bitrate(video_path: str) -> int:
@@ -394,6 +429,8 @@ def render_processed_video_lossless_cut(
 
     Uses -ss/-to before each input to seek fast (decodes only keep segments),
     then concatenates with the concat filter. No temp files needed.
+    Encodes with best available intra-frame codec (ProRes > FFV1 > libx264 All-I)
+    at constant frame rate for editing compatibility.
     """
     if video_offsets is None:
         video_offsets = [0.0] * len(video_files)
@@ -422,23 +459,25 @@ def render_processed_video_lossless_cut(
         if not valid_segs:
             continue
 
+        if is_video:
+            valid_segs = _frame_align_segments(valid_segs, 30.0)
+
         flac_path = associated[0]["original"] if associated else None
-        v_out = os.path.join(output_dir, f"{track_name}_processed.mp4")
         a_out = os.path.join(output_dir, f"{track_name}_processed.flac")
         entry: Dict[str, str] = {}
 
         if is_video:
-            encoder = detect_best_video_encoder()
+            encoder = detect_best_intra_frame_encoder()
+            ext = _video_extension(encoder)
+            v_out = os.path.join(output_dir, f"{track_name}_processed{ext}")
+            ef_opts = _edit_friendly_opts(encoder)
             src_bitrate = _get_video_bitrate(v_path)
-            ef_opts = _edit_friendly_opts()
-            enc_opts = {
-                "h264_nvenc": ["-preset", "p2", "-rc", "vbr_hq", "-b:v", f"{src_bitrate}", *ef_opts] if src_bitrate else ["-preset", "p2", "-cq", "23", *ef_opts],
-                "h264_qsv": ["-preset", "veryfast", "-global_quality", "23", *ef_opts],
-                "libx264": ["-preset", "superfast", "-crf", "23", *ef_opts],
-            }
-            if encoder == "h264_nvenc" and src_bitrate:
-                enc_opts["h264_nvenc"].extend(["-maxrate", f"{int(src_bitrate * 1.5)}"])
-            enc_opts = enc_opts.get(encoder, ["-preset", "superfast", "-crf", "23", *ef_opts])
+            nvenc_opts = ["-preset", "p2", "-rc", "vbr_hq", "-b:v", f"{src_bitrate}", "-maxrate", f"{int(src_bitrate * 1.5)}", *ef_opts] if src_bitrate else ["-preset", "p2", "-cq", "23", *ef_opts]
+            enc_opts = {"h264_nvenc": nvenc_opts,
+                        "h264_qsv": ["-preset", "veryfast", "-global_quality", "23", "-b:v", "50M", *ef_opts],
+                        "libx264": ["-preset", "superfast", "-crf", "23", *ef_opts],
+                        "prores_ks": ef_opts, "prores": ef_opts,
+                        "ffv1": ef_opts}.get(encoder, ef_opts)
             concat_script = os.path.join(output_dir, f"_concat_{track_name}.txt")
             with open(concat_script, "w", encoding="utf-8") as f:
                 f.write("ffconcat version 1.0\n")
@@ -452,7 +491,6 @@ def render_processed_video_lossless_cut(
                     "-f", "concat", "-safe", "0",
                     "-i", concat_script,
                     "-c:v", encoder, *enc_opts,
-                    "-vsync", "0",
                     *log, "-y", v_out
                 ], check=True)
             finally:
@@ -493,22 +531,24 @@ def render_processed_video(
 ) -> Dict[str, Dict[str, str]]:
     """Renders processed files per source with keep segments concatenated.
 
-    Produces two files per source: *_.mp4 (H.264 video + FLAC audio) and *_.flac (audio-only).
+    Produces two files per source: video (ProRes/FFV1/H.264 + FLAC audio) and FLAC (audio-only).
     Video and audio are cut together in a single filter graph so output durations match exactly.
     Uses ffmpeg's select/aselect filters with filter_complex_script to avoid
-    Windows cmd length limits. Uses best available hardware encoder (NVENC/QSV).
-    Returns dict mapping source path -> {video: mp4_path, audio: flac_path}.
+    Windows cmd length limits. Encodes with best available intra-frame codec
+    (ProRes > FFV1 > libx264 All-I) at constant frame rate for editing compatibility.
+    Returns dict mapping source path -> {video: video_path, audio: flac_path}.
     """
     if video_offsets is None:
         video_offsets = [0.0] * len(video_files)
 
-    encoder = detect_best_video_encoder()
-    ef_opts = _edit_friendly_opts()
-    enc_opts = {
-        "h264_nvenc": ["-preset", "p2", "-cq", "23", *ef_opts],
-        "h264_qsv": ["-preset", "veryfast", "-global_quality", "23", *ef_opts],
-        "libx264": ["-preset", "superfast", "-crf", "23", *ef_opts],
-    }.get(encoder, ["-preset", "superfast", "-crf", "23", *ef_opts])
+    encoder = detect_best_intra_frame_encoder()
+    ext = _video_extension(encoder)
+    ef_opts = _edit_friendly_opts(encoder)
+    enc_opts = {"h264_nvenc": ["-preset", "p2", "-rc", "vbr_hq", "-b:v", "50M", "-maxrate", "75M", *ef_opts],
+                "h264_qsv": ["-preset", "veryfast", "-global_quality", "23", "-b:v", "50M", *ef_opts],
+                "libx264": ["-preset", "superfast", "-crf", "23", *ef_opts],
+                "prores_ks": ef_opts, "prores": ef_opts,
+                "ffv1": ef_opts}.get(encoder, ef_opts)
 
     from tqdm import tqdm
 
@@ -533,15 +573,18 @@ def render_processed_video(
         if not valid_segs:
             continue
 
+        if is_video:
+            valid_segs = _frame_align_segments(valid_segs, 30.0)
+
         flac_path = associated[0]["original"] if associated else None
         select_parts = "+".join(f"between(t,{s},{e})" for s, e in valid_segs)
         log = ["-loglevel", "error", "-hide_banner"]
         filter_file = os.path.join(output_dir, f"_filter_{track_name}.txt")
         entry: Dict[str, str] = {}
+        v_out = os.path.join(output_dir, f"{track_name}_processed{ext}")
+        a_out = os.path.join(output_dir, f"{track_name}_processed.flac")
 
         if is_video and flac_path:
-            v_out = os.path.join(output_dir, f"{track_name}_processed.mp4")
-            a_out = os.path.join(output_dir, f"{track_name}_processed.flac")
             filter_graph = (
                 f"[0:v:0]select='{select_parts}',setpts=N/FRAME_RATE/TB[v];\n"
                 f"[1:a:0]aselect='{select_parts}',asetpts=N/SR/TB[a]"
@@ -568,7 +611,6 @@ def render_processed_video(
             ], check=True)
             entry["audio"] = a_out
         elif is_video:
-            v_out = os.path.join(output_dir, f"{track_name}_processed.mp4")
             filter_graph = f"[0:v:0]select='{select_parts}',setpts=N/FRAME_RATE/TB[v]"
             with open(filter_file, "w", encoding="utf-8") as f:
                 f.write(filter_graph)
@@ -585,7 +627,6 @@ def render_processed_video(
                     os.remove(filter_file)
             entry["video"] = v_out
         elif flac_path:
-            a_out = os.path.join(output_dir, f"{track_name}_processed.flac")
             filter_graph = f"aselect='{select_parts}',asetpts=N/SR/TB"
             with open(filter_file, "w", encoding="utf-8") as f:
                 f.write(filter_graph)
