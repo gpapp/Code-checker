@@ -578,6 +578,7 @@ def render_processed_video_lossless_cut(
                              "-f", "concat", "-safe", "0",
                              "-i", concat_script,
                              "-c:v", enc, *enc_opts_try,
+                             "-an",
                              *log, "-y", v_out],
                             total_dur, desc=f"  encoding {track_name}",
                         )
@@ -677,46 +678,10 @@ def render_processed_video(
 
         total_dur = sum(e - s for s, e in valid_segs)
 
-        if is_video and flac_path:
-            filter_graph = (
-                f"[0:v:0]select='{select_parts}',setpts=N/FRAME_RATE/TB[v];\n"
-                f"[1:a:0]aselect='{select_parts}',asetpts=N/SR/TB[a]"
-            )
+        if is_video:
+            v_filter = f"[0:v:0]select='{select_parts}',setpts=N/FRAME_RATE/TB[v]"
             with open(filter_file, "w", encoding="utf-8") as f:
-                f.write(filter_graph)
-            try:
-                for attempt, enc in enumerate(encoders_to_try):
-                    try:
-                        enc_opts_try = _encoder_opts(enc, ef_opts)
-                        _run_ffmpeg_progress(
-                            ["ffmpeg", "-i", v_path, "-i", flac_path,
-                             "-filter_complex_script", filter_file,
-                             "-map", "[v]", "-map", "[a]",
-                             "-c:v", enc, *enc_opts_try,
-                             "-c:a", "flac",
-                             *log, "-y", v_out],
-                            total_dur, desc=f"  encoding {track_name}",
-                        )
-                        break
-                    except subprocess.CalledProcessError:
-                        if attempt == len(encoders_to_try) - 1:
-                            raise
-                        _warn(f"  {enc} failed, falling back to {encoders_to_try[attempt + 1]}")
-            finally:
-                if os.path.exists(filter_file):
-                    os.remove(filter_file)
-            entry["video"] = v_out
-            _run_ffmpeg_progress(
-                ["ffmpeg", "-i", v_out,
-                 "-vn", "-c:a", "copy",
-                 *log, "-y", a_out],
-                total_dur, desc=f"  audio {track_name}",
-            )
-            entry["audio"] = a_out
-        elif is_video:
-            filter_graph = f"[0:v:0]select='{select_parts}',setpts=N/FRAME_RATE/TB[v]"
-            with open(filter_file, "w", encoding="utf-8") as f:
-                f.write(filter_graph)
+                f.write(v_filter)
             try:
                 for attempt, enc in enumerate(encoders_to_try):
                     try:
@@ -726,6 +691,7 @@ def render_processed_video(
                              "-filter_complex_script", filter_file,
                              "-map", "[v]",
                              "-c:v", enc, *enc_opts_try,
+                             "-an",
                              *log, "-y", v_out],
                             total_dur, desc=f"  encoding {track_name}",
                         )
@@ -738,7 +704,8 @@ def render_processed_video(
                 if os.path.exists(filter_file):
                     os.remove(filter_file)
             entry["video"] = v_out
-        elif flac_path:
+
+        if flac_path:
             filter_graph = f"aselect='{select_parts}',asetpts=N/SR/TB"
             with open(filter_file, "w", encoding="utf-8") as f:
                 f.write(filter_graph)
