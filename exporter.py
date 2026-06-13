@@ -389,6 +389,22 @@ def _edit_friendly_opts(encoder: str) -> List[str]:
     return ["-g", "1", "-pix_fmt", "yuv420p", "-movflags", "+faststart", "-r", "30", "-vsync", "cfr"]
 
 
+def _detect_target_fps(video_paths: List[str]) -> float:
+    """Return 10 if OBS recording (low-motion talking head), else 30."""
+    if any("obs" in Path(p).stem.lower() for p in video_paths):
+        return 10.0
+    return 30.0
+
+
+def _edit_friendly_opts(encoder: str, fps: float = 30.0) -> List[str]:
+    """Common options for edit-friendly output (intra-frame, CFR, broad compatibility)."""
+    if encoder in ("prores_ks", "prores"):
+        return ["-profile:v", "hq", "-pix_fmt", "yuv422p10le", "-r", str(int(fps)), "-vsync", "cfr"]
+    elif encoder == "ffv1":
+        return ["-level", "3", "-pix_fmt", "yuv422p", "-r", str(int(fps)), "-vsync", "cfr"]
+    return ["-g", "1", "-pix_fmt", "yuv420p", "-movflags", "+faststart", "-r", str(int(fps)), "-vsync", "cfr"]
+
+
 def _frame_align_segments(
     segments: List[Tuple[float, float]],
     fps: float,
@@ -490,6 +506,7 @@ def render_processed_video_lossless_cut(
 
     from tqdm import tqdm
 
+    target_fps = _detect_target_fps(video_files)
     os.makedirs(output_dir, exist_ok=True)
     rendered: Dict[str, Dict[str, str]] = {}
     log = ["-loglevel", "error", "-hide_banner"]
@@ -513,7 +530,7 @@ def render_processed_video_lossless_cut(
             continue
 
         if is_video:
-            valid_segs = _frame_align_segments(valid_segs, 30.0)
+            valid_segs = _frame_align_segments(valid_segs, target_fps)
 
         flac_path = associated[0]["original"] if associated else None
         a_out = os.path.join(output_dir, f"{track_name}_processed.flac")
@@ -523,17 +540,17 @@ def render_processed_video_lossless_cut(
             encoder = detect_best_intra_frame_encoder()
             ext = _video_extension(encoder)
             v_out = os.path.join(output_dir, f"{track_name}_processed{ext}")
-            ef_opts = _edit_friendly_opts(encoder)
+            ef_opts = _edit_friendly_opts(encoder, fps=target_fps)
             src_bitrate = _get_video_bitrate(v_path)
             if src_bitrate:
-                cap = 10_000_000
+                cap = 20_000_000
                 bv = min(src_bitrate, cap)
                 maxrate = min(int(src_bitrate * 1.5), cap)
                 nvenc_opts = ["-preset", "p2", "-rc", "vbr_hq", "-b:v", str(bv), "-maxrate", str(maxrate), *ef_opts]
             else:
                 nvenc_opts = ["-preset", "p2", "-cq", "23", *ef_opts]
             enc_opts = {"h264_nvenc": nvenc_opts,
-                        "h264_qsv": ["-preset", "veryfast", "-global_quality", "23", "-b:v", "10M", *ef_opts],
+                        "h264_qsv": ["-preset", "veryfast", "-global_quality", "23", "-b:v", "20M", *ef_opts],
                         "libx264": ["-preset", "superfast", "-crf", "23", *ef_opts],
                         "prores_ks": ef_opts, "prores": ef_opts,
                         "ffv1": ef_opts}.get(encoder, ef_opts)
@@ -605,7 +622,8 @@ def render_processed_video(
 
     encoder = detect_best_intra_frame_encoder()
     ext = _video_extension(encoder)
-    ef_opts = _edit_friendly_opts(encoder)
+    target_fps = _detect_target_fps(video_files)
+    ef_opts = _edit_friendly_opts(encoder, fps=target_fps)
     enc_opts = {"h264_nvenc": ["-preset", "p2", "-rc", "vbr_hq", "-b:v", "10M", "-maxrate", "15M", *ef_opts],
                 "h264_qsv": ["-preset", "veryfast", "-global_quality", "23", "-b:v", "10M", *ef_opts],
                 "libx264": ["-preset", "superfast", "-crf", "23", *ef_opts],
@@ -636,7 +654,7 @@ def render_processed_video(
             continue
 
         if is_video:
-            valid_segs = _frame_align_segments(valid_segs, 30.0)
+            valid_segs = _frame_align_segments(valid_segs, target_fps)
 
         flac_path = associated[0]["original"] if associated else None
         select_parts = "+".join(f"between(t,{s},{e})" for s, e in valid_segs)
