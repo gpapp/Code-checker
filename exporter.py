@@ -3,6 +3,8 @@ import math
 import logging
 import subprocess
 import sys
+import threading
+import queue
 from pathlib import Path
 import xml.etree.ElementTree as ET
 from typing import List, Tuple, Dict, Set
@@ -402,6 +404,53 @@ def _frame_align_segments(
     return aligned
 
 
+def _run_ffmpeg_progress(
+    cmd: List[str],
+    total_duration: float,
+    desc: str = "",
+) -> None:
+    """Run ffmpeg command with tqdm progress bar tracking out_time_us."""
+    from tqdm import tqdm
+    q: "queue.Queue[bytes]" = queue.Queue()
+
+    proc = subprocess.Popen(
+        [*cmd, "-progress", "pipe:1"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+    )
+
+    def _reader(stream, q):
+        for line in iter(stream.readline, b''):
+            q.put(line)
+
+    thread = threading.Thread(target=_reader, args=(proc.stdout, q), daemon=True)
+    thread.start()
+
+    try:
+        with tqdm(total=total_duration, unit="s", desc=desc, leave=False) as pbar:
+            last_us = 0
+            while proc.poll() is None:
+                try:
+                    line = q.get(timeout=0.5)
+                    text = line.decode("utf-8", errors="replace").strip()
+                    if text.startswith("out_time_us="):
+                        us = int(text.split("=")[1])
+                        if us > last_us:
+                            pbar.update((us - last_us) / 1_000_000)
+                            last_us = us
+                except queue.Empty:
+                    pass
+            proc.wait()
+            remaining = max(0.0, total_duration - last_us / 1_000_000)
+            if remaining > 0:
+                pbar.update(remaining)
+    finally:
+        proc.stdout.close()
+        thread.join(timeout=2)
+        if proc.returncode:
+            raise subprocess.CalledProcessError(proc.returncode, cmd)
+
+
 def _get_video_bitrate(video_path: str) -> int:
     """Get the video stream bitrate in bps, or 0 if unknown."""
     try:
@@ -491,14 +540,16 @@ def render_processed_video_lossless_cut(
                     f.write(f"file '{v_path.replace(chr(92), '/')}'\n")
                     f.write(f"inpoint {s}\n")
                     f.write(f"outpoint {e}\n")
+            total_dur = sum(e - s for s, e in valid_segs)
             try:
-                subprocess.run([
-                    "ffmpeg",
-                    "-f", "concat", "-safe", "0",
-                    "-i", concat_script,
-                    "-c:v", encoder, *enc_opts,
-                    *log, "-y", v_out
-                ], check=True)
+                _run_ffmpeg_progress(
+                    ["ffmpeg",
+                     "-f", "concat", "-safe", "0",
+                     "-i", concat_script,
+                     "-c:v", encoder, *enc_opts,
+                     *log, "-y", v_out],
+                    total_dur, desc=f"  encoding {track_name}",
+                )
             finally:
                 if os.path.exists(concat_script):
                     os.remove(concat_script)
@@ -511,12 +562,13 @@ def render_processed_video_lossless_cut(
             with open(filter_file, "w", encoding="utf-8") as f:
                 f.write(filter_graph)
             try:
-                subprocess.run([
-                    "ffmpeg", "-i", flac_path,
-                    "-filter_complex_script", filter_file,
-                    "-c:a", "flac",
-                    *log, "-y", a_out
-                ], check=True)
+                _run_ffmpeg_progress(
+                    ["ffmpeg", "-i", flac_path,
+                     "-filter_complex_script", filter_file,
+                     "-c:a", "flac",
+                     *log, "-y", a_out],
+                    sum(e - s for s, e in valid_segs), desc=f"  audio {track_name}",
+                )
             finally:
                 if os.path.exists(filter_file):
                     os.remove(filter_file)
@@ -590,6 +642,8 @@ def render_processed_video(
         v_out = os.path.join(output_dir, f"{track_name}_processed{ext}")
         a_out = os.path.join(output_dir, f"{track_name}_processed.flac")
 
+        total_dur = sum(e - s for s, e in valid_segs)
+
         if is_video and flac_path:
             filter_graph = (
                 f"[0:v:0]select='{select_parts}',setpts=N/FRAME_RATE/TB[v];\n"
@@ -598,36 +652,39 @@ def render_processed_video(
             with open(filter_file, "w", encoding="utf-8") as f:
                 f.write(filter_graph)
             try:
-                subprocess.run([
-                    "ffmpeg", "-i", v_path, "-i", flac_path,
-                    "-filter_complex_script", filter_file,
-                    "-map", "[v]", "-map", "[a]",
-                    "-c:v", encoder, *enc_opts,
-                    "-c:a", "flac",
-                    *log, "-y", v_out
-                ], check=True)
+                _run_ffmpeg_progress(
+                    ["ffmpeg", "-i", v_path, "-i", flac_path,
+                     "-filter_complex_script", filter_file,
+                     "-map", "[v]", "-map", "[a]",
+                     "-c:v", encoder, *enc_opts,
+                     "-c:a", "flac",
+                     *log, "-y", v_out],
+                    total_dur, desc=f"  encoding {track_name}",
+                )
             finally:
                 if os.path.exists(filter_file):
                     os.remove(filter_file)
             entry["video"] = v_out
-            subprocess.run([
-                "ffmpeg", "-i", v_out,
-                "-vn", "-c:a", "copy",
-                *log, "-y", a_out
-            ], check=True)
+            _run_ffmpeg_progress(
+                ["ffmpeg", "-i", v_out,
+                 "-vn", "-c:a", "copy",
+                 *log, "-y", a_out],
+                total_dur, desc=f"  audio {track_name}",
+            )
             entry["audio"] = a_out
         elif is_video:
             filter_graph = f"[0:v:0]select='{select_parts}',setpts=N/FRAME_RATE/TB[v]"
             with open(filter_file, "w", encoding="utf-8") as f:
                 f.write(filter_graph)
             try:
-                subprocess.run([
-                    "ffmpeg", "-i", v_path,
-                    "-filter_complex_script", filter_file,
-                    "-map", "[v]",
-                    "-c:v", encoder, *enc_opts,
-                    *log, "-y", v_out
-                ], check=True)
+                _run_ffmpeg_progress(
+                    ["ffmpeg", "-i", v_path,
+                     "-filter_complex_script", filter_file,
+                     "-map", "[v]",
+                     "-c:v", encoder, *enc_opts,
+                     *log, "-y", v_out],
+                    total_dur, desc=f"  encoding {track_name}",
+                )
             finally:
                 if os.path.exists(filter_file):
                     os.remove(filter_file)
@@ -637,12 +694,13 @@ def render_processed_video(
             with open(filter_file, "w", encoding="utf-8") as f:
                 f.write(filter_graph)
             try:
-                subprocess.run([
-                    "ffmpeg", "-i", flac_path,
-                    "-filter_complex_script", filter_file,
-                    "-c:a", "flac",
-                    *log, "-y", a_out
-                ], check=True)
+                _run_ffmpeg_progress(
+                    ["ffmpeg", "-i", flac_path,
+                     "-filter_complex_script", filter_file,
+                     "-c:a", "flac",
+                     *log, "-y", a_out],
+                    total_dur, desc=f"  encoding {track_name}",
+                )
             finally:
                 if os.path.exists(filter_file):
                     os.remove(filter_file)
