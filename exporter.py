@@ -349,18 +349,22 @@ def generate_kdenlive_project(
         f.write(proj.to_xml(kdenlive_format=True))
 
 def detect_best_intra_frame_encoder() -> str:
-    """Detect best available intra-frame encoder (prores_ks > prores > ffv1 > libx264)."""
+    """Detect best available intra-frame encoder (H.264 All-I > ProRes > FFV1)."""
     try:
         result = subprocess.run(
             ["ffmpeg", "-hide_banner", "-encoders"],
             capture_output=True, text=True, check=True
         )
         encoders = result.stdout
+        if "h264_nvenc" in encoders:
+            return "h264_nvenc"
+        if "h264_qsv" in encoders:
+            return "h264_qsv"
         if "prores_ks" in encoders:
             return "prores_ks"
-        elif "prores" in encoders:
+        if "prores" in encoders:
             return "prores"
-        elif "ffv1" in encoders:
+        if "ffv1" in encoders:
             return "ffv1"
     except Exception:
         pass
@@ -529,7 +533,7 @@ def render_processed_video_lossless_cut(
             else:
                 nvenc_opts = ["-preset", "p2", "-cq", "23", *ef_opts]
             enc_opts = {"h264_nvenc": nvenc_opts,
-                        "h264_qsv": ["-preset", "veryfast", "-global_quality", "23", "-b:v", "50M", *ef_opts],
+                        "h264_qsv": ["-preset", "veryfast", "-global_quality", "23", "-b:v", "10M", *ef_opts],
                         "libx264": ["-preset", "superfast", "-crf", "23", *ef_opts],
                         "prores_ks": ef_opts, "prores": ef_opts,
                         "ffv1": ef_opts}.get(encoder, ef_opts)
