@@ -473,7 +473,7 @@ def render_processed_video_lossless_cut(
             ef_opts = _edit_friendly_opts(encoder)
             src_bitrate = _get_video_bitrate(v_path)
             if src_bitrate:
-                cap = 50_000_000
+                cap = 10_000_000
                 bv = min(src_bitrate, cap)
                 maxrate = min(int(src_bitrate * 1.5), cap)
                 nvenc_opts = ["-preset", "p2", "-rc", "vbr_hq", "-b:v", str(bv), "-maxrate", str(maxrate), *ef_opts]
@@ -550,8 +550,8 @@ def render_processed_video(
     encoder = detect_best_intra_frame_encoder()
     ext = _video_extension(encoder)
     ef_opts = _edit_friendly_opts(encoder)
-    enc_opts = {"h264_nvenc": ["-preset", "p2", "-rc", "vbr_hq", "-b:v", "50M", "-maxrate", "75M", *ef_opts],
-                "h264_qsv": ["-preset", "veryfast", "-global_quality", "23", "-b:v", "50M", *ef_opts],
+    enc_opts = {"h264_nvenc": ["-preset", "p2", "-rc", "vbr_hq", "-b:v", "10M", "-maxrate", "15M", *ef_opts],
+                "h264_qsv": ["-preset", "veryfast", "-global_quality", "23", "-b:v", "10M", *ef_opts],
                 "libx264": ["-preset", "superfast", "-crf", "23", *ef_opts],
                 "prores_ks": ef_opts, "prores": ef_opts,
                 "ffv1": ef_opts}.get(encoder, ef_opts)
