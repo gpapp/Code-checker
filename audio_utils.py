@@ -48,6 +48,19 @@ def get_audio_stream_indices(file_path: str) -> list[int]:
     data = json.loads(result.stdout)
     return [s["index"] for s in data.get("streams", [])]
 
+def get_audio_sample_rate(file_path: str, stream_index: int) -> int:
+    """Returns the sample rate (Hz) of the given audio stream."""
+    cmd = [
+        "ffprobe", "-v", "error", "-select_streams", f"a:{stream_index}",
+        "-show_entries", "stream=sample_rate", "-of", "json", file_path
+    ]
+    result = subprocess.run(cmd, check=True, capture_output=True, text=True)
+    data = json.loads(result.stdout)
+    streams = data.get("streams", [])
+    if streams:
+        return int(streams[0].get("sample_rate", 16000))
+    return 16000
+
 def get_track_name_from_path(file_path: str) -> str:
     """Extracts a clean track name from a file path, keeping only the last -- segment."""
     base_name = os.path.splitext(os.path.basename(file_path))[0]
@@ -77,11 +90,12 @@ def process_streams_to_flac(file_path: str, output_dir: str) -> list[dict]:
             flac_info.append({"flac": output_path, "stream_idx": abs_idx})
             continue
 
+        sr = get_audio_sample_rate(file_path, abs_idx)
         logger.info(f"Pass 1/2: Measuring loudness for stream {i} from {os.path.basename(file_path)}...")
         compressor = "acompressor=ratio=8:attack=5:release=200:threshold=-40dB:makeup=12dB"
         measure_cmd = [
             "ffmpeg", "-i", file_path, "-map", f"0:a:{i}",
-            "-ac", "1", "-ar", "16000",
+            "-ac", "1", "-ar", str(sr),
             "-af", f"{compressor},loudnorm=I=-14:LRA=11:TP=-1.5:print_format=json",
             "-f", "null", "NUL"
         ]
@@ -112,7 +126,7 @@ def process_streams_to_flac(file_path: str, output_dir: str) -> list[dict]:
         )
         process_cmd = [
             "ffmpeg", "-i", file_path, "-map", f"0:a:{i}",
-            "-ac", "1", "-ar", "16000",
+            "-ac", "1", "-ar", str(sr),
             "-af", filter_chain,
             "-c:a", "flac",
             "-y", output_path
@@ -126,7 +140,7 @@ def process_streams_to_flac(file_path: str, output_dir: str) -> list[dict]:
 def detect_silence_and_spikes(audio_path: str, threshold_db: float, min_silence_len: float, max_spike_len: float):
     """Detects silent intervals and short spikes in an audio file."""
     y, sr = librosa.load(audio_path, sr=16000)
-    
+
     # Apply a localized noise gate in-memory at 1% of peak amplitude (-40dB relative).
     # Using a relative threshold ensures quiet speakers aren't gated out.
     y_gated = y.copy()
