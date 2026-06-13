@@ -380,13 +380,32 @@ def _video_extension(encoder: str) -> str:
     return ".mp4"
 
 
-def _edit_friendly_opts(encoder: str) -> List[str]:
-    """Common options for edit-friendly output (30fps, intra-frame, CFR, broad compatibility)."""
+def _edit_friendly_opts(encoder: str, fps: float = 30.0) -> List[str]:
+    """Common options for edit-friendly output (intra-frame, CFR, broad compatibility)."""
+    fps_str = str(int(fps))
     if encoder in ("prores_ks", "prores"):
-        return ["-profile:v", "hq", "-pix_fmt", "yuv422p10le", "-r", "30", "-vsync", "cfr"]
+        return ["-profile:v", "hq", "-pix_fmt", "yuv422p10le", "-r", fps_str, "-vsync", "cfr"]
     elif encoder == "ffv1":
-        return ["-level", "3", "-pix_fmt", "yuv422p", "-r", "30", "-vsync", "cfr"]
-    return ["-g", "1", "-pix_fmt", "yuv420p", "-movflags", "+faststart", "-r", "30", "-vsync", "cfr"]
+        return ["-level", "3", "-pix_fmt", "yuv422p", "-r", fps_str, "-vsync", "cfr"]
+    return ["-g", "1", "-pix_fmt", "yuv420p", "-movflags", "+faststart", "-r", fps_str, "-vsync", "cfr"]
+
+
+def _encoder_opts(encoder: str, ef_opts: List[str]) -> List[str]:
+    """Per-encoder options (preset, rate control, bitrate)."""
+    base = {
+        "h264_nvenc": ["-preset", "p2", "-rc", "vbr_hq", "-b:v", "20M", "-maxrate", "30M"],
+        "h264_qsv": ["-preset", "veryfast", "-global_quality", "23", "-b:v", "20M"],
+        "libx264": ["-preset", "superfast", "-crf", "23"],
+        "prores_ks": [],
+        "prores": [],
+        "ffv1": [],
+    }.get(encoder, [])
+    return [*base, *ef_opts]
+
+
+def _warn(msg: str) -> None:
+    import sys
+    print(msg, file=sys.stderr)
 
 
 def _detect_target_fps(video_paths: List[str]) -> float:
@@ -541,19 +560,6 @@ def render_processed_video_lossless_cut(
             ext = _video_extension(encoder)
             v_out = os.path.join(output_dir, f"{track_name}_processed{ext}")
             ef_opts = _edit_friendly_opts(encoder, fps=target_fps)
-            src_bitrate = _get_video_bitrate(v_path)
-            if src_bitrate:
-                cap = 20_000_000
-                bv = min(src_bitrate, cap)
-                maxrate = min(int(src_bitrate * 1.5), cap)
-                nvenc_opts = ["-preset", "p2", "-rc", "vbr_hq", "-b:v", str(bv), "-maxrate", str(maxrate), *ef_opts]
-            else:
-                nvenc_opts = ["-preset", "p2", "-cq", "23", *ef_opts]
-            enc_opts = {"h264_nvenc": nvenc_opts,
-                        "h264_qsv": ["-preset", "veryfast", "-global_quality", "23", "-b:v", "20M", *ef_opts],
-                        "libx264": ["-preset", "superfast", "-crf", "23", *ef_opts],
-                        "prores_ks": ef_opts, "prores": ef_opts,
-                        "ffv1": ef_opts}.get(encoder, ef_opts)
             concat_script = os.path.join(output_dir, f"_concat_{track_name}.txt")
             with open(concat_script, "w", encoding="utf-8") as f:
                 f.write("ffconcat version 1.0\n")
@@ -563,14 +569,23 @@ def render_processed_video_lossless_cut(
                     f.write(f"outpoint {e}\n")
             total_dur = sum(e - s for s, e in valid_segs)
             try:
-                _run_ffmpeg_progress(
-                    ["ffmpeg",
-                     "-f", "concat", "-safe", "0",
-                     "-i", concat_script,
-                     "-c:v", encoder, *enc_opts,
-                     *log, "-y", v_out],
-                    total_dur, desc=f"  encoding {track_name}",
-                )
+                encoders_to_try = [encoder, "libx264"]
+                for attempt, enc in enumerate(encoders_to_try):
+                    try:
+                        enc_opts_try = _encoder_opts(enc, ef_opts)
+                        _run_ffmpeg_progress(
+                            ["ffmpeg",
+                             "-f", "concat", "-safe", "0",
+                             "-i", concat_script,
+                             "-c:v", enc, *enc_opts_try,
+                             *log, "-y", v_out],
+                            total_dur, desc=f"  encoding {track_name}",
+                        )
+                        break
+                    except subprocess.CalledProcessError:
+                        if attempt == len(encoders_to_try) - 1:
+                            raise
+                        _warn(f"  {enc} failed, falling back to {encoders_to_try[attempt + 1]}")
             finally:
                 if os.path.exists(concat_script):
                     os.remove(concat_script)
@@ -624,11 +639,7 @@ def render_processed_video(
     ext = _video_extension(encoder)
     target_fps = _detect_target_fps(video_files)
     ef_opts = _edit_friendly_opts(encoder, fps=target_fps)
-    enc_opts = {"h264_nvenc": ["-preset", "p2", "-rc", "vbr_hq", "-b:v", "10M", "-maxrate", "15M", *ef_opts],
-                "h264_qsv": ["-preset", "veryfast", "-global_quality", "23", "-b:v", "10M", *ef_opts],
-                "libx264": ["-preset", "superfast", "-crf", "23", *ef_opts],
-                "prores_ks": ef_opts, "prores": ef_opts,
-                "ffv1": ef_opts}.get(encoder, ef_opts)
+    encoders_to_try = [encoder, "libx264"]
 
     from tqdm import tqdm
 
@@ -674,15 +685,23 @@ def render_processed_video(
             with open(filter_file, "w", encoding="utf-8") as f:
                 f.write(filter_graph)
             try:
-                _run_ffmpeg_progress(
-                    ["ffmpeg", "-i", v_path, "-i", flac_path,
-                     "-filter_complex_script", filter_file,
-                     "-map", "[v]", "-map", "[a]",
-                     "-c:v", encoder, *enc_opts,
-                     "-c:a", "flac",
-                     *log, "-y", v_out],
-                    total_dur, desc=f"  encoding {track_name}",
-                )
+                for attempt, enc in enumerate(encoders_to_try):
+                    try:
+                        enc_opts_try = _encoder_opts(enc, ef_opts)
+                        _run_ffmpeg_progress(
+                            ["ffmpeg", "-i", v_path, "-i", flac_path,
+                             "-filter_complex_script", filter_file,
+                             "-map", "[v]", "-map", "[a]",
+                             "-c:v", enc, *enc_opts_try,
+                             "-c:a", "flac",
+                             *log, "-y", v_out],
+                            total_dur, desc=f"  encoding {track_name}",
+                        )
+                        break
+                    except subprocess.CalledProcessError:
+                        if attempt == len(encoders_to_try) - 1:
+                            raise
+                        _warn(f"  {enc} failed, falling back to {encoders_to_try[attempt + 1]}")
             finally:
                 if os.path.exists(filter_file):
                     os.remove(filter_file)
@@ -699,14 +718,22 @@ def render_processed_video(
             with open(filter_file, "w", encoding="utf-8") as f:
                 f.write(filter_graph)
             try:
-                _run_ffmpeg_progress(
-                    ["ffmpeg", "-i", v_path,
-                     "-filter_complex_script", filter_file,
-                     "-map", "[v]",
-                     "-c:v", encoder, *enc_opts,
-                     *log, "-y", v_out],
-                    total_dur, desc=f"  encoding {track_name}",
-                )
+                for attempt, enc in enumerate(encoders_to_try):
+                    try:
+                        enc_opts_try = _encoder_opts(enc, ef_opts)
+                        _run_ffmpeg_progress(
+                            ["ffmpeg", "-i", v_path,
+                             "-filter_complex_script", filter_file,
+                             "-map", "[v]",
+                             "-c:v", enc, *enc_opts_try,
+                             *log, "-y", v_out],
+                            total_dur, desc=f"  encoding {track_name}",
+                        )
+                        break
+                    except subprocess.CalledProcessError:
+                        if attempt == len(encoders_to_try) - 1:
+                            raise
+                        _warn(f"  {enc} failed, falling back to {encoders_to_try[attempt + 1]}")
             finally:
                 if os.path.exists(filter_file):
                     os.remove(filter_file)
