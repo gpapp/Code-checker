@@ -408,9 +408,9 @@ def _warn(msg: str) -> None:
     print(msg, file=sys.stderr)
 
 
-def _detect_target_fps(video_paths: List[str]) -> float:
+def _detect_target_fps(video_path: str) -> float:
     """Return 10 if OBS recording (low-motion talking head), else 25."""
-    if any("obs" in Path(p).stem.lower() for p in video_paths):
+    if "obs" in Path(video_path).stem.lower():
         return 10.0
     return 25.0
 
@@ -525,13 +525,13 @@ def render_processed_video_lossless_cut(
 
     from tqdm import tqdm
 
-    target_fps = _detect_target_fps(video_files)
     os.makedirs(output_dir, exist_ok=True)
     rendered: Dict[str, Dict[str, str]] = {}
     log = ["-loglevel", "error", "-hide_banner"]
 
     for vf_idx, v_path in enumerate(tqdm(video_files, desc="Rendering sources", unit="source")):
         offset = video_offsets[vf_idx] if vf_idx < len(video_offsets) else 0.0
+        target_fps = _detect_target_fps(v_path)
         is_video = has_video_stream(v_path)
         associated = audio_files.get(v_path, [])
         track_name = get_track_name_from_path(v_path)
@@ -638,8 +638,6 @@ def render_processed_video(
 
     encoder = detect_best_intra_frame_encoder()
     ext = _video_extension(encoder)
-    target_fps = _detect_target_fps(video_files)
-    ef_opts = _edit_friendly_opts(encoder, fps=target_fps)
     encoders_to_try = [encoder, "libx264"]
 
     from tqdm import tqdm
@@ -649,6 +647,8 @@ def render_processed_video(
 
     for vf_idx, v_path in enumerate(tqdm(video_files, desc="Rendering sources", unit="source")):
         offset = video_offsets[vf_idx] if vf_idx < len(video_offsets) else 0.0
+        target_fps = _detect_target_fps(v_path)
+        ef_opts = _edit_friendly_opts(encoder, fps=target_fps)
         is_video = has_video_stream(v_path)
         associated = audio_files.get(v_path, [])
         track_name = get_track_name_from_path(v_path)
