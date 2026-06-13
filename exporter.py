@@ -409,10 +409,10 @@ def _warn(msg: str) -> None:
 
 
 def _detect_target_fps(video_paths: List[str]) -> float:
-    """Return 10 if OBS recording (low-motion talking head), else 30."""
+    """Return 10 if OBS recording (low-motion talking head), else 25."""
     if any("obs" in Path(p).stem.lower() for p in video_paths):
         return 10.0
-    return 30.0
+    return 25.0
 
 
 def _edit_friendly_opts(encoder: str, fps: float = 30.0) -> List[str]:
