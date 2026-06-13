@@ -14,6 +14,7 @@
 - **Audio Processing**: All audio streams are processed to FLAC in `video_processing_work/` with two-pass loudnorm (-14 LUFS) + compression. Analysis runs on FLAC files; no raw WAVs are stored.
 - **Cache**: JSON files (`*.asr.json`, `*.markers.json`, etc.) stored in `video_processing_work/` keyed by source file basename
 - **Rendering**: `render_processed_video()` (step 6) concatenates keep segments per source into one file using best hardware encoder (`h264_nvenc` > `h264_qsv` > `libx264`). Presets favor speed: `p2` (NVENC), `veryfast` (QSV), `superfast` (libx264). Output goes to `grandparent_dir/PROCESSED/`.
+- **Lossless Cut** (default): Uses `-ss`/`-to` per segment with `concat` filter — decodes only the keep segments (fast seek), no temp files. Much faster than full decode for sparse content. Use `--full-render` to disable.
 - **Output**: `{grandparent_name}.kdenlive` placed in `grandparent_dir/` (no sequence-level audio filters). References rendered files in `PROCESSED/` by absolute path.
 - **Timecode Architecture** (`mlt-python` + `exporter.py`): The MLT XML format uses `HH:MM:SS:FF` timecodes for `entry` in/out points. All time positions in `Clip`, `Blank`, `Filter`, `Transition` are stored as timecode strings. Frame conversion happens only at XML serialization boundary (`Blank.to_xml(fps)`) and arithmetic boundaries (`add_clip` computes inclusive `out_point` from exclusive `end`). The exporter works in float-seconds internally, converting to timecodes only when calling `Playlist.add_clip`/`add_blank`.
 
@@ -30,7 +31,7 @@
 - **Input**: `.mkv`, `.mp4`, `.avi`, `.mp3`, `.wav`, `.m4a`
 - **Work files** (in `video_processing_work/`): `*.markers.json`, `*.asr.json`, `*.filler_*.json`, `*.reps.json`, `*.vad.json`
 - **Filler model**: `filler_detector.pth` (single file, overwritten on retrain); Hungarian dataset in `fillers_hun/` trains with 5x weight
-- **Rendered files** (in `grandparent_dir/PROCESSED/`): `*_processed.mp4` (video-only H.264), `*_processed.flac` (audio-only)
+- **Rendered files** (in `grandparent_dir/PROCESSED/`): `*_processed.mp4` (H.264 video + FLAC audio), `*_processed.flac` (audio-only extracted via stream copy)
 - **Kdenlive project**: `grandparent_dir/{grandparent_name}.kdenlive`
 
 ## Testing

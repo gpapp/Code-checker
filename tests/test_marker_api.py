@@ -7,14 +7,14 @@ import sys
 sys.path.insert(0, '.')
 sys.path.insert(0, r'c:\Users\gerge\source\repos\mlt-python\src')
 from exporter import generate_kdenlive_project
-from mlt_python.marker import Marker, markers_from_json
+from mlt_python.marker import Marker, markers_from_json, markers_to_json
 
 
 @patch("exporter.get_video_duration", return_value=30.0)
 @patch("exporter.has_video_stream", return_value=True)
 @patch("os.path.exists", return_value=True)
 def test_filler_markers_use_mlt_python_api(mock_exists, mock_has_vid, mock_dur, working_dir):
-    """Test that no filler markers exist in output (marker support was removed)."""
+    """Test that filler markers are added as kdenlive:markers on audio chains."""
     output_path = os.path.join(working_dir, "test_markers.kdenlive")
     
     video_files = ["video.mkv"]
@@ -50,26 +50,42 @@ def test_filler_markers_use_mlt_python_api(mock_exists, mock_has_vid, mock_dur, 
     tree = ET.parse(output_path)
     root = tree.getroot()
     
+    # Find the chain for audio.wav
+    audio_chain = None
     for chain in root.findall(".//chain"):
-        markers_prop = chain.find("property[@name='kdenlive:markers']")
-        assert markers_prop is None, "No markers should exist in output"
+        res = chain.find("property[@name='resource']")
+        if res is not None and audio_path in res.text:
+            audio_chain = chain
+            break
+    assert audio_chain is not None, "Audio chain should exist"
+    
+    markers_prop = audio_chain.find("property[@name='kdenlive:markers']")
+    assert markers_prop is not None, "Filler markers should exist on audio chain"
+    
+    parsed_markers = json.loads(markers_prop.text)
+    assert len(parsed_markers) == 3
+    
+    # Verify marker positions (in frames at 25fps, banker's rounding)
+    assert parsed_markers[0]["pos"] == 38  # round(1.5 * 25) = round(37.5) = 38
+    assert parsed_markers[0]["duration"] == 25  # round(1.0 * 25) = 25
+    assert parsed_markers[0]["comment"] == "Filler"
+    assert parsed_markers[1]["pos"] == 125  # 5.0s * 25 = 125
+    assert parsed_markers[2]["pos"] == 250  # 10.0s * 25 = 250
+    assert parsed_markers[2]["duration"] == 50  # 2.0s * 25 = 50
 
 
 @patch("exporter.get_video_duration", return_value=30.0)
 @patch("exporter.has_video_stream", return_value=True)
 @patch("os.path.exists", return_value=True)
-def test_marker_json_format_valid(mock_exists, mock_has_vid, mock_dur, working_dir):
-    """Test that no markers exist in output (marker support was removed)."""
+def test_filler_marker_no_fillers(mock_exists, mock_has_vid, mock_dur, working_dir):
+    """Test that no markers exist when no fillers are provided."""
     output_path = os.path.join(working_dir, "test_marker_format.kdenlive")
     
     video_files = ["video.mkv"]
     audio_path = "audio.wav"
     
-    fillers = [(3.0, 4.0)]
-    
     stream_markers = {
         audio_path: {
-            "fillers": fillers,
             "silence": [],
             "spikes": []
         }
@@ -96,12 +112,11 @@ def test_marker_json_format_valid(mock_exists, mock_has_vid, mock_dur, working_d
     
     for chain in root.findall(".//chain"):
         markers_prop = chain.find("property[@name='kdenlive:markers']")
-        assert markers_prop is None, "No markers should exist in output"
+        assert markers_prop is None, "No markers should exist when no fillers provided"
 
 
 def test_marker_api_direct():
     """Test mlt-python Marker API directly without exporter."""
-    from mlt_python.marker import markers_to_json
     
     # Create markers using the API
     markers = [

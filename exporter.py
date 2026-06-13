@@ -146,7 +146,7 @@ def generate_kdenlive_project(
             "offset": video_offsets[i] if i < len(video_offsets) else 0.0,
             "asr": asr_words[i] if asr_words and i < len(asr_words) else []
         })
-    paired_inputs.sort(key=lambda x: (not has_video_stream(x["path"]), x["path"]))
+    paired_inputs.sort(key=lambda x: (not has_video_stream(x["path"]), video_files.index(x["path"])))
 
     for i, item in enumerate(paired_inputs):
         file_path = item["path"]
@@ -160,8 +160,8 @@ def generate_kdenlive_project(
     added_audio_tracks: Set[str] = set()
     av_track_mapping: Dict[str, Dict] = {}
 
-    # --- Pass 1: Audio Tracks (Reverse Order) ---
-    for item in reversed(paired_inputs):
+    # --- Pass 1: Audio Tracks (Forward Order) ---
+    for item in paired_inputs:
         video_path = item["path"]
         offset = item["offset"]
         is_vid = has_video_stream(video_path)
@@ -295,10 +295,19 @@ def generate_kdenlive_project(
                         playlist.add_blank((target_end_frame - curr_frame) / fps)
                         curr_frame = target_end_frame
 
+                # Add filler markers on this audio chain (visible as colored bars in timeline)
+                filler_intervals = markers_data.get("fillers", [])
+                for fs, fe in filler_intervals:
+                    if fe - fs > 0.01:
+                        proj.add_marker(
+                            fs, comment="Filler", marker_type=4,
+                            duration=fe - fs, producer_id=audio_clip_producer.id
+                        )
+
                 added_audio_tracks.add(audio_clip_key)
 
-    # --- Pass 2: Video Tracks (Forward Order to Mirror Audio) ---
-    for item in paired_inputs:
+    # --- Pass 2: Video Tracks (Reverse Order to Mirror Audio) ---
+    for item in reversed(paired_inputs):
         video_path = item["path"]
         offset = item["offset"]
         is_vid = has_video_stream(video_path)
@@ -353,6 +362,128 @@ def detect_best_video_encoder() -> str:
     return "libx264"
 
 
+def _edit_friendly_opts() -> List[str]:
+    """Common options for edit-friendly output (All-I, faststart, broad compatibility)."""
+    return ["-g", "1", "-pix_fmt", "yuv420p", "-movflags", "+faststart"]
+
+
+def _get_video_bitrate(video_path: str) -> int:
+    """Get the video stream bitrate in bps, or 0 if unknown."""
+    try:
+        result = subprocess.run(
+            ["ffprobe", "-v", "error", "-select_streams", "v:0",
+             "-show_entries", "stream=bit_rate",
+             "-of", "default=noprint_wrappers=1:nokey=1",
+             video_path],
+            capture_output=True, text=True, check=True
+        )
+        val = result.stdout.strip()
+        return int(val) if val else 0
+    except (ValueError, subprocess.CalledProcessError):
+        return 0
+
+
+def render_processed_video_lossless_cut(
+    video_files: List[str],
+    audio_files: Dict[str, List[Dict]],
+    keep_segments: List[Tuple[float, float]],
+    output_dir: str,
+    video_offsets: List[float] = None,
+) -> Dict[str, Dict[str, str]]:
+    """Lossless-cut rendering using -ss/-to per segment + concat filter.
+
+    Uses -ss/-to before each input to seek fast (decodes only keep segments),
+    then concatenates with the concat filter. No temp files needed.
+    """
+    if video_offsets is None:
+        video_offsets = [0.0] * len(video_files)
+
+    from tqdm import tqdm
+
+    os.makedirs(output_dir, exist_ok=True)
+    rendered: Dict[str, Dict[str, str]] = {}
+    log = ["-loglevel", "error", "-hide_banner"]
+
+    for vf_idx, v_path in enumerate(tqdm(video_files, desc="Rendering sources", unit="source")):
+        offset = video_offsets[vf_idx] if vf_idx < len(video_offsets) else 0.0
+        is_video = has_video_stream(v_path)
+        associated = audio_files.get(v_path, [])
+        track_name = get_track_name_from_path(v_path)
+        if not is_video and not associated:
+            continue
+        src_dur = get_video_duration(v_path)
+
+        valid_segs = []
+        for ks, ke in keep_segments:
+            s = max(0.0, ks + offset)
+            e = min(src_dur, ke + offset)
+            if s < e:
+                valid_segs.append((s, e))
+        if not valid_segs:
+            continue
+
+        flac_path = associated[0]["original"] if associated else None
+        v_out = os.path.join(output_dir, f"{track_name}_processed.mp4")
+        a_out = os.path.join(output_dir, f"{track_name}_processed.flac")
+        entry: Dict[str, str] = {}
+
+        if is_video:
+            encoder = detect_best_video_encoder()
+            src_bitrate = _get_video_bitrate(v_path)
+            ef_opts = _edit_friendly_opts()
+            enc_opts = {
+                "h264_nvenc": ["-preset", "p2", "-rc", "vbr_hq", "-b:v", f"{src_bitrate}", *ef_opts] if src_bitrate else ["-preset", "p2", "-cq", "23", *ef_opts],
+                "h264_qsv": ["-preset", "veryfast", "-global_quality", "23", *ef_opts],
+                "libx264": ["-preset", "superfast", "-crf", "23", *ef_opts],
+            }
+            if encoder == "h264_nvenc" and src_bitrate:
+                enc_opts["h264_nvenc"].extend(["-maxrate", f"{int(src_bitrate * 1.5)}"])
+            enc_opts = enc_opts.get(encoder, ["-preset", "superfast", "-crf", "23", *ef_opts])
+            concat_script = os.path.join(output_dir, f"_concat_{track_name}.txt")
+            with open(concat_script, "w", encoding="utf-8") as f:
+                f.write("ffconcat version 1.0\n")
+                for s, e in valid_segs:
+                    f.write(f"file '{v_path.replace(chr(92), '/')}'\n")
+                    f.write(f"inpoint {s}\n")
+                    f.write(f"outpoint {e}\n")
+            try:
+                subprocess.run([
+                    "ffmpeg",
+                    "-f", "concat", "-safe", "0",
+                    "-i", concat_script,
+                    "-c:v", encoder, *enc_opts,
+                    "-vsync", "0",
+                    *log, "-y", v_out
+                ], check=True)
+            finally:
+                if os.path.exists(concat_script):
+                    os.remove(concat_script)
+            entry["video"] = v_out
+
+        if flac_path:
+            select_parts = "+".join(f"between(t,{s},{e})" for s, e in valid_segs)
+            filter_file = os.path.join(output_dir, f"_filter_{track_name}.txt")
+            filter_graph = f"aselect='{select_parts}',asetpts=N/SR/TB"
+            with open(filter_file, "w", encoding="utf-8") as f:
+                f.write(filter_graph)
+            try:
+                subprocess.run([
+                    "ffmpeg", "-i", flac_path,
+                    "-filter_complex_script", filter_file,
+                    "-c:a", "flac",
+                    *log, "-y", a_out
+                ], check=True)
+            finally:
+                if os.path.exists(filter_file):
+                    os.remove(filter_file)
+            entry["audio"] = a_out
+
+        if entry:
+            rendered[v_path] = entry
+
+    return rendered
+
+
 def render_processed_video(
     video_files: List[str],
     audio_files: Dict[str, List[Dict]],
@@ -362,7 +493,8 @@ def render_processed_video(
 ) -> Dict[str, Dict[str, str]]:
     """Renders processed files per source with keep segments concatenated.
 
-    Produces two files per source: *_.mp4 (video-only, H.264) and *_.flac (audio-only).
+    Produces two files per source: *_.mp4 (H.264 video + FLAC audio) and *_.flac (audio-only).
+    Video and audio are cut together in a single filter graph so output durations match exactly.
     Uses ffmpeg's select/aselect filters with filter_complex_script to avoid
     Windows cmd length limits. Uses best available hardware encoder (NVENC/QSV).
     Returns dict mapping source path -> {video: mp4_path, audio: flac_path}.
@@ -371,11 +503,12 @@ def render_processed_video(
         video_offsets = [0.0] * len(video_files)
 
     encoder = detect_best_video_encoder()
+    ef_opts = _edit_friendly_opts()
     enc_opts = {
-        "h264_nvenc": ["-preset", "p2", "-cq", "23"],
-        "h264_qsv": ["-preset", "veryfast", "-global_quality", "23"],
-        "libx264": ["-preset", "superfast", "-crf", "23"],
-    }.get(encoder, ["-preset", "superfast", "-crf", "23"])
+        "h264_nvenc": ["-preset", "p2", "-cq", "23", *ef_opts],
+        "h264_qsv": ["-preset", "veryfast", "-global_quality", "23", *ef_opts],
+        "libx264": ["-preset", "superfast", "-crf", "23", *ef_opts],
+    }.get(encoder, ["-preset", "superfast", "-crf", "23", *ef_opts])
 
     from tqdm import tqdm
 
@@ -406,7 +539,35 @@ def render_processed_video(
         filter_file = os.path.join(output_dir, f"_filter_{track_name}.txt")
         entry: Dict[str, str] = {}
 
-        if is_video:
+        if is_video and flac_path:
+            v_out = os.path.join(output_dir, f"{track_name}_processed.mp4")
+            a_out = os.path.join(output_dir, f"{track_name}_processed.flac")
+            filter_graph = (
+                f"[0:v:0]select='{select_parts}',setpts=N/FRAME_RATE/TB[v];\n"
+                f"[1:a:0]aselect='{select_parts}',asetpts=N/SR/TB[a]"
+            )
+            with open(filter_file, "w", encoding="utf-8") as f:
+                f.write(filter_graph)
+            try:
+                subprocess.run([
+                    "ffmpeg", "-i", v_path, "-i", flac_path,
+                    "-filter_complex_script", filter_file,
+                    "-map", "[v]", "-map", "[a]",
+                    "-c:v", encoder, *enc_opts,
+                    "-c:a", "flac",
+                    *log, "-y", v_out
+                ], check=True)
+            finally:
+                if os.path.exists(filter_file):
+                    os.remove(filter_file)
+            entry["video"] = v_out
+            subprocess.run([
+                "ffmpeg", "-i", v_out,
+                "-vn", "-c:a", "copy",
+                *log, "-y", a_out
+            ], check=True)
+            entry["audio"] = a_out
+        elif is_video:
             v_out = os.path.join(output_dir, f"{track_name}_processed.mp4")
             filter_graph = f"[0:v:0]select='{select_parts}',setpts=N/FRAME_RATE/TB[v]"
             with open(filter_file, "w", encoding="utf-8") as f:
@@ -423,8 +584,7 @@ def render_processed_video(
                 if os.path.exists(filter_file):
                     os.remove(filter_file)
             entry["video"] = v_out
-
-        if flac_path:
+        elif flac_path:
             a_out = os.path.join(output_dir, f"{track_name}_processed.flac")
             filter_graph = f"aselect='{select_parts}',asetpts=N/SR/TB"
             with open(filter_file, "w", encoding="utf-8") as f:
@@ -455,7 +615,7 @@ def generate_kdenlive_from_rendered(
     """Generate a simple kdenlive project from pre-rendered processed files.
 
     Each source gets separate video and/or audio tracks referencing the
-    rendered .mp4 (video-only H.264) and .flac (audio-only) files.
+    rendered .mp4 (H.264+FLAC) and .flac (audio-only) files.
     """
     from mlt_python.project import MLTProject
 

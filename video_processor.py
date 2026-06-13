@@ -25,7 +25,7 @@ from audio_utils import (
 )
 from filler_processor import run_vad, find_overlaps
 from interval_utils import merge_intervals, calculate_keep_segments, adjust_timestamps, compress_global_silence
-from exporter import generate_kdenlive_project, generate_ass_file, generate_srt_file, render_processed_video, generate_kdenlive_from_rendered
+from exporter import generate_kdenlive_project, generate_ass_file, generate_srt_file, render_processed_video, render_processed_video_lossless_cut, generate_kdenlive_from_rendered
 from transcription_processor import process_transcription, get_full_language_name
 from PodcastFillerLib import PodcastFillerLib
 
@@ -50,6 +50,7 @@ def parse_args():
     parser.add_argument("--no-asr", action="store_true", help="If set, skips all ASR/Whisper steps (filler detection and transcription).")
     parser.add_argument("--filler-threshold", type=float, default=0.9, help="Confidence threshold for filler detection (0.0 to 1.0). Default: 0.9")
     parser.add_argument("--filler-merge-gap", type=float, default=0.05, help="Maximum gap in seconds between fillers to merge them. Default: 0.05")
+    parser.add_argument("--full-render", action="store_true", help="Skip lossless-cut hybrid rendering; fully re-encode everything. Slower but guaranteed compatibility with non-H.264 sources.")
 
     return parser.parse_args()
 
@@ -369,7 +370,8 @@ def main():
             })
         audio_files_config[out_v] = sources
 
-    rendered_files = render_processed_video(
+    render_fn = render_processed_video if args.full_render else render_processed_video_lossless_cut
+    rendered_files = render_fn(
         video_files=output_files,
         audio_files=audio_files_config,
         keep_segments=keep_segments,
