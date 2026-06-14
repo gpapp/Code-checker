@@ -428,11 +428,7 @@ def _frame_align_segments(
     segments: List[Tuple[float, float]],
     fps: float,
 ) -> List[Tuple[float, float]]:
-    """Snap segment boundaries to the nearest video frame boundaries (inward).
-
-    Ensures audio cuts align exactly with video frames, preventing
-    audio/video duration mismatch.
-    """
+    """Snap segment boundaries to the nearest video frame boundaries (inward)."""
     frame_dur = 1.0 / fps
     aligned = []
     for s, e in segments:
@@ -548,9 +544,6 @@ def render_processed_video_lossless_cut(
         if not valid_segs:
             continue
 
-        if is_video:
-            valid_segs = _frame_align_segments(valid_segs, target_fps)
-
         flac_path = associated[0]["original"] if associated else None
         a_out = os.path.join(output_dir, f"{track_name}_processed.flac")
         entry: Dict[str, str] = {}
@@ -565,8 +558,8 @@ def render_processed_video_lossless_cut(
                 f.write("ffconcat version 1.0\n")
                 for s, e in valid_segs:
                     f.write(f"file '{v_path.replace(chr(92), '/')}'\n")
-                    f.write(f"inpoint {s}\n")
-                    f.write(f"outpoint {e}\n")
+                    f.write(f"inpoint {s:.6f}\n")
+                    f.write(f"outpoint {e:.6f}\n")
             total_dur = sum(e - s for s, e in valid_segs)
             try:
                 encoders_to_try = [encoder, "libx264"]
@@ -593,9 +586,16 @@ def render_processed_video_lossless_cut(
             entry["video"] = v_out
 
         if flac_path:
-            select_parts = "+".join(f"between(t,{s},{e})" for s, e in valid_segs)
+            markers = associated[0].get("markers", {}) if associated else {}
+            muted = markers.get("silence", []) + markers.get("spikes", [])
+            if muted:
+                mute_parts = "+".join(f"gte(t,{s})*lt(t,{e})" for s, e in muted)
+                keep_parts = "+".join(f"gte(t,{s})*lt(t,{e})" for s, e in valid_segs)
+                filter_graph = f"volume=0:enable='{mute_parts}',aselect='{keep_parts}',asetpts=N/SR/TB"
+            else:
+                select_parts = "+".join(f"gte(t,{s})*lt(t,{e})" for s, e in valid_segs)
+                filter_graph = f"aselect='{select_parts}',asetpts=N/SR/TB"
             filter_file = os.path.join(output_dir, f"_filter_{track_name}.txt")
-            filter_graph = f"aselect='{select_parts}',asetpts=N/SR/TB"
             with open(filter_file, "w", encoding="utf-8") as f:
                 f.write(filter_graph)
             try:
@@ -665,11 +665,8 @@ def render_processed_video(
         if not valid_segs:
             continue
 
-        if is_video:
-            valid_segs = _frame_align_segments(valid_segs, target_fps)
-
         flac_path = associated[0]["original"] if associated else None
-        select_parts = "+".join(f"between(t,{s},{e})" for s, e in valid_segs)
+        select_parts = "+".join(f"gte(t,{s})*lt(t,{e})" for s, e in valid_segs)
         log = ["-loglevel", "error", "-hide_banner"]
         filter_file = os.path.join(output_dir, f"_filter_{track_name}.txt")
         entry: Dict[str, str] = {}
@@ -706,7 +703,14 @@ def render_processed_video(
             entry["video"] = v_out
 
         if flac_path:
-            filter_graph = f"aselect='{select_parts}',asetpts=N/SR/TB"
+            markers = associated[0].get("markers", {}) if associated else {}
+            muted = markers.get("silence", []) + markers.get("spikes", [])
+            if muted:
+                mute_parts = "+".join(f"gte(t,{s})*lt(t,{e})" for s, e in muted)
+                keep_parts = "+".join(f"gte(t,{s})*lt(t,{e})" for s, e in valid_segs)
+                filter_graph = f"volume=0:enable='{mute_parts}',aselect='{keep_parts}',asetpts=N/SR/TB"
+            else:
+                filter_graph = f"aselect='{select_parts}',asetpts=N/SR/TB"
             with open(filter_file, "w", encoding="utf-8") as f:
                 f.write(filter_graph)
             try:
@@ -715,7 +719,7 @@ def render_processed_video(
                      "-filter_complex_script", filter_file,
                      "-c:a", "flac",
                      *log, "-y", a_out],
-                    total_dur, desc=f"  encoding {track_name}",
+                    total_dur, desc=f"  audio {track_name}",
                 )
             finally:
                 if os.path.exists(filter_file):
@@ -749,19 +753,39 @@ def generate_kdenlive_from_rendered(
     proj = MLTProject(profile="hd1080_25")
     fps = proj.profile.fps
 
+    # Merge entries with matching basename (external audio + video pairing)
+    # e.g., video.mkv + video.wav → one entry with both "video" and "audio"
+    stem_entries: Dict[str, List[Tuple[str, Dict]]] = {}
+    for source_path, rend_entry in rendered_files.items():
+        stem = os.path.splitext(os.path.basename(source_path))[0].lower()
+        stem_entries.setdefault(stem, []).append((source_path, rend_entry))
+
+    merged_rendered: Dict[str, Dict[str, str]] = {}
+    merged_fillers: Dict[str, List[Tuple[float, float]]] = {}
+    for stem, entries in stem_entries.items():
+        merged_entry: Dict[str, str] = {}
+        merged_source = entries[0][0]
+        for sp, re in entries:
+            merged_entry.update(re)
+            if sp in filler_intervals:
+                merged_fillers.setdefault(merged_source, []).extend(filler_intervals[sp])
+        merged_rendered[merged_source] = merged_entry
+
     def _obs_key(item):
         stem = os.path.splitext(os.path.basename(item[0]))[0].lower()
         return (1 if "obs" in stem else 2, item[0])
 
     # Pass 1: All audio tracks (lower tractor numbers = bottom of Kdenlive timeline)
-    for source_path, rend_entry in sorted(rendered_files.items(), key=_obs_key):
+    # Create matching audio track for every video source (empty if no audio) for V/A alignment
+    for source_path, rend_entry in sorted(merged_rendered.items(), key=_obs_key):
         track_name = get_track_name_from_path(source_path)
         a_path = rend_entry.get("audio")
-        intervals = filler_intervals.get(source_path, [])
+        intervals = merged_fillers.get(source_path, [])
+
+        playlist = proj.add_track("audio", id=f"track_{track_name}_audio")
+        playlist.set_property("kdenlive:track_name", f"{track_name} (audio)")
 
         if a_path:
-            playlist = proj.add_track("audio", id=f"track_{track_name}_audio")
-            playlist.set_property("kdenlive:track_name", f"{track_name} (audio)")
             producer = proj.add_producer(
                 a_path, id=f"clip_{track_name}_audio", mlt_service="avformat",
             )
@@ -769,15 +793,15 @@ def generate_kdenlive_from_rendered(
             if dur > 0:
                 playlist.add_clip(producer.id, in_point=0.0, duration=dur, fps=fps)
 
-                for fs, fe in intervals:
-                    if fe - fs > 0.01:
-                        proj.add_marker(
-                            fs, comment="Filler", marker_type=4,
-                            duration=fe - fs, producer_id=producer.id,
-                        )
+            for fs, fe in intervals:
+                if fe - fs > 0.01:
+                    proj.add_marker(
+                        fs, comment="Filler", marker_type=4,
+                        duration=fe - fs, producer_id=producer.id,
+                    )
 
     # Pass 2: All video tracks (higher tractor numbers = top of Kdenlive timeline)
-    for source_path, rend_entry in sorted(rendered_files.items(), key=_obs_key):
+    for source_path, rend_entry in sorted(merged_rendered.items(), key=_obs_key):
         track_name = get_track_name_from_path(source_path)
         v_path = rend_entry.get("video")
 

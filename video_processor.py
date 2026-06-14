@@ -25,7 +25,7 @@ from audio_utils import (
 )
 from filler_processor import run_vad, find_overlaps
 from interval_utils import merge_intervals, calculate_keep_segments, adjust_timestamps, compress_global_silence
-from exporter import generate_kdenlive_project, generate_ass_file, generate_srt_file, render_processed_video, render_processed_video_lossless_cut, generate_kdenlive_from_rendered
+from exporter import generate_kdenlive_project, generate_ass_file, generate_srt_file, render_processed_video, render_processed_video_lossless_cut, generate_kdenlive_from_rendered, _frame_align_segments, _detect_target_fps
 from transcription_processor import process_transcription, get_full_language_name
 from PodcastFillerLib import PodcastFillerLib
 
@@ -131,12 +131,26 @@ def main():
 
     video_to_audio_map = {}
     audio_info_map = {}
+    obs_audio_files: set = set()
+    processed_inputs: set = set()
 
     for v in tqdm(final_inputs, desc="Processing Audio"):
+        if v in processed_inputs:
+            continue
         is_audio_ext = os.path.splitext(v)[1].lower() in audio_exts
         is_obs = "obs" in os.path.splitext(os.path.basename(v))[0].lower()
         if (has_external_audio or is_obs) and has_video_stream(v) and not is_audio_ext:
             video_to_audio_map[v] = []
+            if is_obs:
+                # Skip any companion audio for OBS — no OBS audio in the project
+                stem = os.path.splitext(os.path.basename(v))[0].lower()
+                for other in final_inputs:
+                    if other is v or other in processed_inputs:
+                        continue
+                    other_stem = os.path.splitext(os.path.basename(other))[0].lower()
+                    if other_stem == stem and os.path.splitext(other)[1].lower() in audio_exts:
+                        processed_inputs.add(other)
+                        break
         else:
             processed = process_streams_to_flac(v, working_dir)
             video_to_audio_map[v] = [e["flac"] for e in processed]
@@ -154,6 +168,9 @@ def main():
     logger.info("Step 2/7: Detecting silence and spikes...")
     stream_markers = {}
     for af in tqdm(all_audio_files, desc="Analyzing Audio"):
+        if af in obs_audio_files:
+            stream_markers[af] = {"silence": [], "spikes": [], "duration": get_video_duration(af), "offset": offsets[final_inputs.index(audio_info_map[af]["original"])] if af in audio_info_map else 0.0}
+            continue
         cache_path = _ck[af] + ".markers.json"
         if os.path.exists(cache_path) and os.path.getsize(cache_path) > 0:
             with open(cache_path, "r", encoding="utf-8") as f:
@@ -187,6 +204,9 @@ def main():
         logger.info("Falling back to silence-only cutting (Step 1-2).")
     else:
         for af in tqdm(all_audio_files, desc="Pass 1: CNN Filler Detection"):
+            if af in obs_audio_files:
+                stream_markers[af]["fillers"] = []
+                continue
             # Check for CNN results cache
             cnn_cache = _ck[af] + ".filler_cnn.json"
             if os.path.exists(cnn_cache) and os.path.getsize(cnn_cache) > 0:
@@ -224,6 +244,8 @@ def main():
     if not args.no_asr:
         logger.info("Step 3b/7: Running Pass 2: Final Transcription (faster-whisper large-v3)...")
         for af in tqdm(all_audio_files, desc="Pass 2: Transcription"):
+            if af in obs_audio_files:
+                continue
             transcription_cache = _ck[af] + ".asr.json"
     
             # Load from disk cache first
@@ -302,9 +324,19 @@ def main():
     cutting_segments = merge_intervals(cutting_segments)
     keep_segments = calculate_keep_segments(cutting_segments, total_duration)
 
+    # Frame-align to lowest fps so all sources produce identical total duration
+    all_fps = [
+        _detect_target_fps(v) for v in final_inputs if has_video_stream(v)
+    ] or [25.0]
+    lowest_fps = min(all_fps)
+    keep_segments = _frame_align_segments(keep_segments, lowest_fps)
+
     logger.info("Step 4/7: VAD and Overlap detection...")
     speech_intervals = {}
     for af in tqdm(all_audio_files, desc="VAD"):
+        if af in obs_audio_files:
+            speech_intervals[af] = []
+            continue
         cache_path = _ck[af] + ".vad.json"
         
         # Bypass NeMo VAD if we have accurate word timestamps from Pass 2 (Transcription)
@@ -367,7 +399,8 @@ def main():
             sources.append({
                 "original": af,
                 "stream_idx": info["stream_idx"],
-                "temp_path": af
+                "temp_path": af,
+                "markers": stream_markers.get(af, {}),
             })
         audio_files_config[out_v] = sources
 
