@@ -145,6 +145,9 @@ class PodcastFillerLib:
             pbar = tqdm(dataloader, desc=f"Epoch {epoch+1}/{epochs}")
             for waveforms, labels in pbar:
                 waveforms, labels = waveforms.to(self.device), labels.to(self.device).unsqueeze(1)
+                gain = torch.empty(waveforms.size(0), 1, 1).uniform_(0.5, 1.5).to(self.device)
+                waveforms = waveforms * gain
+                waveforms = waveforms.clamp(-1.0, 1.0)
                 
                 optimizer.zero_grad()
                 outputs = self.model(waveforms)
@@ -194,7 +197,11 @@ class PodcastFillerLib:
         intervals = []
         with torch.no_grad():
             for start in tqdm(range(0, total_samples - win_samples, stride_samples), desc="Analyzing Audio Features", leave=False):
-                chunk = waveform[:, start : start + win_samples].to(self.device).unsqueeze(0)
+                chunk = waveform[:, start : start + win_samples].clone().to(self.device)
+                peak = chunk.abs().max()
+                if peak > 1e-9:
+                    chunk = chunk / peak * 0.95
+                chunk = chunk.unsqueeze(0)
                 if self.model(chunk).item() > threshold:
                     intervals.append((start, start + win_samples))
         if not intervals:
@@ -220,8 +227,8 @@ class PodcastFillerLib:
         """
         total_samples = waveform.shape[1]
         fine_stride = stride_samples // 4  # ~0.0625s at 16kHz
-        # Base the search window on the detection parameters
-        margin = int(0.5 * self.sample_rate)  # search 0.5s beyond each boundary
+        margin = int(0.2 * self.sample_rate)  # search 0.2s beyond each boundary
+        refine_threshold = min(threshold + 0.05, 0.99)
 
         refined = []
         with torch.no_grad():
@@ -231,8 +238,12 @@ class PodcastFillerLib:
                 ref_start = start_samp
                 found_start = False
                 for t in range(search_start, min(start_samp + win_samples, total_samples - win_samples), fine_stride):
-                    chunk = waveform[:, t : t + win_samples].to(self.device).unsqueeze(0)
-                    if self.model(chunk).item() > threshold:
+                    chunk = waveform[:, t : t + win_samples].clone().to(self.device)
+                    peak = chunk.abs().max()
+                    if peak > 1e-9:
+                        chunk = chunk / peak * 0.95
+                    chunk = chunk.unsqueeze(0)
+                    if self.model(chunk).item() > refine_threshold:
                         ref_start = t
                         found_start = True
                         break
@@ -244,13 +255,17 @@ class PodcastFillerLib:
                 ref_end = end_samp
                 last_above = end_samp
                 for t in range(max(0, end_samp - win_samples), search_end + fine_stride, fine_stride):
-                    chunk = waveform[:, t : t + win_samples].to(self.device).unsqueeze(0)
-                    if self.model(chunk).item() > threshold:
+                    chunk = waveform[:, t : t + win_samples].clone().to(self.device)
+                    peak = chunk.abs().max()
+                    if peak > 1e-9:
+                        chunk = chunk / peak * 0.95
+                    chunk = chunk.unsqueeze(0)
+                    if self.model(chunk).item() > refine_threshold:
                         last_above = t + win_samples
                 ref_end = max(last_above, ref_end)
 
                 duration_sec = (ref_end - ref_start) / self.sample_rate
-                if duration_sec > 0.01:
+                if 0.01 < duration_sec < 2.0:
                     refined.append((ref_start / self.sample_rate, ref_end / self.sample_rate))
 
         return refined
@@ -336,6 +351,9 @@ class PodcastFillersDataset(Dataset):
                 wav = torch.zeros(1, self.target_sr)
             if wav.shape[1] > self.target_sr: wav = wav[:, :self.target_sr]
             else: wav = torch.nn.functional.pad(wav, (0, self.target_sr - wav.shape[1]))
+            peak = wav.abs().max()
+            if peak > 1e-9:
+                wav = wav / peak * 0.95
             self.wavs.append(wav)
             self.labels.append(torch.tensor(row['is_filler'], dtype=torch.float32))
         print(f"  Preloaded {len(self.wavs)} samples")
@@ -380,6 +398,9 @@ class HungarianFillersDataset(Dataset):
                 wav = torch.zeros(1, self.target_sr)
             if wav.shape[1] > self.target_sr: wav = wav[:, :self.target_sr]
             else: wav = torch.nn.functional.pad(wav, (0, self.target_sr - wav.shape[1]))
+            peak = wav.abs().max()
+            if peak > 1e-9:
+                wav = wav / peak * 0.95
             self.wavs.append(wav)
             self.labels.append(torch.tensor(row['is_filler'], dtype=torch.float32))
         print(f"  Preloaded {len(self.wavs)} samples")
@@ -435,7 +456,7 @@ if __name__ == "__main__":
     parser.add_argument("--clips_dir", type=str)
     parser.add_argument("--hun_csv", type=str, help="Path to Hungarian CSV file")
     parser.add_argument("--hun_clips_dir", type=str, help="Path to Hungarian clips directory")
-    parser.add_argument("--hun_weight", type=float, default=1.0, help="Weight multiplier for Hungarian samples")
+    parser.add_argument("--hun_weight", type=float, default=50.0, help="Weight multiplier for Hungarian samples")
     parser.add_argument("--epochs", type=int, default=10, help="Number of training epochs")
     parser.add_argument("--batch_size", type=int, default=256, help="Batch size for training")
     parser.add_argument("--input", type=str)
@@ -480,7 +501,7 @@ if __name__ == "__main__":
             clips_dir=eng_clips,
             hun_csv=str(tmp_csv),
             hun_clips_dir=str(parent),
-            hun_weight=5.0,
+            hun_weight=args.hun_weight,
             epochs=args.epochs,
             batch_size=args.batch_size
         )

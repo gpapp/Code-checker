@@ -43,7 +43,7 @@ if not exist filler_detector.pth (
     if exist PodcastFillerDataset\PodcastFillers.csv (
         if exist fillers_hun\training\ (
             echo "[INFO] filler_detector.pth missing. Using AUP3-extracted Hungarian data (fillers_hun/training/) + English..."
-             uv run PodcastFillerLib.py --mode train_fillers --filler-dir fillers_hun\training --non-filler-dir fillers_hun\non_filler --eng_csv PodcastFillerDataset\PodcastFillers.csv --eng_clips_dir PodcastFillerDataset\clip_wav --epochs 10 --batch_size 256
+             uv run PodcastFillerLib.py --mode train_fillers --filler-dir fillers_hun\training --non-filler-dir fillers_hun\non_filler --eng_csv PodcastFillerDataset\PodcastFillers.csv --eng_clips_dir PodcastFillerDataset\clip_wav --epochs 10 --batch_size 256 --hun_weight 50.0
         ) else (
             echo "[INFO] filler_detector.pth missing. Starting training on English dataset only..."
             python PodcastFillerLib.py --mode train --csv PodcastFillerDataset\PodcastFillers.csv --clips_dir PodcastFillerDataset\clip_wav --batch_size 256
