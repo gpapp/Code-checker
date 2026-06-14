@@ -47,7 +47,7 @@ def parse_args():
     parser.add_argument("--restart", action="store_true", help="If set, deletes temporary artifact files (*.json, *.markers.json, etc.) from the working directory before processing.")
     parser.add_argument("--noclear", action="store_true", help="If set, skips cleanup of temporary artifact files after processing.")
     parser.add_argument("--refine", action="store_true", help="If set, uses Gemma 4 via Ollama to clean up the transcription (Step 3c).")
-    parser.add_argument("--no-asr", action="store_true", help="If set, skips all ASR/Whisper steps (filler detection and transcription).")
+    parser.add_argument("--asr-engine", choices=["whisper", "granite"], default=None, help="ASR engine to use (whisper or granite). If not specified, ASR is skipped.")
     parser.add_argument("--filler-threshold", type=float, default=0.9, help="Confidence threshold for filler detection (0.0 to 1.0). Default: 0.9")
     parser.add_argument("--filler-merge-gap", type=float, default=0.05, help="Maximum gap in seconds between fillers to merge them. Default: 0.05")
     parser.add_argument("--full-render", action="store_true", help="Skip lossless-cut hybrid rendering; fully re-encode everything. Slower but guaranteed compatibility with non-H.264 sources.")
@@ -240,8 +240,8 @@ def main():
     # Whisper model stays loaded; Pass 2 below handles files not covered above (edge case)
     # unload_crisper_model() — deliberately NOT called here; shared model reused in process_transcription
 
-    # 2. Pass 2: Final Transcription — skipped for files already transcribed by Pass 1b
-    if not args.no_asr:
+    # 2. Pass 2: Final Transcription
+    if args.asr_engine == "whisper":
         logger.info("Step 3b/7: Running Pass 2: Final Transcription (faster-whisper large-v3)...")
         for af in tqdm(all_audio_files, desc="Pass 2: Transcription"):
             if af in obs_audio_files:
@@ -273,8 +273,32 @@ def main():
     
         # Free memory after Pass 2
         unload_transcription_model()
+
+    elif args.asr_engine == "granite":
+        logger.info("Step 3b/7: Running Pass 2: Final Transcription (Granite Speech)...")
+        from granite_asr import GraniteASR
+        granite = GraniteASR()
+
+        for af in tqdm(all_audio_files, desc="Pass 2: Granite ASR"):
+            if af in obs_audio_files:
+                continue
+            transcription_cache = _ck[af] + ".asr.json"
+
+            if os.path.exists(transcription_cache) and os.path.getsize(transcription_cache) > 0:
+                with open(transcription_cache, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    transcription_results[af] = {"text": data["text"], "words": data["words"]}
+                continue
+
+            c_text, c_words = granite.transcribe(
+                af, language=args.language, cache_path=transcription_cache
+            )
+            transcription_results[af] = {"text": c_text, "words": c_words}
+
+        granite.unload()
+
     else:
-        logger.info("Step 3b/7: Skipping Pass 2 (Final Transcription) due to --no-asr.")
+        logger.info("Step 3b/7: Skipping Pass 2 (no --asr-engine specified).")
 
     # 3. Pass 3: Gemma Cleanup (Step 3c)
     if args.refine:

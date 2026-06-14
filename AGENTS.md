@@ -4,12 +4,12 @@
 
 - **Setup**: Run `setup.bat` to create `.venv` (Python 3.13), install deps via `uv`, and train filler model if `filler_detector.pth` missing
 - **Run**: `process.bat <input>` or `uv run python video_processor.py <input>` (activates `.venv` automatically)
-- **GPU**: Pass 2 ASR (Qwen3-ASR) requires NVIDIA GPU with CUDA 12.6; use `--no-asr` to skip ASR for testing
+- **GPU**: Pass 2 ASR requires NVIDIA GPU with CUDA; use without `--asr-engine` to skip ASR for testing
 
 ## Critical Architecture
 
 - **Entry Point**: `video_processor.py` orchestrates the pipeline
-- **Processing Flow**: `audio_utils.py` (two-pass loudnorm → FLAC) → `filler_processor.py` (CrisperWhisper) → `transcription_processor.py` (Qwen3-ASR) → `interval_utils.py` → `exporter.py`
+- **Processing Flow**: `audio_utils.py` (two-pass loudnorm → FLAC) → `filler_processor.py` (CrisperWhisper) → `transcription_processor.py` (faster-whisper) or `granite_asr.py` (Granite Speech) → `interval_utils.py` → `exporter.py`
 - **Synchronized Cuts**: ALL cuts must use same timestamps across videos. Call `calculate_keep_segments` on consolidated `cutting_segments` for all streams
 - **Audio Processing**: All audio streams are processed to FLAC in `video_processing_work/` with two-pass loudnorm (-14 LUFS) + compression. Analysis runs on FLAC files; no raw WAVs are stored.
 - **Cache**: JSON files (`*.asr.json`, `*.markers.json`, etc.) stored in `video_processing_work/` keyed by source file basename
